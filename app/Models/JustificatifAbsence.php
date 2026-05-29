@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class JustificatifAbsence extends Model
 {
-<<<<<<< HEAD
     protected $fillable = [
         'fichier_path',
         'type',
@@ -17,7 +16,4 @@ class JustificatifAbsence extends Model
     {
         return $this->belongsTo(DemandeAbsence::class);
     }
-=======
-    //
->>>>>>> 1ce37f274bc27af71ef5858c73775e967614fd85
 }

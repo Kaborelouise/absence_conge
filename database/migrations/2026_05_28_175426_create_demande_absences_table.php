@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('demande_absences', function (Blueprint $table) {
             $table->id();
-<<<<<<< HEAD
             $table->integer('num_demande')->unique();
             $table->date('date_debut');
             $table->date('date_fin');
@@ -21,8 +20,6 @@ return new class extends Migration
             $table->foreignId('utilisateur_id')
                   ->constrained('utilisateurs');
                   //qui a fait la demande
-=======
->>>>>>> 1ce37f274bc27af71ef5858c73775e967614fd85
             $table->timestamps();
         });
     }

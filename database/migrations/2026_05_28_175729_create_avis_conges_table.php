@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('avis_conges', function (Blueprint $table) {
             $table->id();
-<<<<<<< HEAD
             $table->enumeration('avis', ['favorable', 'defavorable', 'en_attente']);
             $table->text('commentaire')->nullable();
             $table->enum('type', ['chef_departement', 'responsable_direction', 'agent_rh', 'sg', 'dg', 'pca']);
@@ -23,8 +22,6 @@ return new class extends Migration
                   ->onDelete('cascade');
             $table->foreignId('utilisateur_id')
                     ->constrained('utilisateurs');
-=======
->>>>>>> 1ce37f274bc27af71ef5858c73775e967614fd85
             $table->timestamps();
         });
     }

@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class DemandeJouissance extends Model
 {
-<<<<<<< HEAD
     protected $fillable =[
         'num_demande',
         'date_debut',
@@ -16,7 +15,4 @@ class DemandeJouissance extends Model
 
         public function utilisateur() {return $this->belongsTo(Utilisateur::class); }
         public function avis() { return $this->hasMany(AvisJouissance::class); }
-=======
-    //
->>>>>>> 1ce37f274bc27af71ef5858c73775e967614fd85
 }

@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('justificatif_absences', function (Blueprint $table) {
             $table->id();
-<<<<<<< HEAD
             //On ne stocke pas le fichier en base, juste son chemin
             $table->fichier_path('string');
 
@@ -25,8 +24,6 @@ return new class extends Migration
 
 
 
-=======
->>>>>>> 1ce37f274bc27af71ef5858c73775e967614fd85
             $table->timestamps();
         });
     }
