@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('avis_jouissances', function (Blueprint $table) {
             $table->id();
+<<<<<<< HEAD
             $table->enum('avis',['favorable', 'defavorable','en_attente'])->default('en_attente');
             $table->enum('type', ['chef_departement', 'responsable_direction', 'agent_rh', 'sg', 'dg', 'pca']);
             $table->text('commentaire')->nullable();
@@ -22,6 +23,8 @@ return new class extends Migration
                   ->constrained('demande_jouissances')
                   ->onDelete('cascade');
             $table->foreignId('utilisateur_id')->constrained('utilisateurs');
+=======
+>>>>>>> 1ce37f274bc27af71ef5858c73775e967614fd85
             $table->timestamps();
         });
     }

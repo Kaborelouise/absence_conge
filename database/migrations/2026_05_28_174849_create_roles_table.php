@@ -13,8 +13,11 @@ return new class extends Migration
     {
         Schema::create('roles', function (Blueprint $table) {
             $table->id();
+<<<<<<< HEAD
             // le nom du role: agentRH, Chef_departement 
             $table->string ('libelle');
+=======
+>>>>>>> 1ce37f274bc27af71ef5858c73775e967614fd85
             $table->timestamps();
         });
     }

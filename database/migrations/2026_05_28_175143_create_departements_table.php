@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('departements', function (Blueprint $table) {
             $table->id();
+<<<<<<< HEAD
             //Ex: DRH
             $table->string('libelle_court');
             //Ex: Direction des Ressources Humaines
@@ -23,6 +24,8 @@ return new class extends Migration
                   //On stocke l'Id de la direction a laquelle appartient ce departement
                   //onDelete('cascade'): si la direction est supprimée, ses departements sont aussi supprimés 
 
+=======
+>>>>>>> 1ce37f274bc27af71ef5858c73775e967614fd85
             $table->timestamps();
         });
     }

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('demande_conges', function (Blueprint $table) {
             $table->id();
+<<<<<<< HEAD
             $table->string('lieu_jouissance');
             $table->foreignId('utilisateur_id')
                 ->constrained('utilisateurs');
@@ -20,6 +21,10 @@ return new class extends Migration
             $table->timestamps();
         });
 
+=======
+            $table->timestamps();
+        });
+>>>>>>> 1ce37f274bc27af71ef5858c73775e967614fd85
     }
 
     /**

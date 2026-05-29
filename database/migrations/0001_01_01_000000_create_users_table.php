@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('nom')->nullable();
             $table->string('prenom')->nullable();
             $table->string('poste')->nullable();
+<<<<<<< HEAD
             $table->string('signature')->nullable();//champs pas obligatoire
             $table->boolean('est_responsable_departement')->default(false);
             $table->boolean('est_responsable_direction')->default(false);
@@ -33,6 +34,11 @@ return new class extends Migration
                   ->constrained('departements');
 
 
+=======
+            $table->string('signature')->nullable();
+            $table->boolean('est_responsable_departement')->nullable();
+            $table->boolean('est_responsable_direction')->nullable();
+>>>>>>> 1ce37f274bc27af71ef5858c73775e967614fd85
             $table->rememberToken();
             $table->timestamps();
         });

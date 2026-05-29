@@ -13,11 +13,14 @@ return new class extends Migration
     {
         Schema::create('directions', function (Blueprint $table) {
             $table->id();
+<<<<<<< HEAD
             //ex: DSA
             $table->string('libelle_court');
 
             //Ex: Diretion des Systèmes Applicatifs
             $table->string('libelle_long');
+=======
+>>>>>>> 1ce37f274bc27af71ef5858c73775e967614fd85
             $table->timestamps();
         });
     }
