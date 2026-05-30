@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DemandeConge extends Model
 {
-    protected $fillable = ['lieu_jouissance', 'user_id'];
+    protected $fillable = ['lieu_jouissance', 'statut', 'user_id'];
 
     public function user()
     {

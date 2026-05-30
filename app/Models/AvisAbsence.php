@@ -8,7 +8,7 @@ class AvisAbsence extends Model
 {
     protected $fillable = ['avisabsence', 'type', 'commentaire', 'demande_absence_id'];
 
-    public function DemandeAbsence()
+    public function demandeAbsence()
     {
         return $this->belongsTo(DemandeAbsence::class);
     }

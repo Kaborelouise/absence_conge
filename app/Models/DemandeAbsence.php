@@ -10,7 +10,11 @@ class DemandeAbsence extends Model
     protected $fillable = [
         'num_demande', 
         'date_debut', 
-        'date_fin', 'motif', 
+        'date_fin', 
+        'motif', 
+        'interimaire',
+        'retenue_salaire', 
+        'statut',
         'user_id'
     ];
      //demande fait par un utilisateur(user)

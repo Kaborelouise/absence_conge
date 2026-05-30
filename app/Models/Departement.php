@@ -15,7 +15,7 @@ class Departement extends Model
     }
     
     //un departement peut contenir plusieurs utilisateurs
-    public function utilisateur()
+    public function user()
     {
         return $this->hasMany(User::class);
     }

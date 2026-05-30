@@ -11,7 +11,7 @@ class DemandeJouissance extends Model
         'date_debut',
         'date_fin',
         'nombre_jour',
-        'utilisateur_id'];
+        'user_id'];
 
         public function user() 
         {
