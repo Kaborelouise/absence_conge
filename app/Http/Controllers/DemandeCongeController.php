@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DemandeConge;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class DemandeCongeController extends Controller
@@ -12,15 +13,19 @@ class DemandeCongeController extends Controller
      */
     public function index()
     {
-        //
+        $demandes = DemandeConge::with('user', 'avisconge')->get();
+        return view('demande-conges.index', compact('demandes'));
     }
+        
+    
 
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        //
+        $utilisateurs = User::all();
+        return view('demande-conges.create', compact('utilisateurs'));
     }
 
     /**
@@ -28,7 +33,13 @@ class DemandeCongeController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        
+    $request->validate([
+            'lieu_jouissance' => 'required|string',
+            'user_id'  => 'required|exists:users,id',
+        ]);
+        DemandeConge::create($request->all());
+        return redirect()->route('demande-conges.index')->with('success', 'Demande de congé créée');
     }
 
     /**

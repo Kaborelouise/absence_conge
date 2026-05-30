@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+
+            $table->integer('matricule')->unique();
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
@@ -23,10 +25,14 @@ return new class extends Migration
             $table->string('signature')->nullable();//champs pas obligatoire
             $table->boolean('est_responsable_departement')->default(false);
             $table->boolean('est_responsable_direction')->default(false);
-            // default(false) pour dire que par defaut un utilisateur n'est pas un responsable
 
+            $table->integer('solde_conge')->default(null);
+             $table->integer('solde_absence')->default(null);
+            
             // quel role a cet utilisateur
             $table->foreignId('role_id')->constrained('roles');
+
+            $table->foreignId('departement_id');
 
             //Dans quel departement est ce utilisateur
             $table->foreignId('departement_id')

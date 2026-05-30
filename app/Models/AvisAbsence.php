@@ -6,5 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class AvisAbsence extends Model
 {
-    //
+    protected $fillable = ['avisabsence', 'type', 'commentaire', 'demande_absence_id'];
+
+    public function DemandeAbsence()
+    {
+        return $this->belongsTo(DemandeAbsence::class);
+    }
 }

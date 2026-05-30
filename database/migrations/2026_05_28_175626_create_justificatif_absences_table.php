@@ -17,10 +17,11 @@ return new class extends Migration
             $table->fichier_path('string');
 
             $table->string('type');
-            $table->foreignId('demande_absence_ide')
+            //type de justificatif
+            $table->foreignId('demande_absence_id')
                   ->onstrained('demande_absences')
                   ->onDelete('cascade');
-                  //le justificatif porte le lien car une demande peut ne pas avoir de justificatif
+                  //le justificatif a la clé étrangère car la demande peut exister sans justificatifs
 
 
 

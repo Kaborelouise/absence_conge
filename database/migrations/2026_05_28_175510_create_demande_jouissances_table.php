@@ -18,8 +18,14 @@ return new class extends Migration
             $table->date('date_debut');
             $table->date('date_fin');
             $table->integer('nombre_jour');
-            $table->foreignId('utilisateur_id')
-                  ->constrained('utilisateurs');
+            $table->enum('statut', [
+                'en_attente',
+                 'en_cours',
+                 'validee',
+                 'rejetee'
+            ])->default('en_attente');
+            $table->foreignId('user_id')
+                  ->constrained('users');
             $table->timestamps();
         });
     }

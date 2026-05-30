@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Direction extends Model
 {
-    protected $fillable = ['nom_direction'];
+    protected $fillable = ['libelle_coute', 'libelle_long'];
 
     public function departements()
     {

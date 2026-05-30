@@ -16,13 +16,10 @@ return new class extends Migration
             $table->enum('avis',['favorable', 'defavorable','en_attente'])->default('en_attente');
             $table->enum('type', ['chef_departement', 'responsable_direction', 'agent_rh', 'sg', 'dg', 'pca']);
             $table->text('commentaire')->nullable();
+
             $table->foreignId('demande_jouissance_id')->constrained('demande_jouissances')->onDelete('cascade');
-            $table->foreignId('demande_jouissance_id')
-            
-                  ->constrained('demande_jouissances')
-                  ->onDelete('cascade');
-            $table->foreignId('utilisateur_id')->constrained('utilisateurs');
             $table->timestamps();
+            
         });
     }
 

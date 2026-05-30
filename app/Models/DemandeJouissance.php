@@ -13,6 +13,12 @@ class DemandeJouissance extends Model
         'nombre_jour',
         'utilisateur_id'];
 
-        public function utilisateur() {return $this->belongsTo(Utilisateur::class); }
-        public function avis() { return $this->hasMany(AvisJouissance::class); }
+        public function user() 
+        {
+            return $this->belongsTo(User::class, 'user_id'); 
+        }
+        public function avis() 
+        {
+             return $this->hasMany(AvisJouissance::class); 
+        }
 }

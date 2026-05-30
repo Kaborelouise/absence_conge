@@ -13,15 +13,14 @@ return new class extends Migration
     {
         Schema::create('avis_conges', function (Blueprint $table) {
             $table->id();
-            $table->enumeration('avis', ['favorable', 'defavorable', 'en_attente']);
+            $table->enum('avis', ['favorable', 'defavorable', 'en_attente']);
             $table->text('commentaire')->nullable();
-            $table->enum('type', ['chef_departement', 'responsable_direction', 'agent_rh', 'sg', 'dg', 'pca']);
-             $table->enumeration('type', ['chef_departement', 'responsable_direction', 'agent_rh', 'sg', 'dg', 'pca']);
+            $table->enum('type', ['agent_rh']);
+             $table->enum('type', ['chef_departement', 'responsable_direction', 'agent_rh', 'sg', 'dg', 'pca']);
             $table->foreignId('demande_conge_id')
-                  ->constrained('demandes_conges')
+                  ->constrained('demande_conges')
                   ->onDelete('cascade');
-            $table->foreignId('utilisateur_id')
-                    ->constrained('utilisateurs');
+            
             $table->timestamps();
         });
     }

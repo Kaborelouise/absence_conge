@@ -13,9 +13,16 @@ return new class extends Migration
     {
         Schema::create('demande_conges', function (Blueprint $table) {
             $table->id();
-            $table->string('lieu_jouissance');
-            $table->foreignId('utilisateur_id')
-                ->constrained('utilisateurs');
+
+            $table->enum('lieu_jouissance',[
+                'Afrique',
+                'Asie',
+                'Amerique',
+                'Europe',
+
+            ]);
+            $table->foreignId('user_id')
+                ->constrained('users');
 
             $table->timestamps();
         });
