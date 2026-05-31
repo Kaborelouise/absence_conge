@@ -13,7 +13,7 @@ class RoleController extends Controller
      */
     public function index()
     {
-        $roles = Role::all();
+        $roles = Role::withCount('users')->get();
         //passer $roles a la vue
         return view('roles.index', compact('roles'));
     }
@@ -28,10 +28,11 @@ class RoleController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'libelle' => 'required|string|max:255|unique:roles,libelle'
+            'libelle' => 'required|string|max:255|unique:roles,libelle',
+            
 
         ]);
-        Role::create($request->all());
+        Role::create($request->only(['libelle']));
 
         //redirect() : redirige vers la liste des role apres création
         //with('success') envoie un message de succès
@@ -42,12 +43,13 @@ class RoleController extends Controller
      */
     public function show($id)
     {
-        return response()->json(Role::with('users')->findOrFail($id));
+        //
     }
 
    // Affiche le formulaire de modification
     public function edit($id)
     {
+        $role = Role::findOrFail($id);
         return view('roles.edit', compact('role'));
         
     }
@@ -59,9 +61,9 @@ class RoleController extends Controller
             'libelle' => 'required|string|max:255|unique:roles, libelle,'.$id,
         ]);
         $role = Role::findOrFail($id);
-        $role->update($request->all());
+        $role->update($request->only(['libelle']));
 
-        return response()->route('$roles.index')
+        return redirect()->route('$roles.index')
                          ->with('success', 'Role modifié avec succès');
     }
     

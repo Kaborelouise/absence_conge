@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DemandeAbsence;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class DemandeAbsenceController extends Controller
@@ -12,7 +13,8 @@ class DemandeAbsenceController extends Controller
      */
     public function index()
     {
-        $demandes = DemandeAbsence::with('user', 'justificatif', 'avis')->get();
+        $demandes = DemandeAbsence::with('user', 'justificatifabsence', 'avis')
+        ->get();
         return view('demandes_absence.index', compact('demandes'));
     }
 
@@ -21,14 +23,12 @@ class DemandeAbsenceController extends Controller
      */
     public function create()
     {
-        $utilisateurs= User::all();
-        return view('demandes_absence.create', compact('utilisateurs'));
+        $user = Auth()->user();
+        return view('demandes_absence.create', compact('users'));
     }
     
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    
     public function store(Request $request)
     {
         $request->validate([
@@ -38,52 +38,63 @@ class DemandeAbsenceController extends Controller
             'motif'          => 'required|string',
             'user_id' => 'required|exists:user,id',
         ]);
-        DemandeAbsence::create($request->all());
+
+        DemandeAbsence::create($request->only([
+             'num_demande', 'date_debut', 'date_fin',
+            'motif', 'interimaire', 'retenue_salaire',
+            'users_id',
+        ]));
+
         return redirect()->route('demande-absences.index')->with('success', 'Demande créée avec succès');
     }
 
-    public function edit($id)
     
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(DemandeAbsence $demandeAbsence)
+    public function show($id)
     {
-        //
+        $demande = DemandeAbsence::with('user.departement.direction', 'justificatifabsence', 'avisabsence')->findOrFail($id);
+
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(DemandeAbsence $demandeAbsence)
+    public function edit($id)
     {
         $demande = DemandeAbsence::findOrFail($id);
-        $utilisateurs = User::all();
-        return view('demande_absences.edit', compact('demande', 'users'));
+        
+        return view('demande_absences.edit', compact('demande'));
     }
 
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, DemandeAbsence $demandeAbsence)
+    public function update(Request $request, $id)
     {
         $request->validate([
             'date_debut' => 'required|date',
             'date_fin'   => 'required|date|after_or_equal:date_debut',
             'motif'      => 'required|string',
+            'interimaire' => 'nullable|string',
+            'statut' => 'required|in:en_attente,en_cours,validee,rejetee',
+            'retenue_salaire' => 'boolean',
+
         ]);
         $demande = DemandeAbsence::findOrFail($id);
-        $demande->update($request->all());
+        $demande->update($request->only([
+            'date_debut',
+            'date_fin',
+            'motif',
+            'interimaire', 'statut', 'retenu_salaire',
+
+        ]));
         return redirect()->route('demande-absences.index')->with('success', 'Demande modifiée avec succès');
     }
 
     
 
-    /**
-     * Remove the specified resource from storage.
-     */
+   
     public function destroy($id)
     {
         DemandeAbsence::findOrFail($id)->delete();

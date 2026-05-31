@@ -32,7 +32,12 @@ class DirectionController extends Controller
             'libelle_court' => 'required|string|max:50',
             'libelle_long'  => 'required|string|max:255',
         ]);
-        Direction::create($request ->all());
+        Direction::create($request ->only([
+            'libelle_court',
+            'libelle_long'
+
+            
+        ]));
 
         return redirect()->route('directions.index')
         ->with('success', 'Direction créée avec succès');

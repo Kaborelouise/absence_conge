@@ -26,15 +26,15 @@ return new class extends Migration
             $table->boolean('est_responsable_departement')->default(false);
             $table->boolean('est_responsable_direction')->default(false);
 
-            $table->integer('solde_conge')->default(null);
-             $table->integer('solde_absence')->default(null);
+            $table->integer('solde_conge')->default(10);
+             $table->integer('solde_absence')->default(30);
             
             // quel role a cet utilisateur
             $table->foreignId('role_id')->constrained('roles');
 
-            $table->foreignId('departement_id');
+            
 
-            //Dans quel departement est ce utilisateur
+            //Dans quel departement est cet utilisateur
             $table->foreignId('departement_id')
                   ->constrained('departements');
 

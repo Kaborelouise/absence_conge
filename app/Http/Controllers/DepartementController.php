@@ -39,7 +39,12 @@ class DepartementController extends Controller
             'libelle_long'  => 'required|string|max:255',
             'direction_id'  => 'required|exists:directions,id',
         ]);
-        Departement::create($request->all());
+        Departement::create($request->only([
+            'libelle_court',
+            'libelle_long',
+            'direction_id'
+
+        ]));
         
         return redirect()->route('departemets.index')
                          ->with('success', 'Département créé avec succès');
@@ -48,10 +53,10 @@ class DepartementController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Departement $departement)
-    {
+    //public function show(Departement $departement)
+    //{
         //
-    }
+    //}
 
     /**
      * Show the form for editing the specified resource.
@@ -59,6 +64,7 @@ class DepartementController extends Controller
     public function edit($id)
     {
         $departement = Departement::findOrFail($id);
+        $directions = Direction::all();
         return view('departements.edit', compact('departement', 'directions'));
     }
 
@@ -73,7 +79,12 @@ class DepartementController extends Controller
             'direction_id'  => 'required|exists:directions,id',
         ]);
         $departement = Departement::findOrFail($id);
-        $departement->update($request->all());
+        $departement->update($request->only([
+            'libell_court',
+            'libelle_long',
+            'direction_id'
+
+        ]));
 
        return redirect()->route('departements.index')->with('success', 'Département modifié avec succès');
     }
@@ -81,7 +92,7 @@ class DepartementController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Departement $departement)
+    public function destroy($id)
     {
         Departement::findOrFail($id)->delete();
         return redirect()->route('departements.index')->with('success', 'Département supprimé');

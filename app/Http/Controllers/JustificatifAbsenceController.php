@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\JustificatifAbsence;
+use App\Models\DemandeAbsence;
 use Illuminate\Http\Request;
 
 class JustificatifAbsenceController extends Controller
@@ -12,8 +13,8 @@ class JustificatifAbsenceController extends Controller
      */
     public function index()
     {
-        $justificatifabsence = JustificatifAbsence::all();
-        return view('justificatif.index', compact('justificatifs'));
+        $justificatifabsence = JustificatifAbsence::with('DemandeAbsence');
+        return view('justificatifabsence.index', compact('justificatifabsences'));
     }
 
     /**
@@ -22,7 +23,7 @@ class JustificatifAbsenceController extends Controller
     public function create()
     {
         $demandes = DemandeAbsence::all();
-        return view('justificatifs.create', compact('demandes'));
+        return view('justificatifabsence.create', compact('demandeabsence'));
     }
     
 
@@ -31,16 +32,22 @@ class JustificatifAbsenceController extends Controller
      */
     public function store(Request $request)
     {
-        $path = $request->file('fichier')->store('justificatifabsence');
+         $request->validate([
+            'fichier'            => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'type'               => 'required|string',
+            'demande_absence_id' => 'required|exists:demande_absences,id',
+        ]);
+        $fichierPath = $request->file('fichier')->store('justificatifabsence', 'public');
 
         JustificatifAbsence::create([
-            'fichier_path' => $path,
+            'fichier_path' => $fichierPath,
             'type' => $request->type,
              'demande_absence_id' => 'required|exists:demande_absences,id',
         ]);
-        JustificatifAbsence::create($request->all());
-        return redirect()->route('justificatifs.index')
-        ->with('success', 'Justificatif ajouté');
+        
+        return redirect()
+            ->route('justificatifs.index')
+            ->with('success', 'Justificatif ajouté');
     }
 
         
@@ -56,7 +63,7 @@ class JustificatifAbsenceController extends Controller
     // /**
     //  * Show the form for editing the specified resource.
     //  */
-    public function edit(JustificatifAbsence $justificatifAbsence)
+    public function edit($id)
     {
       $justificatif = JustificatifAbsence::findOrFail($id);
         $demandes = DemandeAbsence::all();
@@ -70,14 +77,26 @@ class JustificatifAbsenceController extends Controller
     public function update(Request $request, $id)
     { 
         $request->validate([
-            'fichier_path'       => 'required|string',
+            'fichier'       => 'sometimes|file|mimes:pdf,jpg,jpeg,png|max:2048',
             'type'               => 'required|string',
             'demande_absence_id' => 'required|exists:demande_absences,id',
         ]);
 
-         $justificatif = JustificatifAbsence::findOrFail($id);
-        $justificatif->update($request->all());
-        return redirect()->route('justificatifs.index')->with('success', 'Justificatif modifié');
+         $justificatifabsence = JustificatifAbsence::findOrFail($id);
+
+         //si un nouveau fichier est envoyé
+         if($request->hasFile('fichier')) {
+            $fichierPath = $request->file('fichier')
+            ->store('justificatifabsence', 'public');
+
+            $justificatifabsence->fichier_path = $fichierPath;
+        }
+
+        $justificatifabsence->type = $request->type;
+        $justificatifabsence->save();
+        return redirect()
+        ->route('justificatifs.index')
+        ->with('success', 'Justificatif modifié');
 
          
     }
@@ -88,6 +107,8 @@ class JustificatifAbsenceController extends Controller
     public function destroy(JustificatifAbsence $justificatifAbsence)
     {
      JustificatifAbsence::findOrFail($id)->delete();
-        return redirect()->route('justificatifabsence.index')->with('success', 'Justificatif supprimé');
+        return redirect()
+        ->route('justificatifabsence.index')
+        ->with('success', 'Justificatif supprimé');
     }
 }

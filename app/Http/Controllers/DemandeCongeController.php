@@ -14,7 +14,7 @@ class DemandeCongeController extends Controller
     public function index()
     {
         $demandes = DemandeConge::with('user', 'avisconge')->get();
-        return view('demande-conges.index', compact('demandes'));
+        return view('demande_conges.index', compact('demandes'));
     }
         
     
@@ -24,8 +24,8 @@ class DemandeCongeController extends Controller
      */
     public function create()
     {
-        $utilisateurs = User::all();
-        return view('demande-conges.create', compact('utilisateurs'));
+        $utilisateurs = auth()->user();
+        return view('demande_conges.create', compact('user'));
     }
 
     /**
@@ -38,24 +38,19 @@ class DemandeCongeController extends Controller
             'lieu_jouissance' => 'required|string',
             'user_id'  => 'required|exists:users,id',
         ]);
-        DemandeConge::create($request->all());
-        return redirect()->route('demande-conges.index')->with('success', 'Demande de congé créée');
+        DemandeConge::create($request->only([
+            'lieu_jouissance',
+            'user_id',
+            
+        ]));;
+        return redirect()->route('demande_conges.index')->with('success', 'Demande de congé créée');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(DemandeConge $demandeConge)
+   
+    public function edit($id)
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(DemandeConge $demandeConge)
-    {
-        //
+         $demande = DemandeConge::findOrFail($id);
+        return view('demande_conges.edit', compact('demande'));
     }
 
     /**
@@ -63,14 +58,29 @@ class DemandeCongeController extends Controller
      */
     public function update(Request $request, DemandeConge $demandeConge)
     {
-        //
+         $request->validate([
+            'lieu_jouissance' => 'required|string',
+            'statut' => 'required|in:en_attente,compilee,validee',
+        ]);
+        $demande = DemandeConge::findOrFail($id);
+        $demande->update($request->only([
+            'lieu_jouissance', 
+            'statut'
+        ]));
+
+        return redirect()
+            ->route('demande_conges.index')
+            ->with('success', 'Demande modifiée');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(DemandeConge $demandeConge)
+    public function destroy($id)
     {
-        //
+         DemandeConge::findOrFail($id)->delete();
+        return redirect()
+            ->route('demande_conges.index')
+            ->with('success', 'Demande supprimée');
     }
 }
