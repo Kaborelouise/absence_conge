@@ -18,14 +18,7 @@ return new class extends Migration
             $table->enum('type', ['chef_departement', 'responsable_direction', 'agent_rh', 'sg', 'dg', 'pca']);
           // type, qui donne l'avis ? Car une demande reçoit plusieurs avis
             $table->text('commentaire')->nullable();
-            $table->enum('type', [
-                'chef_departement',
-                'responsable_direction',
-                'agent_rh',
-                'sg',
-                'dg',
-                'pca'
-    ]);
+            
             $table->foreignId('demande_absence_id')
                  ->constrained('demande_absences')
                  ->onDelete('cascade');

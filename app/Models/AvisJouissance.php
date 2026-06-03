@@ -7,14 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class AvisJouissance extends Model
 { 
     protected $fillable = [
-        'avisjouissance',
+        'avis',
         'type',
         'commentaire',
         'demande_jouissance_id'
     ];
 
-     public function demandejouissance()
+     public function demandeJouissance()
      {
-        return $this->belongsTo(Demandejouissance::class);
+        return $this->belongsTo(DemandeJouissance::class);
      }
 }

@@ -25,15 +25,15 @@ class DemandeAbsence extends Model
     }
 
     //Une demande peut avoir 0 ou 1 justificatif
-    public function justificatifabsence()
+    public function justificatifAbsence()
     {
-        return $this->hasOne(Justificatifabsence::class);
+        return $this->hasOne(JustificatifAbsence::class);
     }
     
     //une demande peut avoir plusieurs avis
-    public function avisabsence()
+    public function avisAbsence()
     {
-        return $this->hasMany(avisabsence::class);
+        return $this->hasMany(AvisAbsence::class);
     }
 
 

@@ -15,19 +15,18 @@ return new class extends Migration
             $table->id();
 
             $table->integer('matricule')->unique();
-            $table->string('name');
+            $table->string('nom');
+             $table->string('prenom');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('nom')->nullable();
-            $table->string('prenom')->nullable();
             $table->string('poste')->nullable();
-            $table->string('signature')->nullable();//champs pas obligatoire
+            $table->string('signature')->nullable();
             $table->boolean('est_responsable_departement')->default(false);
             $table->boolean('est_responsable_direction')->default(false);
 
-            $table->integer('solde_conge')->default(10);
-             $table->integer('solde_absence')->default(30);
+            $table->integer('solde_conge')->default(30);
+             $table->integer('solde_absence')->default(10);
             
             // quel role a cet utilisateur
             $table->foreignId('role_id')->constrained('roles');

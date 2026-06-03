@@ -53,7 +53,7 @@ class AvisCongeController extends Controller
      * Display the specified resource.
      */
     
-    public function edit(AvisConge $avisConge)
+    public function edit($id)
     {
         $avis = AvisConge::findOrFail($id);
         $demandes = DemandeConge::all();
@@ -63,18 +63,17 @@ class AvisCongeController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, AvisConge $avisConge)
+    public function update(Request $request, $id)
     {
         $request->validate([
             'avis'        => 'required|in:favorable,defavorable,en_attente',
             'commentaire' => 'nullable|string',
         ]);
-
         $avis = AvisConge::findOrFail($id);
         $avis->update($request->only(['avis', 'commentaire']));
 
         return redirect()
-            ->route('avis-conges.index')
+            ->route('avis_conges.index')
             ->with('success', 'Avis modifié');
     }
 
@@ -84,8 +83,9 @@ class AvisCongeController extends Controller
     public function destroy($id)
     {
         AvisConge::findOrFail($id)->delete();
+        
         return redirect()
-            ->route('avis-conges.index')
+            ->route('avis_conges.index')
             ->with('success', 'Avis supprimé');
     }
 }

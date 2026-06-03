@@ -13,7 +13,7 @@ class DemandeCongeController extends Controller
      */
     public function index()
     {
-        $demandes = DemandeConge::with('user', 'avisconge')->get();
+        $demandes = DemandeConge::with('user', 'avisConge')->get();
         return view('demande_conges.index', compact('demandes'));
     }
         
@@ -24,7 +24,7 @@ class DemandeCongeController extends Controller
      */
     public function create()
     {
-        $utilisateurs = auth()->user();
+        $user = auth()->user();
         return view('demande_conges.create', compact('user'));
     }
 

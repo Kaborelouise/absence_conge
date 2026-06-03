@@ -238,124 +238,111 @@
     @yield('styles')
 </head>
 <body>
+
     <div class="sidebar">
+
         <a href="{{ route('accueil') }}" class="sidebar-brand">
-        {{-- C'est un lien vers l'accueil
-             Cliquer sur le logo ramène à l'accueil --}}
-        <div class="sidebar-brand-icon">A</div>
-        <div class="sidebar-brand-text">
-            <span class="brand-name">ANPTIC</span>
-            <span class="brand-subtitle">
-                Gestion des congés<br>et des autorisations absences
-            </span>
-        </div>
-    </a>
+            <div class="sidebar-brand-icon">A</div>
+            <div class="sidebar-brand-text">
+                <span class="brand-name">ANPTIC</span>
+                <span class="brand-subtitle">
+                    Gestion des congés<br>
+                    et des autorisations absences
+                </span>
+            </div>
+        </a>
 
-    <div class="sidebar-section-title">Menu principal</div>*
-    {{-- Accueil
-         request()->routeIs('accueil') :
-         va Vérifier si on est actuellement sur la route 'accueil'
-         Si oui on ajoute la classe CSS 'active' (lien surligné)
-         Si non on a pas de classe (lien normal) --}}
-    <a href="{{ route('accueil') }}"
-       class="sidebar-link {{ request()->routeIs('accueil') ? 'active' : '' }}">
-        <i class="bi bi-house-door"></i>
-        <span>Accueil</span>
-    </a>
+        <div class="sidebar-section-title">Menu principal</div>
 
-  
-    <a href="{{ route('dashboard') }}"
-       class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-        <i class="bi bi-grid-1x2"></i>
-        <span>Tableau de bord</span>
-    </a>
+        <a href="{{ route('accueil') }}"
+           class="sidebar-link {{ request()->routeIs('accueil') ? 'active' : '' }}">
+            <i class="bi bi-house-door"></i>
+            <span>Accueil</span>
+        </a>
 
-    <div class="sidebar-section-title">Demandes</div>
+        <a href="{{ route('dashboard') }}"
+           class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+            <i class="bi bi-grid-1x2"></i>
+            <span>Tableau de bord</span>
+        </a>
 
-   
-    <a href="{{ route('demande_absences.index') }}"
-       class="sidebar-link {{ request()->routeIs('demande_absences.*') ? 'active' : '' }}">
-        <i class="bi bi-person-x"></i>
-        <span>Autorisation d'absence</span>
-    </a>
+        <div class="sidebar-section-title">Demandes</div>
 
-    <a href="{{ route('demande_conges.index') }}"
-       class="sidebar-link {{ request()->routeIs('demande_conges.*') ? 'active' : '' }}">
-        <i class="bi bi-calendar2-check"></i>
-        <span>Demande de congé</span>
-    </a>
+        <a href="{{ route('demande_absences.index') }}"
+           class="sidebar-link {{ request()->routeIs('demande_absences.*') ? 'active' : '' }}">
+            <i class="bi bi-person-x"></i>
+            <span>Autorisation d'absence</span>
+        </a>
 
-    <a href="{{ route('demande_jouissances.index') }}"
-       class="sidebar-link {{ request()->routeIs('demande_jouissances.*') ? 'active' : '' }}">
-        <i class="bi bi-calendar2-check"></i>
-        <span>Demande de jouissance</span>
-    </a>
+        <a href="{{ route('demande_conges.index') }}"
+           class="sidebar-link {{ request()->routeIs('demande_conges.*') ? 'active' : '' }}">
+            <i class="bi bi-calendar2-check"></i>
+            <span>Demande de congé</span>
+        </a>
 
-     <div class="sidebar-section-title">Administration</div>
+        <a href="{{ route('demande_jouissances.index') }}"
+           class="sidebar-link {{ request()->routeIs('demande_jouissances.*') ? 'active' : '' }}">
+            <i class="bi bi-calendar2-check"></i>
+            <span>Demande de jouissance</span>
+        </a>
 
-     <a href="{{ route('utilisateurs.index') }}"
-       class="sidebar-link {{ request()->routeIs('utilisateurss.*') ? 'active' : '' }}">
-        <i class="bi bi-people"></i>
-        <span>Utilisateurs</span>
-    </a>
+        <div class="sidebar-section-title">Administration</div>
 
-    <a href="{{ route('roles.index') }}"
-       class="sidebar-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
-        <i class="bi bi-people"></i>
-        <span>Rôles</span>
-    </a>
+        <a href="{{ route('utilisateurs.index') }}"
+           class="sidebar-link {{ request()->routeIs('utilisateurs.*') ? 'active' : '' }}">
+            <i class="bi bi-people"></i>
+            <span>Utilisateurs</span>
+        </a>
 
-     <a href="{{ route('directions.index') }}"
-       class="sidebar-link {{ request()->routeIs('directions.*') ? 'active' : '' }}">
-        <i class="bi bi-building"></i>
-        <span>Directions</span>
-    </a>
+        <a href="{{ route('roles.index') }}"
+           class="sidebar-link {{ request()->routeIs('roles.*') ? 'active' : '' }}">
+            <i class="bi bi-person-badge"></i>
+            <span>Rôles</span>
+        </a>
 
-     <a href="{{ route('departements.index') }}"
-       class="sidebar-link {{ request()->routeIs('departements.*') ? 'active' : '' }}">
-        <i class="bi bi-building"></i>
-        <span>Departements</span>
-    </a>
+        <a href="{{ route('directions.index') }}"
+           class="sidebar-link {{ request()->routeIs('directions.*') ? 'active' : '' }}">
+            <i class="bi bi-building"></i>
+            <span>Directions</span>
+        </a>
 
-       <div style="margin-top: auto; padding: 16px; border-top: 1px solid rgba(255,255,255,0.08)">
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit"
-                    style="background:none; border:none; cursor:pointer;
-                           color:rgba(255,255,255,0.5); font-size:13px;
-                           display:flex; align-items:center; gap:8px; padding:0">
-                <i class="bi bi-box-arrow-left"></i>
-                <span>Se déconnecter</span>
-            </button>
-        </form>
+        <a href="{{ route('departements.index') }}"
+           class="sidebar-link {{ request()->routeIs('departements.*') ? 'active' : '' }}">
+            <i class="bi bi-diagram-3"></i>
+            <span>Départements</span>
+        </a> 
+
+        {{-- <div style="margin-top:auto;padding:16px;border-top:1px solid rgba(255,255,255,.08)">
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit"
+                        style="background:none;border:none;cursor:pointer;
+                               color:rgba(255,255,255,.6);
+                               display:flex;align-items:center;gap:8px;">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Se déconnecter</span>
+                </button>
+            </form>
+        </div> --}}
+
     </div>
 
-    </body>
-</html>
+    <!-- CONTENU PRINCIPAL -->
+    <div class="main-wrapper">
 
-
-
-
-        {{-- <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-    </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
-
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
-
-            <!-- Page Content -->
-            <main>
-                {{ $slot }}
-            </main>
+        <div class="top-bar">
+            <div class="top-bar-title">
+                @yield('page-title', 'ANPTIC')
+            </div>
         </div>
-    </body>
-</html> --}}
+
+        <div class="page-body">
+            @yield('content')
+        </div>
+
+    </div>
+
+    @yield('scripts')
+
+</body>
+</html>

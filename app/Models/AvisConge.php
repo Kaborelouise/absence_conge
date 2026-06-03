@@ -3,14 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\DemandeConge;
 
 class AvisConge extends Model
 {
     protected $fillable = [
-        'avisconge', 'commentaire', 'type', 'demande_conge_id'
+        'avis', 'commentaire', 'type', 'demande_conge_id'
     ];
 
-    public function demandeconge()
+    public function demandeConge()
     {
         return $this->belongsTo(DemandeConge::class);
     }

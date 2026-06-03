@@ -50,17 +50,6 @@ class DepartementController extends Controller
                          ->with('success', 'Département créé avec succès');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    //public function show(Departement $departement)
-    //{
-        //
-    //}
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit($id)
     {
         $departement = Departement::findOrFail($id);
@@ -80,7 +69,7 @@ class DepartementController extends Controller
         ]);
         $departement = Departement::findOrFail($id);
         $departement->update($request->only([
-            'libell_court',
+            'libelle_court',
             'libelle_long',
             'direction_id'
 

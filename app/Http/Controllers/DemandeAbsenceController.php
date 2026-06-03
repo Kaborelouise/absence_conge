@@ -1,9 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use App\Models\DemandeAbsence;
-use App\Models\User;
 use Illuminate\Http\Request;
 
 class DemandeAbsenceController extends Controller
@@ -13,9 +11,10 @@ class DemandeAbsenceController extends Controller
      */
     public function index()
     {
-        $demandes = DemandeAbsence::with('user', 'justificatifabsence', 'avis')
+         $demandes = DemandeAbsence::with('user', 'justificatifAbsence', 'avisAbsence')
         ->get();
-        return view('demandes_absence.index', compact('demandes'));
+
+        return view('demande_absences.index', compact('demandes'));
     }
 
     /**
@@ -23,8 +22,8 @@ class DemandeAbsenceController extends Controller
      */
     public function create()
     {
-        $user = Auth()->user();
-        return view('demandes_absence.create', compact('users'));
+        $user = auth()->user();
+        return view('demande_absences.create', compact('user'));
     }
     
 
@@ -36,23 +35,25 @@ class DemandeAbsenceController extends Controller
             'date_debut'     => 'required|date',
             'date_fin'       => 'required|date|after_or_equal:date_debut',
             'motif'          => 'required|string',
-            'user_id' => 'required|exists:user,id',
+            'user_id' => 'required|exists:users,id',
         ]);
 
         DemandeAbsence::create($request->only([
              'num_demande', 'date_debut', 'date_fin',
             'motif', 'interimaire', 'retenue_salaire',
-            'users_id',
+            'user_id',
         ]));
 
-        return redirect()->route('demande-absences.index')->with('success', 'Demande créée avec succès');
+        return redirect()->route('demande_absences.index')
+        ->with('success', 'Demande créée avec succès');
     }
 
     
 
     public function show($id)
     {
-        $demande = DemandeAbsence::with('user.departement.direction', 'justificatifabsence', 'avisabsence')->findOrFail($id);
+        $demande = DemandeAbsence::with('user.departement.direction', 'justificatifAbsence', 'avisAbsence')->findOrFail($id);
+        return view('demande_absences.show', compact('demande'));
 
     }
 
@@ -89,7 +90,7 @@ class DemandeAbsenceController extends Controller
             'interimaire', 'statut', 'retenu_salaire',
 
         ]));
-        return redirect()->route('demande-absences.index')->with('success', 'Demande modifiée avec succès');
+        return redirect()->route('demande_absences.index')->with('success', 'Demande modifiée avec succès');
     }
 
     

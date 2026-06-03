@@ -14,12 +14,12 @@ return new class extends Migration
         Schema::create('justificatif_absences', function (Blueprint $table) {
             $table->id();
             //On ne stocke pas le fichier en base, juste son chemin
-            $table->fichier_path('string');
+            $table->string('fichier_path');
 
-            $table->string('type');
+            $table->enum('type', ['evenement_familliaux', 'jouissance_de_reliquat_de_congé_paye', 'convenances_personnelles', 'autre']);
             //type de justificatif
             $table->foreignId('demande_absence_id')
-                  ->onstrained('demande_absences')
+                  ->constrained('demande_absences')
                   ->onDelete('cascade');
                   //le justificatif a la clé étrangère car la demande peut exister sans justificatifs
 

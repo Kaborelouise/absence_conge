@@ -19,7 +19,7 @@ class DemandeJouissanceController extends Controller
      */
     public function create()
     {
-         $user = auth()->user();
+         $user = Auth()->user();
         return view('demande_jouissances.create', compact('user'));
     }
 
@@ -33,7 +33,7 @@ class DemandeJouissanceController extends Controller
             'date_debut'     => 'required|date',
             'date_fin'       => 'required|date|after_or_equal:date_debut',
             'nombre_jour'    => 'required|integer|min:1',
-            'utilisateur_id' => 'required|exists:users,id',
+            'user_id' => 'required|exists:users,id',
         ]);
 
         DemandeJouissance::create($request->only([
@@ -42,14 +42,14 @@ class DemandeJouissanceController extends Controller
         ]));
 
         return redirect()
-            ->route('demande-jouissances.index')
+            ->route('demande_jouissances.index')
             ->with('success', 'Demande de jouissance soumise');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(DemandeJouissance $demandeJouissance)
+    public function show($id)
     {
         $demande = DemandeJouissance::with(
             'user.departement.direction',
@@ -62,10 +62,10 @@ class DemandeJouissanceController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(DemandeJouissance $demandeJouissance)
+    public function edit($id)
     {
         $demande = DemandeJouissance::findOrFail($id);
-        return view('demande-jouissances.edit', compact('demande'));
+        return view('demande_jouissances.edit', compact('demande'));
     }
 
     /**
@@ -97,7 +97,7 @@ class DemandeJouissanceController extends Controller
     {
         DemandeJouissance::findOrFail($id)->delete();
         return redirect()
-            ->route('demande-jouissances.index')
+            ->route('demande_jouissances.index')
             ->with('success', 'Demande supprimée');
     }
 }

@@ -16,9 +16,9 @@ return new class extends Migration
             $table->enum('avis', ['favorable', 'defavorable', 'en_attente']);
             $table->text('commentaire')->nullable();
             $table->enum('type', ['agent_rh']);
-             $table->enum('type', ['chef_departement', 'responsable_direction', 'agent_rh', 'sg', 'dg', 'pca']);
+            
             $table->foreignId('demande_conge_id')
-                  ->constrained('demande_conges')
+                  ->constrained()
                   ->onDelete('cascade');
             
             $table->timestamps();
