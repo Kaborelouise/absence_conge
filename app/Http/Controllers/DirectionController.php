@@ -1,14 +1,17 @@
 <?php
 
 namespace App\Http\Controllers;
+//on importe les models nécessaires pour les relations et les données
 
 use App\Models\Direction;
 use Illuminate\Http\Request;
+//gère les données envoyé par les formulaires
 
 class DirectionController extends Controller
 {
-    //Affiche la liste des directions
+    //Affiche la liste de toute les directions route Get/directions quand on clique sur direction dans le sidebar VUE ressources/views/directions/index.blade.php
     public function index()
+    //Direction::with('departements')->get() : récupère toutes les directions avec leurs départements associés grâce à la relation définie dans le model Direction
     {
         $directions = Direction::with('departements')->get();
     //with('departements) charge les departements de chaque direction
@@ -16,7 +19,7 @@ class DirectionController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Affiche le formulaire de crétion 
      */
     public function create()
     {
