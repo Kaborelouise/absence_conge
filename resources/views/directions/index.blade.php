@@ -18,7 +18,7 @@
     {{-- d-flex : active flexbox éléments côte à côte
          justify-content-between : titre à gauche, bouton à droite
          align-items-center : centrés verticalement
-         mb-4 : margin-bottom de 4 unités (1.5rem) --}}
+         mb-4 : margin-bottom de 4 unités (1.5rem) --}} 
 
     
 
@@ -27,28 +27,26 @@
     <a href="{{ route('directions.create') }}" class="btn btn-primary btn-sm">
         <i class="bi bi-plus-lg me-1"></i> Nouvelle direction
     </a>
+    <div class="input-group w-25">
+        <input type="text" id="recherche"
+               class="form-control form-control-sm" placeholder="">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+    </div>
 </div>
 
 {{-- carte qui contient le tableau --}}
+<div class="table-responsive">
+<table class="table table-hover table-sm align-middle" id="tableJouissances">
 <div class="card shadow-sm">
-    <div class="card-body">
 
-        {{--modifier le JavaScript --}}
-        <div class="mb-3">
-            <input type="text"
-                   id="recherche"
-                   class="form-control w-25"
-                   {{-- w-25 veut dire largeur 25% de la carte --}}
-                   placeholder="Rechercher...">
-        </div>
+        
 
-        {{-- TABLEAU DES DIRECTIONS
-             id="tableDirections" : utilisé par le JavaScript de recherche--}}
+        {{-- Tableau des directions id="tableDirections", utilisé par le JavaScript de recherche--}}
         <table class="table table-hover" id="tableDirections">
             {{-- table-hover qui permet à la ligne de changer de couleur au survol --}}
 
             <thead class="table-">
-                {{-- table-dark : en-tête fond sombre --}}
+                {{-- table-dark en-tête fond sombre --}}
                 <tr>
                     <th>Libellé court</th>
                     <th>Libellé long</th>
@@ -82,11 +80,8 @@
                             {{ $direction->departements->count() }} département(s)
                         </span>
                     </td>
-
                     <td>
-                        {{-- bouton modifier
-                             route('directions.edit', $direction->id) :
-                             Génère /directions/3/edit si $direction->id = 3 --}}
+                        {{-- bouton modifier qui redirige vers la page de modification --}}
                         <a href="{{ route('directions.edit', $direction->id) }}"
                            class="btn btn-sm btn-success btn-action">
                             <i class="bi bi-pencil"></i> Modifier
@@ -98,7 +93,7 @@
                               class="d-inline">
                               {{-- d-inline dit que le formulaire reste sur la même ligne que le bouton Modifier --}}
 
-                            {{-- @csrf : protection de sécurité obligatoire , Génère un champ caché avec un token unique, Laravel vérifie ce token à chaque POST,  Sans @csrf → erreur 419 --}}
+                            {{-- @csrf pour protection de sécurité obligatoire , Génère un champ caché avec un token unique, Laravel vérifie ce token à chaque POST,  Sans @csrf → erreur 419 --}}
                             @csrf
 
                             {{-- @method('DELETE') Génère <input type="hidden" name="_method" value="DELETE"> Laravel lit ce champ et traite ça comme DELETE même si le navigateur envoie POST --}}

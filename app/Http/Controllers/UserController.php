@@ -9,26 +9,30 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    // on récupère tous les utilisateurs avec leurs rôles, les départements et directions associé
     
     public function index()
     {
+        // on rcupere tous les utilisateurs avec leurs rôles, départements et directions associés
+        // et leur departement et direction associé 
+        // with() évite les problème de N+1 (trop de requêtes à la base de données)
         
-        $users = User::with('role', 'departement.direction')->get();
-
-        return view('users.index', compact('users'));
+        $utilisateurs = User::with('role', 'departement.direction')->get();
+        return view('utilisateurs.index', compact('utilisateurs'));
+        // compact('utilisateurs') : permet de passer la variable $utilisateurs à la vue
     }
 
     
     public function create()
     {
-        // On récupère les rôles pour la liste déroulante
+        // on récupère  tous les roles et les departements
 
         $roles = Role::all();
 
         
         $departements = Departement::with('direction')->get();
 
-        return view('users.create', compact(
+        return view('utilisateurs.create', compact(
             'roles',
             'departements'
         ));
@@ -76,19 +80,19 @@ class UserController extends Controller
         ]));
 
         return redirect()
-            ->route('users.index')
+            ->route('utilisateurs.index')
             ->with('success', 'Utilisateur créé avec succès');
     }
 
    
     public function edit($id)
     {
-        $user = User::findOrFail($id);
+        $utilisateur= User::findOrFail($id);
         $roles = Role::all();
         $departements = Departement::with('direction')->get();
 
-        return view('users.edit', compact(
-            'user',
+        return view('utilisateurs.edit', compact(
+            'utilisateur',
             'roles',
             'departements'
         ));
@@ -104,7 +108,7 @@ class UserController extends Controller
             'poste'     => 'required|string|max:255',
             'email'     => 'required|email|unique:users,email,'.$id,
 
-            // 'sometimes' valide si le champ est présent
+            // 'sometimes' valide si le champ est présent dans la requête, sinon il l'ignore
             
             'password'       => 'sometimes|string|min:8',
             'role_id'        => 'required|exists:roles,id',
@@ -115,8 +119,8 @@ class UserController extends Controller
             'solde_absence' => 'nullable|integer',
         ]);
 
-        $user = User::findOrFail($id);
-        $user->update($request->only([
+        $utilisateur = User::findOrFail($id);
+        $utilisateur->update($request->only([
             'matricule', 'nom', 'prenom', 'poste',
             'email', 'password', 'signature',
             'est_responsable_departement',
@@ -126,7 +130,7 @@ class UserController extends Controller
         ]));
 
         return redirect()
-            ->route('users.index')
+            ->route('utilisateurs.index')
             ->with('success', 'Utilisateur modifié avec succès');
     }
 

@@ -13,7 +13,7 @@ class RoleController extends Controller
      */
     public function index()
     {
-        $roles = Role::withCount('users')->get();
+        $roles = Role::withCount('utilisateurs')->get();
         //passer $roles a la vue
         return view('roles.index', compact('roles'));
     }
@@ -58,12 +58,12 @@ class RoleController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'libelle' => 'required|string|max:255|unique:roles, libelle,'.$id,
+            'libelle' => "required|string|max:255|unique:roles,libelle,$id",
         ]);
         $role = Role::findOrFail($id);
         $role->update($request->only(['libelle']));
 
-        return redirect()->route('$roles.index')
+        return redirect()->route('roles.index')
                          ->with('success', 'Role modifié avec succès');
     }
     

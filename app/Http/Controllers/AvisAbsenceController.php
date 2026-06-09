@@ -88,3 +88,5 @@ class AvisAbsenceController extends Controller
         ->with('success', 'Avis supprimé');
     }
 }
+
+// Note: 

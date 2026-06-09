@@ -24,7 +24,7 @@
             <thead class="table-dark">
                 <tr>
                     <th>Agents</th>
-                    <th>Localités</th>
+                    <th>Lieu de jouissance</th>
                     <th>Statut</th>
                     <th>Action</th>
                 </tr>

@@ -14,7 +14,7 @@ class DepartementController extends Controller
     public function index()
     {
         $departements = Departement::with('direction')->get();
-        return view('departemnts.index', compact('departements'));
+        return view('departements.index', compact('departements'));
     }
 
     /**
@@ -46,7 +46,7 @@ class DepartementController extends Controller
 
         ]));
         
-        return redirect()->route('departemets.index')
+        return redirect()->route('departements.index')
                          ->with('success', 'Département créé avec succès');
     }
 

@@ -29,8 +29,7 @@ Route::middleware('auth')->group(function () {
     // Maintenant route('accueil') fonctionnera
 
     // DASHBOARD
-    Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // ADMINISTRATION
     Route::resource('roles', RoleController::class);

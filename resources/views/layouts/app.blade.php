@@ -369,7 +369,7 @@
 
     </div>
 
-    <!-- CONTENU PRINCIPAL -->
+    <!-- Contenu principal -->
     <div class="main-wrapper">
 
         <div class="top-bar">

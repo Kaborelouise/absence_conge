@@ -4,7 +4,7 @@
 
 @section('content')
 
-{{-- EN-TÊTE : titre + recherche + bouton créer --}}
+{{-- EN-TÊTE titre, recherche, bouton créer --}}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="mb-0 fw-bold">Liste des demandes d'absence</h5>
 
@@ -19,7 +19,7 @@
         </span>
     </div>
 
-    {{-- Bouton nouvelle demande --}}
+    {{-- Bouton pour faire une nouvelle demande --}}
     <a href="{{ route('demande_absences.create') }}"
        class="btn btn-primary btn-sm">
         <i class="bi bi-plus-lg me-1"></i> Nouvelle demande
@@ -28,6 +28,8 @@
 
 <div class="card shadow-sm">
     <div class="card-body">
+
+        <div class="table-responsive">
         <table class="table table-hover" id="tableAbsences">
             <thead class="table-dark">
                 <tr>
@@ -69,7 +71,7 @@
                         </span>
                     </td>
 
-                    <td>ici
+                    <td>
                         {{-- le bouton voir est en premier car c'est l'action principale , btn-info : couleur bleue claire = consulter --}}
                         <a href="{{ route('demande_absences.show', $demande->id) }}"
                            class="btn btn-sm btn-info btn-action">

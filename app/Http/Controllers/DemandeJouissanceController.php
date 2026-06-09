@@ -28,6 +28,7 @@ class DemandeJouissanceController extends Controller
      */
     public function store(Request $request)
     {
+        
         $request->validate([
             'num_demande'    => 'required|integer|unique:demande_jouissances,num_demande',
             'date_debut'     => 'required|date',
@@ -36,6 +37,7 @@ class DemandeJouissanceController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
+        dd($request);
         DemandeJouissance::create($request->only([
             'num_demande', 'date_debut', 'date_fin',
             'nombre_jour', 'user_id',
