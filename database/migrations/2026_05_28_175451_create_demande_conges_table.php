@@ -21,6 +21,13 @@ return new class extends Migration
                 'Europe',
 
             ]);
+
+            $table->enum('statut', [
+                'en_attente',
+                'compilee',
+                'validee',
+                 'refusee'
+            ])->default('en_attente');
             $table->foreignId('user_id')
                 ->constrained('users');
 

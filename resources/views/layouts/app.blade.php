@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-{{-- ce fichier est le squelette de toutes les pages apres la connexion, il contient le sidebar, le navbar, le footer --}}
+{{-- ce fichier contient le sidebar, le navbar, le footer --}}
 <html lang="fr">
     <head>
         <meta charset="utf-8">
@@ -16,12 +16,12 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
         
-         {{-- Boostrap 5 css pour les composants visuels(cartes, boutons, tableaux)--}}
+         {{-- Boostrap, css pour les composants visuels(cartes, boutons, tableaux)--}}
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
           rel="stylesheet">
           <i class="bi bi-house"></i> 
          
-     {{-- Boostrap icons: biblithèque d'icons--}}
+     {{-- Boostrap icons: bibliothèque d'icons--}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
           rel="stylesheet">
 
@@ -59,7 +59,7 @@
           .sidebar-brand {
             padding: 18px 16px;
             /*ligne de séparation*/
-            border-bottom: 1px solid rgba(255, 255,255, 0.88);
+            border-bottom: 2px solid rgba(255, 255,255, 0.88);
 
             display: flex;
             align-items: center;
@@ -174,7 +174,7 @@
             /* Titre à gauche, l'utilisateur droite */
             align-items: center;
             position: sticky;
-            top: 0;
+            top: 0; 
             z-index: 999;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         } 
@@ -184,6 +184,7 @@
             font-size: 14px;
             font-weight: 600;
             color: #2c3e50;
+
         }
 
         .top-bar-user {

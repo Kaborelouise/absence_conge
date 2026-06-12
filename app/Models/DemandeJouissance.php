@@ -11,7 +11,9 @@ class DemandeJouissance extends Model
         'date_debut',
         'date_fin',
         'nombre_jour',
-        'user_id'];
+        'intérimaire',
+        'user_id', 
+        ];
 
         public function user() 
         {

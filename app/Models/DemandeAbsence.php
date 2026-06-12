@@ -31,7 +31,7 @@ class DemandeAbsence extends Model
     }
     
     //une demande peut avoir plusieurs avis
-    public function avisAbsence()
+    public function avisAbsences()
     {
         return $this->hasMany(AvisAbsence::class);
     }

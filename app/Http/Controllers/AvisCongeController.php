@@ -20,10 +20,11 @@ class AvisCongeController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        $demandes = DemandeConge::all();
-        return view('avis_conges.create', compact('demandes'));
+        $demande = DemandeConge::with('user')
+        ->findOrFail($request->demande_conge_id);
+        return view('avis_conges.create', compact('demande'));
     }
 
     /**
@@ -57,7 +58,7 @@ class AvisCongeController extends Controller
     {
         $avis = AvisConge::findOrFail($id);
         $demandes = DemandeConge::all();
-        return view('avis_conges.edit', compact('avis', 'demandes'));
+        return view('avis_conges.edit', compact('avis', 'demande'));
     }
 
     /**
@@ -88,4 +89,14 @@ class AvisCongeController extends Controller
             ->route('avis_conges.index')
             ->with('success', 'Avis supprimé');
     }
+
+    public function show($id)
+{
+    // Charge la demande avec l'utilisateur et ses avis
+    $demande = DemandeConge::with('user', 'avisconge')
+        ->findOrFail($id);
+
+    return view('demande_conges.show', compact('demande'));
+}
+
 }

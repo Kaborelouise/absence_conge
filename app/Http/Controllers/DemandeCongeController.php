@@ -56,7 +56,7 @@ class DemandeCongeController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, DemandeConge $demandeConge)
+    public function update(Request $request, $id)
     {
          $request->validate([
             'lieu_jouissance' => 'required|string',
@@ -83,4 +83,11 @@ class DemandeCongeController extends Controller
             ->route('demande_conges.index')
             ->with('success', 'Demande supprimée');
     }
+
+    public function show($id)
+{
+    $demande = DemandeConge::with('user', 'avisConge')
+                ->findOrFail($id);
+    return view('demande_conges.show', compact('demande'));
+}
 }

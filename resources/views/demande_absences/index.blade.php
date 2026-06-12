@@ -3,35 +3,26 @@
 @section('page-title', 'Gestion des demandes d\'absence')
 
 @section('content')
-
 {{-- EN-TÊTE titre, recherche, bouton créer --}}
-<div class="d-flex justify-content-between align-items-center mb-4">
+{{-- <div class="d-flex justify-content-between align-items-center mb-4"> --}}
     <h5 class="mb-0 fw-bold">Liste des demandes d'absence</h5>
-
-    {{-- Barre de recherche --}}
-    <div class="input-group w-25">
-        <input type="text"
-               id="recherche"
-               class="form-control form-control-sm"
-               placeholder="">
-        <span class="input-group-text">
-            <i class="bi bi-search"></i>
-        </span>
-    </div>
-
-    {{-- Bouton pour faire une nouvelle demande --}}
-    <a href="{{ route('demande_absences.create') }}"
-       class="btn btn-primary btn-sm">
-        <i class="bi bi-plus-lg me-1"></i> Nouvelle demande
-    </a>
-</div>
+    <div class="card shadow-sm">
+    <div class="card-body">
 
 <div class="card shadow-sm">
     <div class="card-body">
 
-        <div class="table-responsive">
-        <table class="table table-hover" id="tableAbsences">
-            <thead class="table-dark">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a href="{{ route('demande_absences.create') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-lg me-1"></i> Nouvelle demande
+            </a>
+             <div class="input-group w-25">
+                <input type="text" id="recherche" class="form-control form-control-sm"
+                       placeholder="Rechercher..."> <span class="input-group-text"><i class="bi bi-search"></i></span>
+            </div>
+        </div>
+         <table class="table table-hover table-sm" id="tableConges">
+           <thead class="table-dark">
                 <tr>
                     <th>N° Demande</th>
                     <th>Agent</th>
@@ -43,7 +34,6 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-
             <tbody>
                 @forelse($demandes as $demande)
                 <tr>

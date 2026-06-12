@@ -10,8 +10,8 @@ class DemandeJouissanceController extends Controller
     
     public function index()
     {
-        $demandes = DemandeJouissance::with('user', 'avis')->get();
-        return view('demande_jouissances.index', compact('demandes'));
+        $demande = DemandeJouissance::with('user', 'avis')->get();
+        return view('demande_jouissances.index', compact('demande'));
     }
 
     /**
@@ -19,34 +19,74 @@ class DemandeJouissanceController extends Controller
      */
     public function create()
     {
-         $user = Auth()->user();
+         $user = auth()->user();
         return view('demande_jouissances.create', compact('user'));
     }
+
+    public function store(Request $request)
+{
+    $request->validate([
+        'date_debut' => 'required|date',
+        'date_fin'   => 'required|date|after_or_equal:date_debut',
+    ]);
+
+    // calcul nombre de jours
+    $dateDebut = new \DateTime($request->date_debut);
+    $dateFin   = new \DateTime($request->date_fin);
+    $nombreJour = $dateDebut->diff($dateFin)->days + 1;
+
+    // génération du numéro (OBLIGATOIRE AVANT INSERT)
+    $last = DemandeJouissance::orderBy('id', 'desc')->first();
+    $nextNumber = $last ? $last->id + 1 : 1;
+
+    $numDemande = $nextNumber; // IMPORTANT (INTEGER)
+
+    // INSERT complet
+    DemandeJouissance::create([
+        'num_demande' => $numDemande,   // 🔥 IMPORTANT
+        'date_debut'  => $request->date_debut,
+        'date_fin'    => $request->date_fin,
+        'nombre_jour' => $nombreJour,
+        'user_id'     => auth()->id(),
+    ]);
+
+    return redirect()
+        ->route('demande_jouissances.index')
+        ->with('success', 'Demande créée avec succès.');
+}
+
+
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
+    // public function store(Request $request)
+    // {
         
-        $request->validate([
-            'num_demande'    => 'required|integer|unique:demande_jouissances,num_demande',
-            'date_debut'     => 'required|date',
-            'date_fin'       => 'required|date|after_or_equal:date_debut',
-            'nombre_jour'    => 'required|integer|min:1',
-            'user_id' => 'required|exists:users,id',
-        ]);
+    //     $request->validate([
+        
+    //         'date_debut'     => 'required|date',
+    //         'date_fin'       => 'required|date|after_or_equal:date_debut',  
+    //     ]);
+        
+    //     $dateDebut = new \DateTime($request->date_debut);
+    //     $dateFin = new \DateTime($request->date_fin);
+    //     $nombreJour = $dateDebut->diff($dateFin)->days + 1;
 
-        dd($request);
-        DemandeJouissance::create($request->only([
-            'num_demande', 'date_debut', 'date_fin',
-            'nombre_jour', 'user_id',
-        ]));
+    //   DemandeJouissance::create([
+    //   'num_demande'  => $request->num_demande,
+    //   'date_debut'  => $request->date_debut,
+    //   'date_fin'    => $request->date_fin,
+    //   'nombre_jour' => $nombreJour,
+    //   'user_id'     => auth()->id(),
+    //  ]);
+    //  return redirect()
+    //         ->route('demande_jouissances.index')
+    //         ->with('success', 'Demande créée avec succès.');
+    // }
 
-        return redirect()
-            ->route('demande_jouissances.index')
-            ->with('success', 'Demande de jouissance soumise');
-    }
+
+
 
     /**
      * Display the specified resource.
@@ -73,7 +113,7 @@ class DemandeJouissanceController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, DemandeJouissance $demandeJouissance)
+    public function update(Request $request, $id)
     {
         $request->validate([
             'date_debut'  => 'required|date',
@@ -95,11 +135,11 @@ class DemandeJouissanceController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(DemandeJouissance $demandeJouissance)
+    public function destroy($id)
     {
         DemandeJouissance::findOrFail($id)->delete();
         return redirect()
-            ->route('demande_jouissances.index')
+            ->route('demande_jouissances.index') 
             ->with('success', 'Demande supprimée');
     }
 }

@@ -11,7 +11,7 @@ class DemandeAbsenceController extends Controller
      */
     public function index()
     {
-         $demandes = DemandeAbsence::with('user', 'justificatifAbsence', 'avisAbsence')
+         $demandes = DemandeAbsence::with('user', 'justificatifAbsence', 'avisAbsences')
         ->get();
 
         return view('demande_absences.index', compact('demandes'));
@@ -52,7 +52,7 @@ class DemandeAbsenceController extends Controller
 
     public function show($id)
     {
-        $demande = DemandeAbsence::with('user.departement.direction', 'justificatifAbsence', 'avisAbsence')->findOrFail($id);
+        $demande = DemandeAbsence::with('user.departement.direction', 'justificatifAbsence', 'avisAbsences')->findOrFail($id);
         return view('demande_absences.show', compact('demande'));
 
     }

@@ -81,9 +81,20 @@ class DepartementController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id)
-    {
-        Departement::findOrFail($id)->delete();
-        return redirect()->route('departements.index')->with('success', 'Département supprimé');
+   public function destroy($id)
+   {
+    $departement = Departement::findOrFail($id);
+
+    if ($departement->users()->count() > 0) {
+        return redirect()
+            ->route('departements.index')
+            ->with('error', 'Impossible de supprimer ce département car il contient des utilisateurs.');
     }
+
+      $departement->delete();
+
+         return redirect()
+        ->route('departements.index')
+        ->with('success', 'Département supprimé avec succès.');
+}
 }

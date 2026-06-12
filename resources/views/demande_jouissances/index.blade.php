@@ -33,7 +33,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($demandes as $demande)
+                    @forelse($demande as $demande)
                     <tr>
                         <td>{{ $demande->user->nom }} {{ $demande->user->prenom }}</td>
                         <td>{{ $demande->num_demande }}</td>
@@ -50,40 +50,30 @@
                         </td>
                         <td class="text-center">
                             <div class="btn-group btn-group-sm" role="group">
-                                {{-- Bouton Voir --}}
-                                <a href="{{ route('demande_jouissances.show', $demande->id) }}" 
-                                   class="btn btn-outline-secondary" 
-                                   title="Voir les détails">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-
-                                {{-- Bouton Modifier --}}
-                                <a href="{{ route('demande_jouissances.edit', $demande->id) }}" 
-                                   class="btn btn-outline-primary" 
-                                   title="Modifier">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-
-                                {{-- Bouton Supprimer --}}
-                                <form action="{{ route('demande_jouissances.destroy', $demande->id) }}" 
-                                      method="POST" 
-                                      class="d-inline"
-                                      onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette demande ?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" 
-                                            class="btn btn-outline-danger" 
-                                            title="Supprimer"
-                                            style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                               <td>
+                        {{-- le bouton voir est en premier car c'est l'action principale , btn-info : couleur bleue claire = consulter --}}
+                        <a href="{{ route('demande_jouissances.show', $demande->id) }}"
+                           class="btn btn-sm btn-info btn-action">
+                            </i> Voir
+                        </a>
+                        <a href="{{ route('demande_jouissances.edit', $demande->id) }}"
+                           class="btn btn-sm btn-success btn-action">Modifier</a>
+                        <form action="{{ route('demande_jouissances.destroy', $demande->id) }}"
+                              method="POST" class="d-inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-sm btn-danger btn-action"
+                                    onclick="return confirm('Supprimer ?')">
+                                Supprimer
+                            </button>
+                        </form>
                                 </form>
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-3">
+                        <td colspan="" class="text-center text-muted py-3">
                             Aucune demande de jouissance de congé trouvée.
                         </td>
                     </tr>

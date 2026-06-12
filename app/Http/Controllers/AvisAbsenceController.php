@@ -18,75 +18,71 @@ class AvisAbsenceController extends Controller
         return view('avis_absences.index', compact('avis'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        $demandes = DemandeAbsence::all();
-        return view('avis_absences.create', compact('demandes'));
-    }
+    public function create(Request $request)
+{
+    // On récupère la demande concernée
+    // depuis l'URL : /avis_absences/create?demande_absence_id=3
+    // $request->demande_absence_id : l'id passé en paramètre
+    $demande = DemandeAbsence::findOrFail($request->demande_absence_id);
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'avis' => 'required|in:favorable,defavorable,en_attente',
-            'type' => 'required|in:chef_departement,responsable_direction,agent_rh,sg,dg,pca',
-            'commentaire' => 'nullable|string',
-            'demande_absence_id' => 'required|exists:demande_absences,id',
-
-        ]);
-
-        AvisAbsence::create($request->only([
-            'avis', 'type', 'commentaire', 'demande_absence_id'
-        ]));
-        return redirect()
-            ->route('avis_absences.index')
-            ->with('success', 'Avis enregistré');
-    }
-
-    
-    
-    public function edit($id)
-    {
-         $avis = AvisAbsence::findOrFail($id);
-         $demandes = DemandeAbsence::all();
-         return view('avis_absences.edit', compact('avis', 'demandes'));
-    
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'avis'        => 'required|in:favorable,defavorable,en_attente',
-            'commentaire' => 'nullable|string',
-        ]);
-
-        $avis = AvisAbsence::findOrFail($id);
-        $avis->update($request->only(['avis', 'commentaire']));
-
-        return redirect()
-        ->route('avis_absences.index')
-        ->with('success', 'Avis modifié');
-
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        AvisAbsence::findOrFail($id)->delete();
-        return redirect()
-        ->route('avis_absences.index')
-        ->with('success', 'Avis supprimé');
-    }
+    return view('avis_absences.create', compact('demande'));
 }
 
-// Note: 
+public function store(Request $request)
+{
+    $request->validate([
+        'avis'               => 'required|in:favorable,defavorable,en_attente',
+        'type'               => 'required|in:chef_departement,responsable_direction,agent_rh,sg,dg,pca',
+        'commentaire'        => 'nullable|string',
+        'demande_absence_id' => 'required|exists:demande_absences,id',
+    ]);
+
+    AvisAbsence::create($request->only([
+        'avis', 'type', 'commentaire', 'demande_absence_id'
+    ]));
+
+    // On retourne vers le DÉTAIL de la demande
+    // et pas vers une liste d'avis
+    return redirect()
+        ->route('demande_absences.show', $request->demande_absence_id)
+        ->with('success', 'Avis enregistré avec succès');
+}
+
+public function edit($id)
+{
+    $avis = AvisAbsence::findOrFail($id);
+    $demande = $avis->demandeAbsence;
+    // On charge aussi la demande pour afficher le contexte
+
+    return view('avis_absences.edit', compact('avis', 'demande'));
+}
+
+public function update(Request $request, $id)
+{
+    $request->validate([
+        'avis'        => 'required|in:favorable,defavorable,en_attente',
+        'commentaire' => 'nullable|string',
+    ]);
+
+    $avis = AvisAbsence::findOrFail($id);
+    $avis->update($request->only(['avis', 'commentaire']));
+
+    // Retour vers le détail de la demande concernée
+    return redirect()
+        ->route('demande_absences.show', $avis->demande_absence_id)
+        ->with('success', 'Avis modifié');
+}
+
+public function destroy($id)
+{
+    $avis = AvisAbsence::findOrFail($id);
+    $demande_id = $avis->demande_absence_id;
+    // On sauvegarde l'id AVANT de supprimer
+    // car après delete() on ne peut plus y accéder
+    $avis->delete();
+
+    return redirect()
+        ->route('demande_absences.show', $demande_id)
+        ->with('success', 'Avis supprimé');
+}
+}

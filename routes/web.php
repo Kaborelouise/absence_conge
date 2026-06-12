@@ -29,7 +29,8 @@ Route::middleware('auth')->group(function () {
     // Maintenant route('accueil') fonctionnera
 
     // DASHBOARD
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
 
     // ADMINISTRATION
     Route::resource('roles', RoleController::class);
@@ -45,8 +46,9 @@ Route::middleware('auth')->group(function () {
         ->only(['create', 'store', 'edit', 'update', 'destroy']);
     Route::resource('demande_conges', DemandeCongeController::class);
     Route::resource('avis_conges', AvisCongeController::class)
-        ->only(['create', 'store', 'edit', 'update', 'destroy']);
+        ->only(['index', 'create','store', 'edit', 'update', 'destroy']);
     Route::resource('demande_jouissances', DemandeJouissanceController::class);
     Route::resource('avis_jouissances', AvisJouissanceController::class)
-        ->only(['create', 'store', 'edit', 'update', 'destroy']);
+        ->only(['create', 'index', 'store', 'edit', 'update', 'destroy']);
+        
 });

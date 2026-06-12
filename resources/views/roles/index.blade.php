@@ -4,8 +4,12 @@
 
 @section('content')
 
+
+
 <div class="d-flex justify-content-between align-items-center mb-5">
     <h5 class="mb-0 fw-bold">Liste des rôles</h5> 
+
+
     <div class="input-group w-25">
         <input type="text" id="recherche" class="form-control form-control-sm" placeholder="">
         <span class="input-group-text"><i class="bi bi-search"></i></span>

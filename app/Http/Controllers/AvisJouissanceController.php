@@ -20,10 +20,10 @@ class AvisJouissanceController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        $demandes = DemandeJouissance::all();
-        return view('avis_jouissances.create', compact('demandes'));
+        $demande = DemandeJouissance::findOrFail($request->demande_jouissance_id);
+        return view('avis_jouissances.create', compact('demande'));
     }
 
     /**
@@ -44,16 +44,17 @@ class AvisJouissanceController extends Controller
         ]));
 
         return redirect()
-            ->route('avis-jouissances.index')
+            ->route('avis_jouissances.index')
             ->with('success', 'Avis enregistré');
     }
 
    
-    public function edit(AvisJouissance $avisJouissance)
+    public function edit($id)
     {
         $avis = AvisJouissance::findOrFail($id);
-        $demandes = DemandeJouissance::all();
-        return view('avis_jouissances.edit', compact('avis', 'demandes'));
+        $demande = DemandeJouissance::all();
+
+        return view('avis_jouissances.edit', compact('avis', 'demande'));
     }
 
     /**

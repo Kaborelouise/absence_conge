@@ -38,6 +38,7 @@
 <div class="table-responsive">
 <table class="table table-hover table-sm align-middle" id="tableJouissances">
 <div class="card shadow-sm">
+   
 
         
 

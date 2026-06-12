@@ -40,6 +40,11 @@
                         </span>
                     </td>
                     <td>
+                        {{-- le bouton voir est en premier car c'est l'action principale , btn-info : couleur bleue claire = consulter --}}
+                        <a href="{{ route('demande_conges.show', $demande->id) }}"
+                           class="btn btn-sm btn-info btn-action">
+                            </i> Voir
+                        </a>
                         <a href="{{ route('demande_conges.edit', $demande->id) }}"
                            class="btn btn-sm btn-success btn-action">Modifier</a>
                         <form action="{{ route('demande_conges.destroy', $demande->id) }}"
