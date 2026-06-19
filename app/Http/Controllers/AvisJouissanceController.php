@@ -2,86 +2,139 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AvisJouissance;
 use App\Models\DemandeJouissance;
 use Illuminate\Http\Request;
 
-class AvisJouissanceController extends Controller
+class DemandeJouissanceController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $avis = AvisJouissance::with('demandeJouissance')->get();
-        return view('avis_jouissances.index', compact('avis'));
+        $user = auth()->user();
+        $role = $user->role->libelle;
+
+        $demandes = DemandeJouissance::with('user.departement.direction', 'avis')
+            ->when($role === 'agent', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->when($role === 'chef_departement' || $user->est_responsable_departement, function ($q) use ($user) {
+                $q->whereHas('user', function ($q2) use ($user) {
+                    $q2->where('departement_id', $user->departement_id);
+                });
+            })
+            ->when($role === 'responsable_direction', function ($q) use ($user) {
+                $directionId = $user->departement->direction_id;
+                $q->whereHas('user.departement', function ($q2) use ($directionId) {
+                    $q2->where('direction_id', $directionId);
+                });
+            })
+            ->when(in_array($role, ['agent_rh', 'sg', 'dg', 'pca']), function ($q) {
+                // RH, SG, DG, PCA voient toutes les demandes
+            })
+            ->latest()
+            ->get();
+
+        return view('demande_jouissances.index', compact('demandes'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        $demandes = DemandeJouissance::all();
-        return view('avis_jouissances.create', compact('demandes'));
+        $user = auth()->user();
+        return view('demande_jouissances.create', compact('user'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
-            'avis' => 'required|in:favorable,defavorable,en_attente',
-            'type' => 'required|in:chef_departement,agent_rh,responsable_direction,sg,dg,pca',
-
-            'commentaire'           => 'nullable|string',
-            'demande_jouissance_id' => 'required|exists:demande_jouissances,id',
+            'date_debut'  => 'required|date',
+            'date_fin'    => 'required|date|after_or_equal:date_debut',
+            'nombre_jour' => 'required|integer|min:1',
         ]);
 
-        AvisJouissance::create($request->only([
-            'avis', 'type', 'commentaire', 'demande_jouissance_id'
+        DemandeJouissance::create([
+            'num_demande'  => time(),
+            'date_debut'   => $request->date_debut,
+            'date_fin'     => $request->date_fin,
+            'nombre_jour'  => $request->nombre_jour,
+            'user_id'      => auth()->id(),
+            'statut'       => 'en_attente',
+        ]);
+
+        return redirect()
+            ->route('demande_jouissances.index')
+            ->with('success', 'Demande de jouissance soumise avec succès.');
+    }
+
+    public function show($id)
+    {
+        $demande = DemandeJouissance::with(
+            'user.departement.direction',
+            'avis'
+        )->findOrFail($id);
+
+        $user = auth()->user();
+
+        $peutAgir       = $demande->peutDonnerAvis($user);
+        $prochainActeur = $demande->prochainActeur();
+
+        return view('demande_jouissances.show', compact(
+            'demande',
+            'peutAgir',
+            'prochainActeur'
+        ));
+    }
+
+    public function edit($id)
+    {
+        $demande = DemandeJouissance::findOrFail($id);
+
+        if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
+            return redirect()
+                ->route('demande_jouissances.show', $id)
+                ->with('error', 'Cette demande ne peut plus être modifiée.');
+        }
+
+        return view('demande_jouissances.edit', compact('demande'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $demande = DemandeJouissance::findOrFail($id);
+
+        if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
+            return redirect()
+                ->route('demande_jouissances.show', $id)
+                ->with('error', 'Modification non autorisée.');
+        }
+
+        $request->validate([
+            'date_debut'  => 'required|date',
+            'date_fin'    => 'required|date|after_or_equal:date_debut',
+            'nombre_jour' => 'required|integer|min:1',
+        ]);
+
+        $demande->update($request->only([
+            'date_debut', 'date_fin', 'nombre_jour',
         ]));
 
         return redirect()
-            ->route('avis-jouissances.index')
-            ->with('success', 'Avis enregistré');
+            ->route('demande_jouissances.index')
+            ->with('success', 'Demande modifiée avec succès.');
     }
 
-   
-    public function edit(AvisJouissance $avisJouissance)
-    {
-        $avis = AvisJouissance::findOrFail($id);
-        $demandes = DemandeJouissance::all();
-        return view('avis_jouissances.edit', compact('avis', 'demandes'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'avis'        => 'required|in:favorable,defavorable,en_attente',
-            'commentaire' => 'nullable|string',
-        ]);
-
-        $avis = AvisJouissance::findOrFail($id);
-        $avis->update($request->only(['avis', 'commentaire']));
-        return redirect()
-            ->route('avis_jouissances.index')
-            ->with('success', 'Avis modifié');
-   
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
-        AvisJouissance::findOrFail($id)->delete();
+        $demande = DemandeJouissance::findOrFail($id);
+
+        if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
+            return redirect()
+                ->route('demande_jouissances.index')
+                ->with('error', 'Suppression non autorisée.');
+        }
+
+        $demande->delete();
+
         return redirect()
-            ->route('avis_jouissances.index')
-            ->with('success', 'Avis supprimé');
+            ->route('demande_jouissances.index')
+            ->with('success', 'Demande supprimée.');
     }
 }

@@ -1,12 +1,16 @@
 @extends('layouts.app')
 
-@section('title', 'Demandes d\'absence')
-@section('page-title', 'Autorisation d\'absence ')
+@section('title', 'Demandes de jouissance')
+@section('page-title', 'Gestion des demandes de jouissance')
 
 @section('content')
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h5 class="mb-0 fw-bold">Liste des demandes d'absence</h5>
+    <h5 class="mb-0 fw-bold">Liste des demandes de jouissance</h5>
+
+    <a href="{{ route('demande_jouissances.create') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i> Nouvelle demande
+    </a>
 </div>
 
 @if(session('success'))
@@ -18,22 +22,20 @@
 
 <div class="card shadow-sm">
     <div class="card-body">
-        <a href="{{ route('demande_absences.create') }}" class="btn btn-primary btn-sm">
-        <i class="bi bi-plus-lg me-1"></i> Nouvelle demande</a>
-         <div class="mb-3">
-            <input type="text" id="recherche" class="form-control w-25"
-                   placeholder="Rechercher...">
+
+        <div class="mb-3">
+            <input type="text" id="recherche" class="form-control w-25" placeholder="Rechercher...">
         </div>
 
-        <table class="table table-hover" id="tableAbsences">
-            <thead class="table-anptic-dark">
+        <table class="table table-hover" id="tableJouissances">
+            <thead class="table-dark">
                 <tr>
                     <th>N° Demande</th>
                     <th>Agent</th>
                     <th>Département</th>
                     <th>Date début</th>
                     <th>Date fin</th>
-                    <th>Motif</th>
+                    <th>Nombre de Jours</th>
                     <th>Statut</th>
                     <th>Actions</th>
                 </tr>
@@ -53,7 +55,7 @@
                     <td>{{ $demande->user->departement->libelle_court ?? '—' }}</td>
                     <td>{{ \Carbon\Carbon::parse($demande->date_debut)->format('d/m/Y') }}</td>
                     <td>{{ \Carbon\Carbon::parse($demande->date_fin)->format('d/m/Y') }}</td>
-                    <td>{{ $demande->motif }}</td>
+                    <td>{{ $demande->nombre_jour }}</td>
                     <td>
                         <span class="badge-statut badge-{{ $demande->statut }}">
                             {{ ucfirst(str_replace('_',' ',$demande->statut)) }}
@@ -65,19 +67,20 @@
                         @endif
                     </td>
                     <td>
-                        <a href="{{ route('demande_absences.show', $demande->id) }}"
-                           class="btn btn-sm btn-outline-primary btn-action">Voir
+                        <a href="{{ route('demande_jouissances.show', $demande->id) }}"
+                           class="btn btn-sm btn-outline-primary btn-action">
+                            <i class="bi bi-eye"></i>
                         </a>
 
                         @if($modifiable)
-                        <a href="{{ route('demande_absences.edit', $demande->id) }}"
+                        <a href="{{ route('demande_jouissances.edit', $demande->id) }}"
                            class="btn btn-sm btn-success btn-action">
                             Modifier
                         </a>
                         @endif
 
                         @if($modifiable)
-                        <form action="{{ route('demande_absences.destroy', $demande->id) }}"
+                        <form action="{{ route('demande_jouissances.destroy', $demande->id) }}"
                               method="POST" class="d-inline">
                             @csrf
                             @method('DELETE')
@@ -105,9 +108,9 @@
 <script>
 document.getElementById('recherche').addEventListener('input', function () {
     let valeur = this.value.toLowerCase();
-    document.querySelectorAll('#tableAbsences tbody tr').forEach(function(ligne) {
+    document.querySelectorAll('#tableJouissances tbody tr').forEach(function(ligne) {
         ligne.style.display = ligne.textContent.toLowerCase().includes(valeur) ? '' : 'none';
     });
 });
 </script>
-@endsection 
+@endsection

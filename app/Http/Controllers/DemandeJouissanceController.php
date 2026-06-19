@@ -7,48 +7,63 @@ use Illuminate\Http\Request;
 
 class DemandeJouissanceController extends Controller
 {
-    
     public function index()
     {
-        $demandes = DemandeJouissance::with('user', 'avis')->get();
+        $user = auth()->user();
+        $role = $user->role->libelle;
+
+        $demandes = DemandeJouissance::with('user.departement.direction', 'avis')
+            ->when($role === 'agent', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->when($role === 'chef_departement' || $user->est_responsable_departement, function ($q) use ($user) {
+                $q->whereHas('user', function ($q2) use ($user) {
+                    $q2->where('departement_id', $user->departement_id);
+                });
+            })
+            ->when($role === 'responsable_direction', function ($q) use ($user) {
+                $directionId = $user->departement->direction_id;
+                $q->whereHas('user.departement', function ($q2) use ($directionId) {
+                    $q2->where('direction_id', $directionId);
+                });
+            })
+            ->when(in_array($role, ['agent_rh', 'sg', 'dg', 'pca']), function ($q) {
+                // RH, SG, DG, PCA voient toutes les demandes
+            })
+            ->latest()
+            ->get();
+
         return view('demande_jouissances.index', compact('demandes'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-         $user = Auth()->user();
+        $user = auth()->user();
         return view('demande_jouissances.create', compact('user'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
-            'num_demande'    => 'required|integer|unique:demande_jouissances,num_demande',
-            'date_debut'     => 'required|date',
-            'date_fin'       => 'required|date|after_or_equal:date_debut',
-            'nombre_jour'    => 'required|integer|min:1',
-            'user_id' => 'required|exists:users,id',
+            'date_debut'  => 'required|date',
+            'date_fin'    => 'required|date|after_or_equal:date_debut',
+            'nombre_jour' => 'required|integer|min:1',
         ]);
 
-        DemandeJouissance::create($request->only([
-            'num_demande', 'date_debut', 'date_fin',
-            'nombre_jour', 'user_id',
-        ]));
+        DemandeJouissance::create([
+            'num_demande'  => time(),
+            'date_debut'   => $request->date_debut,
+            'date_fin'     => $request->date_fin,
+            'nombre_jour'  => $request->nombre_jour,
+            'user_id'      => auth()->id(),
+            'statut'       => 'en_attente',
+        ]);
 
         return redirect()
             ->route('demande_jouissances.index')
-            ->with('success', 'Demande de jouissance soumise');
+            ->with('success', 'Demande de jouissance soumise avec succès.');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show($id)
     {
         $demande = DemandeJouissance::with(
@@ -56,48 +71,70 @@ class DemandeJouissanceController extends Controller
             'avis'
         )->findOrFail($id);
 
-        return view('demande_jouissances.show', compact('demande'));
+        $user = auth()->user();
+
+        $peutAgir       = $demande->peutDonnerAvis($user);
+        $prochainActeur = $demande->prochainActeur();
+
+        return view('demande_jouissances.show', compact(
+            'demande',
+            'peutAgir',
+            'prochainActeur'
+        ));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit($id)
     {
         $demande = DemandeJouissance::findOrFail($id);
+
+        if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
+            return redirect()
+                ->route('demande_jouissances.show', $id)
+                ->with('error', 'Cette demande ne peut plus être modifiée.');
+        }
+
         return view('demande_jouissances.edit', compact('demande'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, DemandeJouissance $demandeJouissance)
+    public function update(Request $request, $id)
     {
+        $demande = DemandeJouissance::findOrFail($id);
+
+        if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
+            return redirect()
+                ->route('demande_jouissances.show', $id)
+                ->with('error', 'Modification non autorisée.');
+        }
+
         $request->validate([
             'date_debut'  => 'required|date',
             'date_fin'    => 'required|date|after_or_equal:date_debut',
             'nombre_jour' => 'required|integer|min:1',
-            'statut'      => 'required|in:en_attente,en_cours,validee,rejetee',
         ]);
 
-        $demande = DemandeJouissance::findOrFail($id);
         $demande->update($request->only([
-            'date_debut', 'date_fin', 'nombre_jour', 'statut'
+            'date_debut', 'date_fin', 'nombre_jour',
         ]));
 
         return redirect()
             ->route('demande_jouissances.index')
-            ->with('success', 'Demande modifiée');
+            ->with('success', 'Demande modifiée avec succès.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(DemandeJouissance $demandeJouissance)
+    public function destroy($id)
     {
-        DemandeJouissance::findOrFail($id)->delete();
+        $demande = DemandeJouissance::findOrFail($id);
+
+        if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
+            return redirect()
+                ->route('demande_jouissances.index')
+                ->with('error', 'Suppression non autorisée.');
+        }
+
+        $demande->delete();
+
         return redirect()
             ->route('demande_jouissances.index')
-            ->with('success', 'Demande supprimée');
+            ->with('success', 'Demande supprimée.');
     }
 }

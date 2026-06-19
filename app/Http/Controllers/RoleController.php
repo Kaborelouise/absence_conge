@@ -2,76 +2,78 @@
 
 namespace App\Http\Controllers;
 
-use App\http\controllers;
 use App\Models\Role;
 use Illuminate\Http\Request;
 
 class RoleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $roles = Role::withCount('users')->get();
-        //passer $roles a la vue
+        $roles = Role::withCount('utilisateurs')->get();
         return view('roles.index', compact('roles'));
     }
 
-    //Afficher le formulaire de création 
     public function create()
     {
-        return view ('roles.create');
+        return view('roles.create');
     }
 
-    //enregistrer un nouveau role
     public function store(Request $request)
     {
         $request->validate([
             'libelle' => 'required|string|max:255|unique:roles,libelle',
-            
-
         ]);
+
         Role::create($request->only(['libelle']));
 
-        //redirect() : redirige vers la liste des role apres création
-        //with('success') envoie un message de succès
-        return redirect()->route('roles.index')->with('success', 'Role a été creer avec succès');    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show($id)
-    {
-        //
+        return redirect()
+            ->route('roles.index')
+            ->with('success', 'Rôle créé avec succès');
     }
 
-   // Affiche le formulaire de modification
+    public function show($id)
+    {
+        $role = Role::withCount('utilisateurs')->findOrFail($id);
+        return view('roles.show', compact('role'));
+    }
+
     public function edit($id)
     {
         $role = Role::findOrFail($id);
         return view('roles.edit', compact('role'));
-        
     }
 
-   //Mettre a jour un role
     public function update(Request $request, $id)
     {
         $request->validate([
-            'libelle' => 'required|string|max:255|unique:roles, libelle,'.$id,
+
+            'libelle' => 'required|string|max:255|unique:roles,libelle,'.$id,
         ]);
+
         $role = Role::findOrFail($id);
         $role->update($request->only(['libelle']));
 
-        return redirect()->route('$roles.index')
-                         ->with('success', 'Role modifié avec succès');
+        return redirect()
+            ->route('roles.index')
+            ->with('success', 'Rôle modifié avec succès');
     }
-    
 
-    //supprimer un role
     public function destroy($id)
     {
-        Role::findOrFail($id)->delete();
-        return redirect()->route('roles.index')->with('success', 'Role supprimé avec succès');
+        $role = Role::withCount('utilisateurs')->findOrFail($id);
+
+        // pour la sécurité, on empêche la suppression si des utilisateurs
+        //utilisent encore ce rôle. Sinon soit la base refuse
+        if ($role->utilisateurs_count > 0) {
+            return redirect()
+                ->route('roles.index')
+                ->with('error', "Impossible de supprimer ce rôle : {$role->utilisateurs_count} utilisateur(s) l'utilisent encore.");
+        }
+
+        $role->delete();
+
+        return redirect()
+            ->route('roles.index')
+            ->with('success', 'Rôle supprimé avec succès');
     }
 }

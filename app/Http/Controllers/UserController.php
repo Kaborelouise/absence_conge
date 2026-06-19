@@ -15,7 +15,7 @@ class UserController extends Controller
         
         $users = User::with('role', 'departement.direction')->get();
 
-        return view('users.index', compact('users'));
+        return view('utilisateurs.index', compact('users'));
     }
 
     
@@ -28,7 +28,7 @@ class UserController extends Controller
         
         $departements = Departement::with('direction')->get();
 
-        return view('users.create', compact(
+        return view('utilisateurs.create', compact(
             'roles',
             'departements'
         ));
@@ -76,7 +76,7 @@ class UserController extends Controller
         ]));
 
         return redirect()
-            ->route('users.index')
+            ->route('utilisateurs.index')
             ->with('success', 'Utilisateur créé avec succès');
     }
 
@@ -87,48 +87,54 @@ class UserController extends Controller
         $roles = Role::all();
         $departements = Departement::with('direction')->get();
 
-        return view('users.edit', compact(
+        return view('utilisateurs.edit', compact(
             'user',
             'roles',
             'departements'
         ));
     }
 
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            
-            'matricule' => 'required|integer|unique:users,matricule,'.$id,
-            'nom'       => 'required|string|max:255',
-            'prenom'    => 'required|string|max:255',
-            'poste'     => 'required|string|max:255',
-            'email'     => 'required|email|unique:users,email,'.$id,
+public function update(Request $request, $id)
+{
+    $request->validate([
+        'matricule' => 'required|integer|unique:users,matricule,'.$id,
+        'nom'       => 'required|string|max:255',
+        'prenom'    => 'required|string|max:255',
+        'poste'     => 'required|string|max:255',
+        'email'     => 'required|email|unique:users,email,'.$id,
+        'password'  => 'nullable|string|min:8',
+        'role_id'        => 'required|exists:roles,id',
+        'departement_id' => 'required|exists:departements,id',
+        'est_responsable_departement' => 'boolean',
+        'est_responsable_direction'   => 'boolean',
+        'solde_conge'   => 'nullable|integer',
+        'solde_absence' => 'nullable|integer',
+    ]);
 
-            // 'sometimes' valide si le champ est présent
-            
-            'password'       => 'sometimes|string|min:8',
-            'role_id'        => 'required|exists:roles,id',
-            'departement_id' => 'required|exists:departements,id',
-            'est_responsable_departement' => 'boolean',
-            'est_responsable_direction'   => 'boolean',
-            'solde_conge'   => 'nullable|integer',
-            'solde_absence' => 'nullable|integer',
-        ]);
+    $user = User::findOrFail($id);
 
-        $user = User::findOrFail($id);
-        $user->update($request->only([
-            'matricule', 'nom', 'prenom', 'poste',
-            'email', 'password', 'signature',
-            'est_responsable_departement',
-            'est_responsable_direction',
-            'solde_conge', 'solde_absence',
-            'role_id', 'departement_id',
-        ]));
+    // On récupère tous les champs SAUF password
+    $data = $request->only([
+        'matricule', 'nom', 'prenom', 'poste',
+        'email', 'signature',
+        'est_responsable_departement',
+        'est_responsable_direction',
+        'solde_conge', 'solde_absence',
+        'role_id', 'departement_id',
+    ]);
 
-        return redirect()
-            ->route('users.index')
-            ->with('success', 'Utilisateur modifié avec succès');
+    // On n'ajoute le mot de passe QUE s'il a été réellement rempli
+   
+    if ($request->filled('password')) {
+        $data['password'] = $request->password;
     }
+
+    $user->update($data);
+
+    return redirect()
+        ->route('utilisateurs.index')
+        ->with('success', 'Utilisateur modifié avec succès');
+}
 
    
     public function destroy($id)

@@ -1,0 +1,120 @@
+@extends('layouts.app')
+@section('title', 'Modifier le département')
+@section('page-title', 'Gestion des départements')
+
+@section('content')
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Modifier le département</h5>
+            </div>
+            <div class="card-body p-4">
+
+                @if($errors->any())
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            @foreach($errors->all() as $erreur)
+                                <li>{{ $erreur }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                {{-- 
+                    Différence clé avec create.blade.php : on envoie
+                    vers 'departements.update' (et pas 'store'), et on
+                    ajoute @method('PUT').
+                    
+                    Pourquoi @method('PUT') ? Les navigateurs HTML ne
+                    savent envoyer que GET ou POST nativement. Laravel
+                    simule PUT/PATCH/DELETE via un champ caché _method
+                    que le framework intercepte et traite comme si la
+                    requête avait vraiment été envoyée en PUT. --}}
+                <form action="{{ route('departements.update', $departement->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Libellé court</label>
+                            {{-- 
+                                old('libelle_court', $departement->libelle_court) :
+                                deuxième argument = valeur par défaut SI
+                                old() ne contient rien (donc au premier
+                                chargement de la page, avant toute erreur
+                                de validation). C'est ça qui pré-remplit
+                                le formulaire avec les données existantes.
+                            --}}
+                            <input type="text" name="libelle_court"
+                                   class="form-control @error('libelle_court') is-invalid @enderror"
+                                   value="{{ old('libelle_court', $departement->libelle_court) }}"
+                                   required>
+                            @error('libelle_court')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Libellé long</label>
+                            <input type="text" name="libelle_long"
+                                   class="form-control @error('libelle_long') is-invalid @enderror"
+                                   value="{{ old('libelle_long', $departement->libelle_long) }}"
+                                   required>
+                            @error('libelle_long')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Direction de rattachement</label>
+                        <select name="direction_id"
+                                class="form-select @error('direction_id') is-invalid @enderror"
+                                required>
+                            @foreach($directions as $direction)
+                                {{-- 
+                                    Ici on compare avec $departement->direction_id
+                                    (la direction ACTUELLE du département) pour
+                                    présélectionner la bonne option dans le menu
+                                    déroulant.
+                                --}}
+                                <option value="{{ $direction->id }}"
+                                    {{ old('direction_id', $departement->direction_id) == $direction->id ? 'selected' : '' }}>
+                                    {{ $direction->libelle_court }} — {{ $direction->libelle_long }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('direction_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    {{-- 
+                        Avertissement : si on change la direction d'un
+                        département qui contient déjà des utilisateurs,
+                        ces utilisateurs "suivent" automatiquement le
+                        département dans sa nouvelle direction. Ça peut
+                        casser la logique de peutDonnerAvis() pour
+                        responsable_direction si mal anticipé.
+                    --}}
+                    @if($departement->user()->count() > 0)
+                        <div class="alert alert-warning py-2" style="font-size:12px;">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            Attention : {{ $departement->user()->count() }} utilisateur(s)
+                            sont rattachés à ce département. Changer sa direction
+                            les affecte aussi dans le circuit de validation.
+                        </div>
+                    @endif
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-lg me-1"></i> Mettre à jour
+                        </button>
+                        <a href="{{ route('departements.index') }}" class="btn btn-secondary">Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection

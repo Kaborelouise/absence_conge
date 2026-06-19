@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Détail demande')
-@section('page-title', 'Autorisation d\'absence')
+@section('title', 'Détail demande de jouissance')
+@section('page-title', 'Demande de jouissance de congé')
 
 @section('content')
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="fw-bold mb-0">Détail / Suivi de la demande</h5>
-    <a href="{{ route('demande_absences.index') }}" class="btn btn-sm btn-secondary">
+    <a href="{{ route('demande_jouissances.index') }}" class="btn btn-sm btn-secondary">
         <i class="bi bi-arrow-left me-1"></i> Retour
     </a>
 </div>
@@ -17,6 +17,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 @endif
+
 @if(session('error'))
     <div class="alert alert-danger alert-dismissible fade show">
         {{ session('error') }}
@@ -58,22 +59,8 @@
                         <td>{{ \Carbon\Carbon::parse($demande->date_fin)->format('d/m/Y') }}</td>
                     </tr>
                     <tr>
-                        <th class="ps-3">Durée</th>
-                        <td>
-                            {{ \Carbon\Carbon::parse($demande->date_debut)->diffInDays($demande->date_fin) }} jour(s)
-                        </td>
-                    </tr>
-                    <tr>
-                        <th class="ps-3">Motif</th>
-                        <td>{{ $demande->motif }}</td>
-                    </tr>
-                    <tr>
-                        <th class="ps-3">Intérimaire</th>
-                        <td>{{ $demande->interimaire ?? '—' }}</td>
-                    </tr>
-                    <tr>
-                        <th class="ps-3">Retenue salaire</th>
-                        <td>{{ $demande->retenue_salaire ? 'Oui' : 'Non' }}</td>
+                        <th class="ps-3">Nombre de jours</th>
+                        <td>{{ $demande->nombre_jour }} jour(s)</td>
                     </tr>
                     <tr>
                         <th class="ps-3">Statut</th>
@@ -95,7 +82,7 @@
                 <i class="bi bi-diagram-3 me-2"></i> Suivi du circuit
             </div>
             <div class="card-body">
-                @forelse($demande->avisAbsence as $avis)
+                @forelse($demande->avis as $avis)
                 <div class="d-flex align-items-start gap-3 mb-3 pb-3 border-bottom">
                     <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
                          style="width:38px;height:38px;background:#1e2a3a;color:white;font-size:11px;">
@@ -145,36 +132,15 @@
                 @endif
             </div>
             <div class="card-body">
-                <form action="{{ route('avis_absences.store') }}" method="POST">
+                <form action="{{ route('avis_jouissances.store') }}" method="POST">
                     @csrf
-                    <input type="hidden" name="demande_absence_id" value="{{ $demande->id }}">
+                    <input type="hidden" name="demande_jouissance_id" value="{{ $demande->id }}">
 
                     @if(auth()->user()->role->libelle === 'agent_rh')
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Solde restant de l'agent</label>
+                        <label class="form-label fw-bold">Solde congé restant de l'agent</label>
                         <input type="text" class="form-control" readonly
-                               value="{{ $demande->user->solde_absence }} jours">
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox"
-                                   name="retenue_salaire" id="retenue_salaire" value="1"
-                                   {{ $demande->retenue_salaire ? 'checked' : '' }}>
-                            <label class="form-check-label" for="retenue_salaire">
-                                Avec retenue sur salaire
-                            </label>
-                        </div>
-                    </div>
-                    @endif
-
-                    @if(in_array(auth()->user()->role->libelle, ['chef_departement','responsable_direction']))
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">
-                            Intérimaire désigné
-                            <span class="text-muted fw-normal">(vous pouvez modifier)</span>
-                        </label>
-                        <input type="text" name="interimaire" class="form-control"
-                               value="{{ $demande->interimaire }}">
+                               value="{{ $demande->user->solde_conge }} jours">
                     </div>
                     @endif
 
@@ -188,15 +154,13 @@
                         </label>
                         <div class="d-flex gap-3">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio"
-                                       name="avis" value="favorable" id="favorable" required>
+                                <input class="form-check-input" type="radio" name="avis" value="favorable" id="favorable" required>
                                 <label class="form-check-label text-success fw-bold" for="favorable">
                                     <i class="bi bi-check-circle me-1"></i> Favorable / Valider
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio"
-                                       name="avis" value="defavorable" id="defavorable">
+                                <input class="form-check-input" type="radio" name="avis" value="defavorable" id="defavorable">
                                 <label class="form-check-label text-danger fw-bold" for="defavorable">
                                     <i class="bi bi-x-circle me-1"></i> Défavorable / Rejeter
                                 </label>
@@ -206,8 +170,7 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">
-                            Commentaire
-                            <span class="text-muted fw-normal">(optionnel)</span>
+                            Commentaire <span class="text-muted fw-normal">(optionnel)</span>
                         </label>
                         <textarea name="commentaire" class="form-control" rows="3"
                                   placeholder="Motif du rejet ou remarques..."></textarea>
