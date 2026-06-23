@@ -7,7 +7,7 @@
 
         <title>@yield('title', 'ANPTIC') - Gestion des demandes d'autorisation d'absence et de congé</title>
 
-        <!-- Fonts -->
+        <!-- Font -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
@@ -33,7 +33,7 @@
                 left: 0;
                 width: 230px;
                 height: 100vh;
-                background-color: #1e2a3a;
+                background-color: #1B384F;
                 overflow-y: auto;
                 z-index: 1000;
                 display: flex;
@@ -170,10 +170,15 @@
                 box-shadow: 0 1px 6px rgba(0, 0, 0, 0.07);
             }
 
+            .card-header-anptic {
+                background-color: #1B384F !important;
+                color: white !important;
+            }
+
             .card-header {
                 border-radius: 10px 10px 0 0 !important;
                 padding: 14px 20px;
-                border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+                border-bottom: 1px solid #1B384F !important;
                 font-weight: 600;
             }
 
@@ -197,17 +202,17 @@
                 border-radius: 5px;
             }
 
-            .table-anptic-dark {
-    background-color: #1e2a3a !important;
-    color: white;
-}
+            .table-anptic-dark th {
+                background-color: #1B384F !important;
+                 color: white !important;
+            }
         </style>
 
         @yield('styles')
     </head>
     <body>
 
-        <!-- SIDEBAR -->
+        <!-- Sidebar-->
         <div class="sidebar">
 
             <a href="{{ route('accueil') }}" class="sidebar-brand">
@@ -280,12 +285,11 @@
                 <i class="bi bi-diagram-3"></i>
                 <span>Départements</span>
             </a>
-{{-- 1B384F --}}
            
 
         </div>
 
-        <!-- CONTENU PRINCIPAL -->
+        <!-- Contenu principal -->
         <div class="main-wrapper">
 
             <div class="top-bar">
@@ -332,7 +336,8 @@
 
         </div>
 
-        <!-- Bootstrap JS pour la liste déroulante -->
+        <!-- Bootstrap JS pour la liste déroulante-->
+
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
         @yield('scripts')

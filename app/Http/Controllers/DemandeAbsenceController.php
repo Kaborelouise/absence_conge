@@ -36,11 +36,18 @@ class DemandeAbsenceController extends Controller
         return view('demande_absences.index', compact('demandes'));
     }
 
-    public function create()
-    {
-        $user = auth()->user();
-        return view('demande_absences.create', compact('user'));
-    }
+public function create()
+{
+    $user = auth()->user();
+
+    // On récupère les agents du même département que l'utilisateur
+
+    $agentsMemeDepartement = \App\Models\User::where('departement_id', $user->departement_id)
+        ->where('id', '!=', $user->id)
+        ->get();
+
+    return view('demande_absences.create', compact('user', 'agentsMemeDepartement'));
+}
 
     public function store(Request $request)
     {
@@ -79,10 +86,16 @@ class DemandeAbsenceController extends Controller
         $peutAgir = $demande->peutDonnerAvis($user);
         $prochainActeur = $demande->prochainActeur();
 
+        //Liste des agents du même département que le demandeur
+        $agentsMemeDepartement = \App\Models\User::where('departement_id', $demande->user->departement_id)
+        ->where('id', '!=', $demande->user_id)
+        ->get();
+
         return view('demande_absences.show', compact(
             'demande',
             'peutAgir',
-            'prochainActeur'
+            'prochainActeur',
+            'agentsMemeDepartement'
         ));
     }
 

@@ -7,6 +7,9 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="mb-0 fw-bold">Liste des demandes d'absence</h5>
+
+     <a href="{{ route('demande_absences.create') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i> Nouvelle demande</a>
 </div>
 
 @if(session('success'))
@@ -18,8 +21,7 @@
 
 <div class="card shadow-sm">
     <div class="card-body">
-        <a href="{{ route('demande_absences.create') }}" class="btn btn-primary btn-sm">
-        <i class="bi bi-plus-lg me-1"></i> Nouvelle demande</a>
+
          <div class="mb-3">
             <input type="text" id="recherche" class="form-control w-25"
                    placeholder="Rechercher...">
@@ -55,14 +57,16 @@
                     <td>{{ \Carbon\Carbon::parse($demande->date_fin)->format('d/m/Y') }}</td>
                     <td>{{ $demande->motif }}</td>
                     <td>
-                        <span class="badge-statut badge-{{ $demande->statut }}">
+                       
+                 @if($peutAgirIci)
+                    <span class="badge bg-warning text-dark" style="font-size:11px;">
+                   <i class="bi bi-clock me-1"></i> À traiter
+                     </span>
+                    @else
+                   <span class="badge-statut badge-{{ $demande->statut }}">
                             {{ ucfirst(str_replace('_',' ',$demande->statut)) }}
-                        </span>
-                        @if($peutAgirIci)
-                            <span class="badge bg-warning text-dark ms-1" style="font-size:10px;">
-                                À traiter
-                            </span>
-                        @endif
+                     </span>
+                @endif
                     </td>
                     <td>
                         <a href="{{ route('demande_absences.show', $demande->id) }}"

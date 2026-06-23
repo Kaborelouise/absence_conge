@@ -39,7 +39,7 @@ class UserSeeder extends Seeder
             ['email' => 'awa@gmail.com'],
             [
                 'matricule' => 1002, 'nom' => 'Ouedraogo', 'prenom' => 'Awa',
-                'poste' => 'Chef de département', 'password' => 'awa12',
+                'poste' => 'Chef de département', 'password' => hash::make('awa12'),
                 'role_id' => $roleChefDept->id, 'departement_id' => $dev->id,
                 'est_responsable_departement' => true, 'est_responsable_direction' => false,
                 'solde_conge' => 30, 'solde_absence' => 10,
@@ -50,7 +50,7 @@ class UserSeeder extends Seeder
             ['email' => 'etienne@gmail.com'],
             [
                 'matricule' => 1003, 'nom' => 'Tougri', 'prenom' => 'Etienne',
-                'poste' => 'Responsable de direction', 'password' => 'etienne12',
+                'poste' => 'Responsable de direction', 'password' => Hash::make('etienne12'),
                 'role_id' => $roleRespDir->id, 'departement_id' => $dev->id,
                 'est_responsable_departement' => false, 'est_responsable_direction' => true,
                 'solde_conge' => 30, 'solde_absence' => 10,
@@ -61,7 +61,7 @@ class UserSeeder extends Seeder
             ['email' => 'traorefatou@gmail.com'],
             [
                 'matricule' => 1004, 'nom' => 'Traore', 'prenom' => 'Fatou',
-                'poste' => 'Agent RH', 'password' => 'fatou12',
+                'poste' => 'Agent RH', 'password' => Hash::make('fatou12'),
                 'role_id' => $roleAgentRh->id, 'departement_id' => $drh->id,
                 'est_responsable_departement' => false, 'est_responsable_direction' => false,
                 'solde_conge' => 30, 'solde_absence' => 10,
@@ -72,7 +72,7 @@ class UserSeeder extends Seeder
             ['email' => 'kaborelouise@gmail.com'],
             [
                 'matricule' => 1005, 'nom' => 'Kabore', 'prenom' => 'Louise',
-                'poste' => 'Secrétaire Général', 'password' => 'louise12',
+                'poste' => 'Secrétaire Général', 'password' => Hash::make('louise12'),
                 'role_id' => $roleSg->id, 'departement_id' => $drh->id,
                 'est_responsable_departement' => false, 'est_responsable_direction' => false,
                 'solde_conge' => 30, 'solde_absence' => 10,
@@ -83,7 +83,7 @@ class UserSeeder extends Seeder
             ['email' => 'zongooctave@gmail.com'],
             [
                 'matricule' => 1006, 'nom' => 'Zongo', 'prenom' => 'Octave',
-                'poste' => 'Directeur Général', 'password' => 'octave12',
+                'poste' => 'Directeur Général', 'password' => Hash::make ('octave12'),
                 'role_id' => $roleDg->id, 'departement_id' => $drh->id,
                 'est_responsable_departement' => false, 'est_responsable_direction' => false,
                 'solde_conge' => 30, 'solde_absence' => 10,
@@ -94,7 +94,7 @@ class UserSeeder extends Seeder
             ['email' => 'dialloamelle'],
             [
                 'matricule' => 1007, 'nom' => 'Diallo', 'prenom' => 'Amelle',
-                'poste' => 'Président du Conseil d\'Administration', 'password' => 'amelle12',
+                'poste' => 'Président du Conseil d\'Administration', 'password' => Hash::make ('amelle12'),
                 'role_id' => $rolePca->id, 'departement_id' => $drh->id,
                 'est_responsable_departement' => false, 'est_responsable_direction' => false,
                 'solde_conge' => 30, 'solde_absence' => 10,
@@ -105,7 +105,7 @@ class UserSeeder extends Seeder
             ['email' => 'admin@anptic.bf'],
             [
                 'matricule' => 1000, 'nom' => 'Admin', 'prenom' => 'Système',
-                'poste' => 'Administrateur', 'password' => 'admin12',
+                'poste' => 'Administrateur', 'password' => Hash::make('admin12'),
                 'role_id' => $roleAdmin->id, 'departement_id' => $drh->id,
                 'est_responsable_departement' => false, 'est_responsable_direction' => false,
                 'solde_conge' => 30, 'solde_absence' => 10,
