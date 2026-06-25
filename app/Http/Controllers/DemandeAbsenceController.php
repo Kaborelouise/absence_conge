@@ -40,8 +40,6 @@ public function create()
 {
     $user = auth()->user();
 
-    // On récupère les agents du même département que l'utilisateur
-
     $agentsMemeDepartement = \App\Models\User::where('departement_id', $user->departement_id)
         ->where('id', '!=', $user->id)
         ->get();
@@ -73,32 +71,31 @@ public function create()
             ->with('success', 'Demande soumise avec succès.');
     }
 
-    public function show($id)
-    {
-        $demande = DemandeAbsence::with(
-            'user.departement.direction',
-            'justificatifAbsence',
-            'avisAbsence'
-        )->findOrFail($id);
+     public function show($id)
+     {
+    $demande = DemandeAbsence::with(
+        'user.departement.direction',
+        'justificatifAbsence',
+        'avisAbsence'
+    )->findOrFail($id);
 
-        $user = auth()->user();
+    $user = auth()->user();
 
-        $peutAgir = $demande->peutDonnerAvis($user);
-        $prochainActeur = $demande->prochainActeur();
-
-        //Liste des agents du même département que le demandeur
-        $agentsMemeDepartement = \App\Models\User::where('departement_id', $demande->user->departement_id)
+    $peutAgir       = $demande->peutDonnerAvis($user);
+    $prochainActeur = $demande->prochainActeur();
+    $derniereEtape = $demande->avisAbsence->last()?->type;
+    $agentsMemeDepartement = \App\Models\User::where('departement_id', $demande->user->departement_id)
         ->where('id', '!=', $demande->user_id)
         ->get();
 
-        return view('demande_absences.show', compact(
-            'demande',
-            'peutAgir',
-            'prochainActeur',
-            'agentsMemeDepartement'
-        ));
-    }
-
+    return view('demande_absences.show', compact(
+        'demande', 
+        'peutAgir', 
+        'prochainActeur', 
+        'derniereEtape',
+        'agentsMemeDepartement'
+    ));
+ }
     public function edit($id)
     {
         $demande = DemandeAbsence::findOrFail($id);

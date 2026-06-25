@@ -14,7 +14,7 @@ class DemandeCongeController extends Controller
 
         // L'agent ne voit que ses propres demandes.
         // L'agent RH (et l'admin) voient tout, car c'est lui
-        // qui doit toutes les compiler.
+        // qui doit tout les compliler
         $demandes = DemandeConge::with('user.departement.direction', 'avisConge')
             ->when($role === 'agent' || ($role !== 'agent_rh' && $role !== 'admin'), function ($q) use ($user) {
                 $q->where('user_id', $user->id);
@@ -39,7 +39,7 @@ class DemandeCongeController extends Controller
 
         DemandeConge::create([
             'lieu_jouissance' => $request->lieu_jouissance,
-            // user_id pris de l'utilisateur connecté, jamais du formulaire
+            // user_id vient de l'utilisateur connecté, jamais du formulaire
             'user_id' => auth()->id(),
         ]);
 

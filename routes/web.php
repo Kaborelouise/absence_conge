@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
     // DEMANDES
     Route::resource('demande_absences', DemandeAbsenceController::class);
     Route::resource('justificatifabsence', JustificatifAbsenceController::class)
+    
         ->only(['create', 'store', 'destroy']);
     Route::resource('avis_absences', AvisAbsenceController::class)
         ->only(['create', 'store', 'edit', 'update', 'destroy']);
@@ -50,4 +51,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('demande_jouissances', DemandeJouissanceController::class);
     Route::resource('avis_jouissances', AvisJouissanceController::class)
         ->only(['create', 'store', 'edit', 'update', 'destroy']);
+
+        
+
+    Route::get('demande_absences/{id}/telecharger', [DemandeAbsenceController::class, 'telecharger'])
+    ->name('demande_absences.telecharger');
 });

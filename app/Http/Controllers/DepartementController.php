@@ -18,7 +18,7 @@ class DepartementController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new resource
      */
     public function create()
 
@@ -46,7 +46,7 @@ class DepartementController extends Controller
 
         ]));
         
-        return redirect()->route('departemets.index')
+        return redirect()->route('departements.index')
                          ->with('success', 'Département créé avec succès');
     }
 

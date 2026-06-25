@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DemandeJouissance;
 use Illuminate\Http\Request;
 
-class DemandeJouissanceController extends Controller
+class AvisJouissanceController extends Controller
 {
     public function index()
     {

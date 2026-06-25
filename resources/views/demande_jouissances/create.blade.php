@@ -10,7 +10,6 @@
                 <h5 class="mb-0">Nouvelle demande de jouissance de congé</h5>
             </div>
             <div class="card-body p-4">
-
                 @if($errors->any())
                     <div class="alert alert-danger">
                         <ul class="mb-0">
@@ -20,7 +19,6 @@
                         </ul>
                     </div>
                 @endif
-
                 <form action="{{ route('demande_jouissances.store') }}" method="POST">
                     @csrf
 
@@ -32,7 +30,7 @@
                                    value="{{ old('date_debut') }}" required>
                             @error('date_debut')
                                 <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            @enderror 
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Date de fin</label>
@@ -44,7 +42,6 @@
                             @enderror
                         </div>
                     </div>
-
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <label class="form-label">Nombre de jours</label>

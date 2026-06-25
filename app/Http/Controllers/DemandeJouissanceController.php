@@ -64,24 +64,35 @@ class DemandeJouissanceController extends Controller
             ->with('success', 'Demande de jouissance soumise avec succès.');
     }
 
-    public function show($id)
-    {
-        $demande = DemandeJouissance::with(
-            'user.departement.direction',
-            'avis'
-        )->findOrFail($id);
+     public function show($id)
+     {
+    $demande = DemandeJouissance::with(
+        'user.departement.direction',
+        'avis'
+    )->findOrFail($id);
 
-        $user = auth()->user();
+    $user = auth()->user();
 
-        $peutAgir       = $demande->peutDonnerAvis($user);
-        $prochainActeur = $demande->prochainActeur();
+    $peutAgir       = $demande->peutDonnerAvis($user);
+    $prochainActeur = $demande->prochainActeur();
 
-        return view('demande_jouissances.show', compact(
-            'demande',
-            'peutAgir',
-            'prochainActeur'
-        ));
-    }
+    // Ajout dernière étape traitée pour afficher "Étape actuelle"
+  
+    $derniereEtape = $demande->avis->last()?->type;
+
+    // Agent du même département que l'agent
+    $agentsMemeDepartement = \App\Models\User::where('departement_id', $demande->user->departement_id)
+        ->where('id', '!=', $demande->user_id)
+        ->get();
+
+    return view('demande_jouissances.show', compact(
+        'demande',
+        'peutAgir',
+        'prochainActeur',
+        'derniereEtape',
+        'agentsMemeDepartement'
+    ));
+}
 
     public function edit($id)
     {

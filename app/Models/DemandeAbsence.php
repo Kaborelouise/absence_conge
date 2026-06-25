@@ -14,10 +14,8 @@ class DemandeAbsence extends Model
         'interimaire',
         'retenue_salaire',
         'statut',
-        'user_id'
+        'user_id',
     ];
-
-    // Les relations
 
     public function user()
     {
@@ -34,32 +32,45 @@ class DemandeAbsence extends Model
         return $this->hasMany(AvisAbsence::class);
     }
 
-    // la logique du circuit
 
     public function circuitAttendu(): array
     {
-        $user = $this->user; // l'utilisateur qui crée la demande(qui fait cette demande )
-        $role = $user->role->libelle; // le rôle de l'utilisateur qui fait la demande
+        $user  = $this->user;
+        $role  = $user->role->libelle;
 
-        if ($role === 'sg') 
-            {
+        // on calcul la durée pour déterminer le validateur final
+        // diffInDays retourne un entier positif
+        $jours = \Carbon\Carbon::parse($this->date_debut)
+                               ->diffInDays($this->date_fin);
+        $validateurFinal = $jours > 5 ? 'dg' : 'sg';
+
+        // Cas du sg le DG valide toujours peu importe la durée
+        if ($role === 'sg') {
             return ['agent_rh', 'dg'];
-            }
+        }
 
+        // Cas du dg cest le PCA qui valide toujours
         if ($role === 'dg') {
             return ['agent_rh', 'pca'];
         }
 
+        // Cas du Responsable de direction 
         if ($role === 'responsable_direction') {
-            return ['agent_rh', 'sg', 'dg'];
+            return ['agent_rh', $validateurFinal];
         }
 
+        // Cas Agent de direction ou Chef de département :
         if ($role === 'chef_departement' || $user->est_responsable_departement) {
-            return ['responsable_direction', 'agent_rh', 'sg', 'dg'];
+            return ['responsable_direction', 'agent_rh', $validateurFinal];
         }
 
-        return ['chef_departement', 'responsable_direction', 'agent_rh', 'sg', 'dg'];
+        // Cas Agent simple d'un département 
+
+        return ['chef_departement', 'responsable_direction', 'agent_rh', $validateurFinal];
     }
+
+    // Retourne le type d'avis attendu à l'étape actuelle.
+
 
     public function prochainActeur(): ?string
     {
@@ -79,9 +90,10 @@ class DemandeAbsence extends Model
         return null;
     }
 
+    // cette fonction vérifie si l'utilisateur peut donner son avis
     public function peutDonnerAvis(User $user): bool
     {
-        if (in_array($this->statut, ['validee', 'rejette'])) {
+        if (in_array($this->statut, ['validee', 'rejetee'])) {
             return false;
         }
 
@@ -93,8 +105,8 @@ class DemandeAbsence extends Model
         }
 
         if ($role === 'responsable_direction') {
-            $dirUser   = $user->departement->direction_id ?? null;
-            $dirAgent  = $this->user->departement->direction_id ?? null;
+            $dirUser  = $user->departement->direction_id ?? null;
+            $dirAgent = $this->user->departement->direction_id ?? null;
             return $prochain === 'responsable_direction'
                 && $dirUser === $dirAgent;
         }
@@ -109,12 +121,5 @@ class DemandeAbsence extends Model
         }
 
         return false;
-    }
-
-    public function validateurFinal(): string
-    {
-        $jours = \Carbon\Carbon::parse($this->date_debut)
-                               ->diffInDays($this->date_fin);
-        return $jours > 5 ? 'dg' : 'sg';
     }
 }

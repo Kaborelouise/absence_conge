@@ -30,22 +30,29 @@ class DemandeJouissance extends Model
         $user = $this->user;
         $role = $user->role->libelle;
 
+        // Cas du sg d'abord RH vérifie puis DG décide 
         if ($role === 'sg') {
             return ['agent_rh', 'dg'];
         }
 
+        // Cas du dg, RH puis PCA décide
         if ($role === 'dg') {
             return ['agent_rh', 'pca'];
         }
 
+        // Cas Responsable de direction, RH puis SG décide
         if ($role === 'responsable_direction') {
             return ['agent_rh', 'sg'];
         }
 
+        // Cas Agent de direction ou Chef de département :
+        // RH puis Responsable de direction décide — INCHANGÉ
         if ($role === 'chef_departement' || $user->est_responsable_departement) {
             return ['agent_rh', 'responsable_direction'];
         }
 
+        // Cas Agent simple d'un département :
+        // Chef Dpt → RH → Responsable de direction — INCHANGÉ
         return ['chef_departement', 'agent_rh', 'responsable_direction'];
     }
 
@@ -67,6 +74,8 @@ class DemandeJouissance extends Model
         return null;
     }
 
+    // Vérifie si l'utilisateur connecté peut donner son avis
+  
     public function peutDonnerAvis(User $user): bool
     {
         if (in_array($this->statut, ['validee', 'rejetee'])) {
