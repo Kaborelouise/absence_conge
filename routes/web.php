@@ -59,9 +59,22 @@ Route::middleware('auth')->group(function () {
 
 
 
-    Route::get('demende_jouissance/{id}/abandonner', [DemandeJouissanceController::class, 'abandonner'])
+    Route::get('demande_jouissances/{id}/abandonner', [DemandeJouissanceController::class, 'abandonner'])
     ->name('demande_jouissances.abandonner');
 
-    Route::get('demende_absence/{id}/abandonner', [DemandeAbsenceController::class, 'abandonner'])
+    Route::post('demande_absence/{id}/abandonner', [DemandeAbsenceController::class, 'abandonner'])
     ->name('demande_absences.abandonner');
+
+    // AJOUT : routes pour la clôture jouissance
+    Route::post('demande_jouissances/{id}/upload-cessation', [DemandeJouissanceController::class, 'uploadCessation'])
+    ->name('demande_jouissances.upload_cessation');
+
+    Route::post('demande_jouissances/{id}/upload-prise-service', [DemandeJouissanceController::class, 'uploadPriseService'])
+    ->name('demande_jouissances.upload_prise_service');
+
+    Route::post('demande_jouissances/{id}/cloturer', [DemandeJouissanceController::class, 'cloturer'])
+    ->name('demande_jouissances.cloturer');
+
+    Route::get('demande_jouissances/{id}/telecharger', [DemandeJouissanceController::class, 'telecharger'])
+    ->name('demande_jouissances.telecharger');
 });

@@ -1,0 +1,76 @@
+@startuml Sequence_Demande_Jouissance
+title Diagramme de Séquence : Demande de Jouissance de Congé
+
+actor Agent
+participant "Application Web" as App
+database "Base de Données" as DB
+actor "Chef de Département" as Chef
+actor "Responsable Direction" as RespDir
+actor "Agent RH" as RH
+actor "DG/SG/PCA" as Direction
+
+== Création de la demande ==
+Agent -> App: Ouvre formulaire demande de jouissance
+Agent -> App: Remplit dates et nombre jours
+App -> DB: Crée DemandeJouissance\n(statut = "en attente")
+DB --> App: OK
+App --> Agent: Demande de jouissance créée
+
+== Circuit de validation ==
+loop Pour chaque acteur du circuit
+    App -> DB: Détermine prochainActeur()
+    DB --> App: Acteur suivant
+    
+    alt Chef/Responsable/RH/Direction
+        App -> Actor: Demande à traiter
+        Actor -> App: Donne avis (favorable/défavorable)
+    end
+    
+    App -> DB: Sauvegarde AvisJouissance
+    DB --> App: Avis enregistré
+    
+    alt Avis DÉFAVORABLE
+        App -> DB: Statut = "rejetee"
+        DB --> App: OK
+        App --> Agent: Demande rejetée
+        break
+    else Avis FAVORABLE + Dernière étape
+        App -> DB: Statut = "validee"
+        DB --> App: OK
+        App --> Agent: Demande validée - Prochaines étapes disponibles
+        break
+    else Avis FAVORABLE + Étapes restantes
+        note over App: Passe à l'étape suivante
+    end
+end
+
+== Après validation ==
+Agent -> App: Upload certificat de CESSATION
+App -> DB: Stocke certificat_cessation
+DB --> App: Fichier enregistré
+App --> Agent: Certificat de cessation enregistré
+
+Agent -> App: Upload certificat de PRISE DE SERVICE
+App -> DB: Stocke certificat_prise_service
+DB --> App: Fichier enregistré
+App --> Agent: Certificat de prise service enregistré
+
+== Clôture de la jouissance ==
+App -> Agent: Affiche bouton "Clôturer"
+Agent -> App: Clique "Clôturer demande"
+App -> DB: Vérifie :\ncertificat_cessation ≠ null\ncertificat_prise_service ≠ null\nstatut = "validee"
+DB --> App: Vérification OK
+App -> DB: Met à jour cloturee_at
+App -> DB: Décrémente solde_conge de l'agent
+DB --> App: Mis à jour effectué
+App --> Agent: Jouissance clôturée - Solde mis à jour
+
+== Abandon optionnel ==
+opt Agent abandonne avant validation
+    Agent -> App: Clique "Abandonner"
+    App -> DB: Statut = "abandonnee"
+    DB --> App: OK
+    App --> Agent: Demande abandonnée
+end
+
+@enduml

@@ -1,0 +1,57 @@
+@startuml Sequence_Admin_Utilisateurs
+title Diagramme de Séquence : Gestion des Utilisateurs (Admin)
+
+actor Administrateur
+participant "Application Web" as App
+database "Base de Données" as DB
+
+== Consultation de la liste ==
+Administrateur -> App: Accède menu "Utilisateurs"
+App -> DB: Récupère tous les utilisateurs
+DB --> App: Liste utilisateurs
+App --> Administrateur: Affiche tableau des utilisateurs
+
+== Création d'un utilisateur ==
+Administrateur -> App: Clique "Ajouter utilisateur"
+App --> Administrateur: Affiche formulaire création
+Administrateur -> App: Remplit formulaire et soumet
+note right
+  - Nom, Prénom, Email
+  - Rôle, Département, Direction
+  - Solde congé, Solde absence
+end note
+
+App -> DB: Valide données
+DB --> App: OK
+App -> DB: INSERT User
+DB --> App: Utilisateur créé
+App --> Administrateur: Utilisateur ajouté avec succès
+
+== Modification d'un utilisateur ==
+Administrateur -> App: Clique sur un utilisateur
+App -> DB: Récupère détails utilisateur
+DB --> App: Données utilisateur
+App --> Administrateur: Affiche formulaire édition
+
+Administrateur -> App: Modifie champs et valide
+App -> DB: UPDATE User
+DB --> App: OK
+App --> Administrateur: Utilisateur mis à jour
+
+== Suppression d'un utilisateur ==
+Administrateur -> App: Clique "Supprimer" sur un utilisateur
+App --> Administrateur: Affiche confirmation
+Administrateur -> App: Confirme suppression
+
+App -> DB: Vérifie si usager a des demandes actives
+DB --> App: Statut vérification
+
+alt Demandes actives détectées
+    App --> Administrateur: ⚠️ Impossible - Demandes actives existantes
+else Peut être supprimé
+    App -> DB: DELETE User
+    DB --> App: OK
+    App --> Administrateur: Utilisateur supprimé
+end
+
+@enduml

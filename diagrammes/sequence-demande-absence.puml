@@ -1,0 +1,41 @@
+@startuml
+actor Agent
+actor "Chef de département" as Chef
+actor "Responsable de direction" as RespDir
+actor "Agent RH" as RH
+actor "DG / SG / PCA" as DirGen
+participant "Application" as App
+database "Base de données" as DB
+
+Agent -> App: Ouvre formulaire demande d'absence
+Agent -> App: Soumet la demande
+App -> DB: Crée DemandeAbsence
+DB --> App: Demande enregistrée
+App -> Agent: Confirme création (statut = "en attente")
+
+alt traitement du circuit
+    loop pour chaque acteur attendu
+        App -> DB: Détermine acteur suivant
+        DB --> App: Acteur suivant
+        App -> Actor: Affiche demande à l'acteur
+        Actor -> App: Envoie avis favorable/défavorable
+        App -> DB: Sauvegarde AvisAbsence
+        DB --> App: Avis enregistré
+
+        alt avis défavorable
+            App -> DB: Met à jour statut = "rejetee"
+            DB --> App: Statut mis à jour
+            App -> Agent: Informe du rejet
+            break
+        else avis favorable
+            App -> DB: Calcule prochainActeur()
+            DB --> App: Prochain acteur
+        end
+    end
+    alt dernier acteur favorable
+        App -> DB: Met à jour statut = "validee"
+        DB --> App: Statut validé
+        App -> Agent: Autorisation disponible / téléchargement possible
+    end
+end
+@enduml

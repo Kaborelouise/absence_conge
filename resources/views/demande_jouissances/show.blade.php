@@ -196,31 +196,184 @@
             </button>
         </div>
         @endif
+@if($demande->statut === 'validee' && $demande->user_id === auth()->id())
+<div class="card shadow-sm border-success">
+    <div class="card-header text-white" style="background:#198754;">
+        <i class="bi bi-check-circle me-2"></i>
+        @if($demande->estCloturee())
+            Demande clôturée
+        @else
+            Demande validée — Clôture
+        @endif
+    </div>
+    <div class="card-body">
 
-        {{-- Bloc de clôture si la demande est validée --}}
-        @if($demande->statut === 'validee' && $demande->user_id === auth()->id())
-        <div class="card shadow-sm border-success">
-            <div class="card-header text-white" style="background:#198754;">
-                <i class="bi bi-check-circle me-2"></i> Demande validée — Clôture
+        @if($demande->estCloturee())
+            {{--
+                Demande entièrement clôturée.
+                Affiche la date de clôture et un récapitulatif.
+            --}}
+            <div class="alert alert-success text-center">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                Demande clôturée le
+                <strong>{{ $demande->cloturee_at->format('d/m/Y à H:i') }}</strong>
             </div>
-            <div class="card-body text-center">
-                <p style="font-size:13px;" class="text-muted mb-3">
-                    Votre demande a été validée. Veuillez imprimer les
-                    certificats de cessation et de prise de service,
-                    les faire signer, puis les charger ici.
+
+        @else
+            {{--
+                Processus de clôture en 3 étapes :
+                1. Télécharger les certificats vierges
+                2. Uploader les certificats signés
+                3. Clôturer
+            --}}
+
+            {{-- ÉTAPE 1 : Télécharger les certificats vierges --}}
+            <div class="mb-4">
+                <h6 class="fw-bold">
+                    <span class="badge bg-primary me-2">1</span>
+                    Télécharger et imprimer les certificats
+                </h6>
+                <p class="text-muted" style="font-size:12px;">
+                    Téléchargez les certificats, imprimez-les et faites-les
+                    signer par les responsables concernés.
                 </p>
-                <div class="alert alert-warning py-2" style="font-size:12px;">
-                    <i class="bi bi-printer me-1"></i>
-                    <strong>Hors plateforme :</strong> Imprimer et faire signer
-                    les certificats avant de clôturer.
-                </div>
-                <button class="btn btn-success px-4" disabled>
-                    <i class="bi bi-upload me-2"></i>
-                    Charger les certificats et clôturer
-                    <span class="badge bg-light text-dark ms-1" style="font-size:10px;">
-                        Bientôt disponible
-                    </span>
-                </button>
+                <a href="{{ route('demande_jouissances.telecharger', $demande->id) }}"
+                   class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-download me-1"></i>
+                    Télécharger les certificats
+                </a>
+            </div>
+
+            <hr>
+
+            {{-- ÉTAPE 2 : Uploader le certificat de cessation --}}
+            <div class="mb-4">
+                <h6 class="fw-bold">
+                    <span class="badge {{ $demande->certificat_cessation ? 'bg-success' : 'bg-secondary' }} me-2">2</span>
+                    Certificat de cessation de service
+                    @if($demande->certificat_cessation)
+                        <i class="bi bi-check-circle-fill text-success ms-1"></i>
+                    @endif
+                </h6>
+                <p class="text-muted" style="font-size:12px;">
+                    Joignez le scan/photo du certificat de cessation signé.
+                </p>
+
+                @if($demande->certificat_cessation)
+                    {{-- Fichier déjà uploadé : affiche un lien + possibilité de remplacer --}}
+                    <div class="alert alert-success py-2 mb-2" style="font-size:12px;">
+                        <i class="bi bi-file-earmark-check me-1"></i>
+                        Fichier uploadé.
+                        <a href="{{ \Storage::url($demande->certificat_cessation) }}"
+                           target="_blank" class="ms-1">
+                            Voir le fichier
+                        </a>
+                    </div>
+                @endif
+
+                {{-- Formulaire d'upload --}}
+                <form action="{{ route('demande_jouissances.upload_cessation', $demande->id) }}"
+                      method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="input-group input-group-sm">
+                        <input type="file" name="certificat_cessation"
+                               class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-upload me-1"></i>
+                            {{ $demande->certificat_cessation ? 'Remplacer' : 'Uploader' }}
+                        </button>
+                    </div>
+                    <small class="text-muted">PDF, JPG, PNG — max 5MB</small>
+                </form>
+            </div>
+
+            <hr>
+
+            {{-- ÉTAPE 3 : Uploader le certificat de prise de service --}}
+            <div class="mb-4">
+                <h6 class="fw-bold">
+                    <span class="badge {{ $demande->certificat_prise_service ? 'bg-success' : 'bg-secondary' }} me-2">3</span>
+                    Certificat de prise de service
+                    @if($demande->certificat_prise_service)
+                        <i class="bi bi-check-circle-fill text-success ms-1"></i>
+                    @endif
+                </h6>
+                <p class="text-muted" style="font-size:12px;">
+                    Joignez le scan/photo du certificat de prise de service signé.
+                </p>
+
+                @if($demande->certificat_prise_service)
+                    <div class="alert alert-success py-2 mb-2" style="font-size:12px;">
+                        <i class="bi bi-file-earmark-check me-1"></i>
+                        Fichier uploadé.
+                        <a href="{{ \Storage::url($demande->certificat_prise_service) }}"
+                           target="_blank" class="ms-1">
+                            Voir le fichier
+                        </a>
+                    </div>
+                @endif
+
+                <form action="{{ route('demande_jouissances.upload_prise_service', $demande->id) }}"
+                      method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="input-group input-group-sm">
+                        <input type="file" name="certificat_prise_service"
+                               class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-upload me-1"></i>
+                            {{ $demande->certificat_prise_service ? 'Remplacer' : 'Uploader' }}
+                        </button>
+                    </div>
+                    <small class="text-muted">PDF, JPG, PNG — max 5MB</small>
+                </form>
+            </div>
+
+            <hr>
+
+            {{-- ÉTAPE 4 : Clôturer --}}
+            <div>
+                <h6 class="fw-bold">
+                    <span class="badge bg-secondary me-2">4</span>
+                    Clôturer la demande
+                </h6>
+                <p class="text-muted" style="font-size:12px;">
+                    Une fois les deux certificats uploadés, vous pouvez
+                    clôturer officiellement la demande.
+                </p>
+
+                @if($demande->certificat_cessation && $demande->certificat_prise_service)
+                    {{--Les deux certificats sont uploadés le bouton clôturer est actif--}}
+                    <form action="{{ route('demande_jouissances.cloturer', $demande->id) }}"
+                          method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-success px-4"
+                                onclick="return confirm('Clôturer définitivement cette demande ?')">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Clôturer la demande
+                        </button>
+                    </form>
+                @else
+                    {{--Un ou deux certificats manquants :
+                        le bouton est désactivé avec un message explicatif--}}
+                    <button class="btn btn-success px-4" disabled>
+                        <i class="bi bi-check-circle me-1"></i>
+                        Clôturer la demande
+                    </button>
+                    <div class="text-muted mt-1" style="font-size:11px;">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Uploadez les deux certificats
+                    </div>
+                @endif
+            </div>
+
+        @endif
+    </div>
+</div>
+
+
+
+
+
             </div>
         </div>
         @endif

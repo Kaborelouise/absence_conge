@@ -1,0 +1,37 @@
+@startuml Activity_Demande_Conge
+title Diagramme d'Activité : Demande de Congé Administratif
+
+start
+:Authentifier l'utilisateur;
+:Accéder au menu "Demande de congé administratif";
+:Remplir le formulaire;
+note right
+  - Lieu de jouissance
+  - (Dates optionnelles)
+end note
+
+if (Données valides ?) then (non)
+  :Afficher erreurs de validation;
+  stop
+else (oui)
+  :Enregistrer la demande;
+end
+
+:Envoyer notification à Agent RH;
+
+:Agent RH consulte demande;
+
+if (Agent RH compile ?) then (non)
+  :Demande reste en attente;
+  stop
+else (oui)
+  :Créer AvisConge;
+  :Demande est compilée/validée;
+end
+
+:Informer Agent de la compilation;
+:Demande disponible pour consultation;
+
+stop
+
+@enduml

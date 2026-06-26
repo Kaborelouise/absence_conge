@@ -1,0 +1,75 @@
+@startuml Activity_Demande_Jouissance
+title Diagramme d'Activité : Demande de Jouissance de Congé
+
+start
+:Authentifier l'utilisateur;
+:Accéder au menu "Demande de jouissance";
+:Remplir le formulaire;
+note right
+  - Date début / fin
+  - Nombre de jours
+  - (Solde congé consulté)
+end note
+
+if (Données valides ?) then (non)
+  :Afficher erreurs;
+  stop
+else (oui)
+  :Enregistrer la demande;
+  :Calculer circuitAttendu();
+end
+
+note over current
+  Circuit similaire à Demande d'Absence
+  Chef → Responsable → RH → Direction
+end note
+
+:Lancer circuit de validation;
+
+if (Tout avis favorable ?) then (non)
+  :Mettre statut = "rejetee";
+  :Informer Agent;
+  stop
+else (oui)
+  :Mettre statut = "validee";
+end
+
+:Informer Agent : validation réussie;
+
+:Agent upload certificat CESSATION;
+:Attendre certificat;
+
+if (Certificat reçu ?) then (non)
+  :Demande en attente;
+  stop
+else (oui)
+  :Enregistrer certificat;
+end
+
+:Agent upload certificat PRISE DE SERVICE;
+:Attendre certificat;
+
+if (Certificat reçu ?) then (non)
+  :Demande en attente;
+  stop
+else (oui)
+  :Enregistrer certificat;
+end
+
+:Afficher bouton "Clôturer demande";
+
+if (Agent clôture ?) then (non)
+  :Demande reste ouverte;
+  stop
+else (oui)
+  :Vérifier statut et certificats;
+  :Mettre à jour cloturee_at;
+  :Décrémenter solde_conge;
+  :Mettre à jour User.solde_conge;
+end
+
+:Informer Agent : jouissance clôturée;
+
+stop
+
+@enduml

@@ -1,0 +1,72 @@
+@startuml Sequence_Admin_Orga
+title Diagramme de Séquence : Gestion des Structures (Admin)
+
+actor Administrateur
+participant "Application Web" as App
+database "Base de Données" as DB
+
+== Gestion des Directions ==
+Administrateur -> App: Accède menu "Directions"
+App -> DB: Récupère toutes les directions
+DB --> App: Liste directions
+App --> Administrateur: Affiche tableau
+
+alt Créer Direction
+    Administrateur -> App: Clique "Ajouter"
+    Administrateur -> App: Remplit nom direction
+    App -> DB: INSERT Direction
+    DB --> App: OK
+    App --> Administrateur: Direction ajoutée
+else Modifier Direction
+    Administrateur -> App: Clique "Modifier"
+    Administrateur -> App: Met à jour et valide
+    App -> DB: UPDATE Direction
+    DB --> App: OK
+    App --> Administrateur: Direction mise à jour
+else Supprimer Direction
+    Administrateur -> App: Clique "Supprimer"
+    App -> DB: Vérifie dépendances (départements, utilisateurs)
+    DB --> App: Statut dépendances
+    
+    alt Dépendances trouvées
+        App --> Administrateur: ⚠️ Impossible - Dépendances existantes
+    else Peut être supprimée
+        App -> DB: DELETE Direction
+        DB --> App: OK
+        App --> Administrateur: Direction supprimée
+    end
+end
+
+== Gestion des Départements ==
+Administrateur -> App: Accède menu "Départements"
+App -> DB: Récupère tous les départements
+DB --> App: Liste départements
+App --> Administrateur: Affiche tableau
+
+alt Créer Département
+    Administrateur -> App: Clique "Ajouter"
+    Administrateur -> App: Remplit nom + sélectionne Direction
+    App -> DB: INSERT Departement
+    DB --> App: OK
+    App --> Administrateur: Département ajouté
+else Modifier Département
+    Administrateur -> App: Clique "Modifier"
+    Administrateur -> App: Met à jour champs
+    App -> DB: UPDATE Departement
+    DB --> App: OK
+    App --> Administrateur: Département mis à jour
+else Supprimer Département
+    Administrateur -> App: Clique "Supprimer"
+    App -> DB: Vérifie si département a des utilisateurs
+    DB --> App: Nombre utilisateurs
+    
+    alt Utilisateurs assignés
+        App --> Administrateur: ⚠️ Impossible - Utilisateurs assignés
+    else Peut être supprimé
+        App -> DB: DELETE Departement
+        DB --> App: OK
+        App --> Administrateur: Département supprimé
+    end
+end
+
+@enduml

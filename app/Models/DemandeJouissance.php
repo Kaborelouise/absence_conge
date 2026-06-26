@@ -13,7 +13,33 @@ class DemandeJouissance extends Model
         'nombre_jour',
         'statut',
         'user_id',
+        'abandonnee',
+        'certificat_cessation',
+        'certificat_prise_service',
+        'cloturee_at',
     ];
+
+    protected $cast = [
+        'abandonnee' => 'boolean',
+        //pour la cloture on ajoute cast datetime
+        'cloture_at' => 'datetime',
+    ];
+
+    public function estCloturee(): bool
+    {
+        return $this->cloturee_at !== null;
+    }
+    //vérifie si l'agent peut cloturee : la demande est validée, les 2 certificats ont été uploader
+
+    public function peutEtreClotureePar(User $user): bool 
+    { 
+        return $this->statut === 'validee'
+        && $this->certificat_cessation !== null
+        && $this->certificat_prise_service !== null
+        && !$this->estCloturee()
+        && $this->user_id === $user->id;
+
+    }
 
     public function user()
     {

@@ -1,0 +1,27 @@
+@startuml
+start
+:Authentifier l'utilisateur;
+:Ouvrir le menu "Demande d'absence";
+:Remplir le formulaire de demande;
+if (Formulaire valide ?) then (oui)
+  :Enregistrer la demande;
+  :Calculer circuitAttendu();
+  while (Étape suivante disponible ?) is (oui)
+    :Notifier l'acteur suivant;
+    if (Avis favorable ?) then (oui)
+      if (Dernière étape ?) then (oui)
+        :Mettre statut = "validee";
+        stop
+      else (non)
+        :Passer au prochain acteur;
+      endif
+    else (non)
+      :Mettre statut = "rejetee";
+      stop
+    endif
+  endwhile
+else (non)
+  :Afficher erreurs de saisie;
+  stop
+endif
+@enduml

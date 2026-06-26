@@ -1,0 +1,70 @@
+@startuml Sequence_Demande_Absence
+title Diagramme de Séquence : Demande d'Absence
+
+actor Agent
+participant "Application Web" as App
+database "Base de Données" as DB
+actor "Chef de Département" as Chef
+actor "Responsable Direction" as RespDir
+actor "Agent RH" as RH
+actor "DG/SG/PCA" as Direction
+
+== Création de la demande ==
+Agent -> App: Ouvre formulaire demande d'absence
+Agent -> App: Remplit et soumet la demande
+App -> DB: Crée DemandeAbsence\n(statut = "en attente")
+DB --> App: OK
+App --> Agent: Demande enregistrée avec succès
+
+== Circuit de validation ==
+loop Pour chaque acteur du circuit
+    App -> DB: Détermine prochainActeur()
+    DB --> App: Acteur suivant
+    
+    alt Chef de département
+        App -> Chef: Demande à traiter
+        Chef -> App: Donne avis (favorable/défavorable)
+    else Responsable direction
+        App -> RespDir: Demande à traiter
+        RespDir -> App: Donne avis (favorable/défavorable)
+    else Agent RH
+        App -> RH: Demande à traiter
+        RH -> App: Donne avis (favorable/défavorable)
+    else Direction Générale
+        App -> Direction: Demande à traiter
+        Direction -> App: Donne avis (favorable/défavorable)
+    end
+    
+    App -> DB: Sauvegarde AvisAbsence
+    DB --> App: Avis enregistré
+    
+    alt Avis DÉFAVORABLE
+        App -> DB: Statut = "rejetee"
+        DB --> App: OK
+        App --> Agent: Demande rejetée
+        break
+    else Avis FAVORABLE + Dernière étape
+        App -> DB: Statut = "validee"
+        DB --> App: OK
+        App --> Agent: Demande validée
+        break
+    else Avis FAVORABLE + Étapes restantes
+        note over App: Passe à l'étape suivante
+    end
+end
+
+== Après validation ==
+Agent -> App: Demande téléchargement (PDF/document)
+App -> DB: Récupère détails demande
+DB --> App: Données demande
+App --> Agent: Télécharge le fichier
+
+== Abandon optionnel ==
+opt Agent abandonne avant validation
+    Agent -> App: Clique sur "Abandonner"
+    App -> DB: Statut = "abandonnee"
+    DB --> App: OK
+    App --> Agent: Demande abandonnée
+end
+
+@enduml

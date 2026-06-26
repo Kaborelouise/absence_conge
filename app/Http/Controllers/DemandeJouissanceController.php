@@ -152,4 +152,115 @@ class DemandeJouissanceController extends Controller
             ->route('demande_jouissances.index')
             ->with('success', 'Demande supprimée.');
     }
+
+    
+
+
+
+
+
+
+public function uploadCessation(Request $request, $id)
+{
+    $request->validate([
+        // Accepte PDF, JPG, PNG — max 5MB
+        'certificat_cessation' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+    ]);
+
+    $demande = DemandeJouissance::findOrFail($id);
+
+    // Sécurité : seulement l'auteur, seulement si validée, pas encore clôturée
+    if ($demande->user_id !== auth()->id()
+        || $demande->statut !== 'validee'
+        || $demande->estCloturee()) {
+        return redirect()
+            ->route('demande_jouissances.show', $id)
+            ->with('error', 'Action non autorisée.');
+    }
+
+    // Si un ancien fichier existe, on le supprime avant d'en stocker un nouveau
+    if ($demande->certificat_cessation) {   \Storage::disk('public')->delete($demande->certificat_cessation);
+    }
+    $path = $request->file('certificat_cessation')
+                    ->store('certificats/jouissance', 'public');
+
+    $demande->update(['certificat_cessation' => $path]);
+
+    return redirect()
+        ->route('demande_jouissances.show', $id)
+        ->with('success', 'Certificat de cessation uploadé avec succès.');
+}
+
+/**
+ * AJOUT : upload du certificat de prise de service.
+ * Même logique que uploadCessation().
+ */
+public function uploadPriseService(Request $request, $id)
+{
+    $request->validate([
+        'certificat_prise_service' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+    ]);
+
+    $demande = DemandeJouissance::findOrFail($id);
+
+    if ($demande->user_id !== auth()->id()
+        || $demande->statut !== 'validee'
+        || $demande->estCloturee()) {
+        return redirect()
+            ->route('demande_jouissances.show', $id)
+            ->with('error', 'Action non autorisée.');
+    }
+
+    if ($demande->certificat_prise_service) {
+        \Storage::disk('public')->delete($demande->certificat_prise_service);
+    }
+
+    $path = $request->file('certificat_prise_service')
+                    ->store('certificats/jouissance', 'public');
+
+    $demande->update(['certificat_prise_service' => $path]);
+
+    return redirect()
+        ->route('demande_jouissances.show', $id)
+        ->with('success', 'Certificat de prise de service uploadé avec succès.');
+    }
+
+  public function cloturer($id)
+   {
+    $demande = DemandeJouissance::findOrFail($id);
+
+    if (!$demande->peutEtreClotureeePar(auth()->user())) {
+        return redirect()
+            ->route('demande_jouissances.show', $id)
+            ->with('error', 'Vous ne pouvez pas clôturer cette demande. Vérifiez que les deux certificats sont uploadés.');
+    }
+
+    // On enregistre la date et l'heure de clôture
+    $demande->update(['cloturee_at' => now()]);
+
+    return redirect()
+        ->route('demande_jouissances.show', $id)
+        ->with('success', 'Demande clôturée avec succès.');
+   }
+
+    public function telecharger($id)
+     {
+    $demande = DemandeJouissance::with(
+        'user.departement.direction',
+        'avis'
+    )->findOrFail($id);
+
+    if ($demande->statut !== 'validee') {
+        return redirect()
+            ->route('demande_jouissances.show', $id)
+            ->with('error', 'La demande doit être validée pour télécharger.');
+    }
+
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+        'pdf.jouissance',
+        compact('demande')
+    );
+
+    return $pdf->download("jouissance_{$demande->num_demande}.pdf");
+    }
 }
