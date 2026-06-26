@@ -1,0 +1,51 @@
+@startuml Sequence_Demande_Conge
+title Diagramme de Séquence : Demande de Congé Administratif
+
+actor Agent
+participant "Application Web" as App
+database "Base de Données" as DB
+actor "Agent RH" as RH
+
+== Création de la demande ==
+Agent -> App: Ouvre formulaire demande de congé
+Agent -> App: Remplit lieu de jouissance et soumet
+App -> DB: Crée DemandeConge
+DB --> App: OK
+App --> Agent: Demande enregistrée
+
+== Compilation par RH ==
+RH -> App: Consulte liste demandes de congé
+App -> DB: Récupère toutes les demandes
+DB --> App: Liste demandes
+App --> RH: Affiche demandes en attente
+
+RH -> App: Ouvre une demande
+RH -> App: Soumet avis de compilation (simple)
+App -> DB: Crée AvisConge\n(type = "agent_rh")
+DB --> App: OK
+App --> Agent: Demande compilée par RH
+
+== Après compilation ==
+Agent -> App: Demande téléchargement
+App -> DB: Récupère détails demande
+DB --> App: Données demande
+App --> Agent: Télécharge le fichier
+
+== Modification optionnelle ==
+opt Agent modifie avant compilation
+    Agent -> App: Clique "Modifier"
+    Agent -> App: Change lieu de jouissance
+    App -> DB: Met à jour DemandeConge
+    DB --> App: OK
+    App --> Agent: Demande mise à jour
+end
+
+== Suppression optionnelle ==
+opt RH supprime la demande (administration)
+    RH -> App: Clique "Supprimer"
+    App -> DB: DELETE DemandeConge
+    DB --> App: OK
+    App --> RH: Demande supprimée
+end
+
+@enduml

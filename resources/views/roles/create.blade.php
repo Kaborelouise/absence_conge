@@ -1,5 +1,3 @@
-
-
 @extends('layouts.app')
 @section('title', 'Nouveau rôle')
 @section('page-title', 'Gestion des rôles')
@@ -8,12 +6,10 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-plus-circle me-2"></i>Créer un rôle
-                </h5>
+            <div class="card-header text-white" style="background-color:#1e2a3a; padding: 20px;">
+                <h5 class="mb-0">Créer un nouveau rôle</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
 
                 @if($errors->any())
                     <div class="alert alert-danger">
@@ -25,53 +21,38 @@
                     </div>
                 @endif
 
-                <form action="{{ route('roles.store') }}"
-                      method="POST" id="formRole">
+                <form action="{{ route('roles.store') }}" method="POST">
                     @csrf
 
-                    <div class="mb-3">
-                        <label for="libelle" class="form-label fw-bold">
-                            Libellé <span class="text-danger">*</span>
-                        </label>
-                        <input type="text"
+                    <div class="mb-4">
+                        <label class="form-label">Libellé du rôle</label>
+                        <input type="text" name="libelle"
                                class="form-control @error('libelle') is-invalid @enderror"
-                               id="libelle"
-                               name="libelle"
                                value="{{ old('libelle') }}"
-                               placeholder="Ex: agent, chef_departement...">
+                               placeholder="ex: chef_departement"
+                               required>
                         @error('libelle')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                        <small class="text-muted">
+                            Attention : les rôles utilisés par le circuit de validation
+                            (agent, chef_departement, responsable_direction, agent_rh,
+                            sg, dg, pca) sont reconnus tels quels par le système.
+                        </small>
                     </div>
 
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg me-1"></i> Enregistrer
+                    <div class="d-flex justify-content-center gap-3">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-check-lg me-1"></i> Créer
                         </button>
-                        <a href="{{ route('roles.index') }}"
-                           class="btn btn-secondary">
-                            <i class="bi bi-x-lg me-1"></i> Annuler
+                        <a href="{{ route('roles.index') }}" class="btn btn-secondary px-4">
+                            Annuler
                         </a>
                     </div>
+
                 </form>
             </div>
         </div>
     </div>
 </div>
-@endsection
-
-@section('scripts')
-<script>
-    document.getElementById('formRole').addEventListener('submit', function(e) {
-        const libelle = document.getElementById('libelle').value.trim();
-        if (libelle === '') {
-            e.preventDefault();
-            document.getElementById('libelle').classList.add('is-invalid');
-            document.getElementById('libelle').focus();
-        }
-    });
-    document.getElementById('libelle').addEventListener('input', function() {
-        this.classList.remove('is-invalid');
-    });
-</script>
 @endsection

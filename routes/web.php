@@ -41,14 +41,40 @@ Route::middleware('auth')->group(function () {
     // DEMANDES
     Route::resource('demande_absences', DemandeAbsenceController::class);
     Route::resource('justificatifabsence', JustificatifAbsenceController::class)
+    
         ->only(['create', 'store', 'destroy']);
     Route::resource('avis_absences', AvisAbsenceController::class)
         ->only(['create', 'store', 'edit', 'update', 'destroy']);
     Route::resource('demande_conges', DemandeCongeController::class);
     Route::resource('avis_conges', AvisCongeController::class)
-        ->only(['index', 'create','store', 'edit', 'update', 'destroy']);
+        ->only(['create', 'store', 'edit', 'update', 'destroy']);
     Route::resource('demande_jouissances', DemandeJouissanceController::class);
     Route::resource('avis_jouissances', AvisJouissanceController::class)
-        ->only(['create', 'index', 'store', 'edit', 'update', 'destroy']);
+        ->only(['create', 'store', 'edit', 'update', 'destroy']);
+
         
+
+    Route::get('demande_absences/{id}/telecharger', [DemandeAbsenceController::class, 'telecharger'])
+    ->name('demande_absences.telecharger');
+
+
+
+    Route::get('demande_jouissances/{id}/abandonner', [DemandeJouissanceController::class, 'abandonner'])
+    ->name('demande_jouissances.abandonner');
+
+    Route::post('demande_absence/{id}/abandonner', [DemandeAbsenceController::class, 'abandonner'])
+    ->name('demande_absences.abandonner');
+
+    // AJOUT : routes pour la clôture jouissance
+    Route::post('demande_jouissances/{id}/upload-cessation', [DemandeJouissanceController::class, 'uploadCessation'])
+    ->name('demande_jouissances.upload_cessation');
+
+    Route::post('demande_jouissances/{id}/upload-prise-service', [DemandeJouissanceController::class, 'uploadPriseService'])
+    ->name('demande_jouissances.upload_prise_service');
+
+    Route::post('demande_jouissances/{id}/cloturer', [DemandeJouissanceController::class, 'cloturer'])
+    ->name('demande_jouissances.cloturer');
+
+    Route::get('demande_jouissances/{id}/telecharger', [DemandeJouissanceController::class, 'telecharger'])
+    ->name('demande_jouissances.telecharger');
 });

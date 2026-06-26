@@ -1,0 +1,74 @@
+@startuml Activity_Demande_Absence
+title Diagramme d'Activité : Demande d'Absence
+
+start
+:Authentifier l'utilisateur;
+:Accéder au menu "Autorisation d'absence";
+:Remplir le formulaire;
+note right
+  - Date début / fin
+  - Motif de l'absence
+  - Intérimaire
+  - Retenue salaire
+end note
+
+if (Données valides ?) then (non)
+  :Afficher erreurs de validation;
+  stop
+else (oui)
+  :Enregistrer la demande;
+  :Calculer circuitAttendu();
+end
+
+:Notifier Chef de Département;
+
+if (Chef donne avis ?) then (défavorable)
+  :Mettre statut = "rejetee";
+  :Informer Agent du rejet;
+  stop
+else (favorable)
+  if (Chef est\nle validateur final ?) then (oui)
+    :Mettre statut = "validee";
+  else (non)
+    :Passer à Responsable Direction;
+  endif
+end
+
+if (Responsable Direction\ndonne avis ?) then (défavorable)
+  :Mettre statut = "rejetee";
+  :Informer Agent du rejet;
+  stop
+else (favorable)
+  if (Responsable est\nle validateur final ?) then (oui)
+    :Mettre statut = "validee";
+  else (non)
+    :Passer à Agent RH;
+  endif
+end
+
+if (Agent RH\ndonne avis ?) then (défavorable)
+  :Mettre statut = "rejetee";
+  :Informer Agent du rejet;
+  stop
+else (favorable)
+  if (RH est\nle validateur final ?) then (oui)
+    :Mettre statut = "validee";
+  else (non)
+    :Passer à Direction (DG/SG/PCA);
+  endif
+end
+
+if (Direction\ndonne avis ?) then (défavorable)
+  :Mettre statut = "rejetee";
+  :Informer Agent du rejet;
+  stop
+else (favorable)
+  :Mettre statut = "validee";
+end
+
+:Informer Agent de la validation;
+:Demande disponible pour téléchargement;
+
+stop
+
+@enduml

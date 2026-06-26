@@ -8,81 +8,116 @@ use Illuminate\Http\Request;
 
 class AvisJouissanceController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        $avis = AvisJouissance::with('demandeJouissance')->get();
-        return view('avis_jouissances.index', compact('avis'));
-    }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(Request $request)
-    {
-        $demande = DemandeJouissance::findOrFail($request->demande_jouissance_id);
-        return view('avis_jouissances.create', compact('demande'));
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
-            'avis' => 'required|in:favorable,defavorable,en_attente',
-            'type' => 'required|in:chef_departement,agent_rh,responsable_direction,sg,dg,pca',
-
-            'commentaire'           => 'nullable|string',
             'demande_jouissance_id' => 'required|exists:demande_jouissances,id',
+            'avis'                  => 'required|in:favorable,defavorable',
+            'commentaire'           => 'nullable|string|max:500',
         ]);
 
-        AvisJouissance::create($request->only([
-            'avis', 'type', 'commentaire', 'demande_jouissance_id'
-        ]));
+        // On charge la demande avec ses avis et les relations nécessaires
+        // pour que peutDonnerAvis() et prochainActeur() fonctionnent correctement
+        $demande = DemandeJouissance::with(
+            'avis',
+            'user.role',
+            'user.departement'
+        )->findOrFail($request->demande_jouissance_id);
+
+        $user = auth()->user();
+
+        // Sécurité : vérifier que c'est bien le tour de cet utilisateur
+        if (!$demande->peutDonnerAvis($user)) {
+            return redirect()
+                ->route('demande_jouissances.show', $demande->id)
+                ->with('error', 'Vous n\'êtes pas autorisé à donner un avis à cette étape.');
+        }
+
+        $role = $user->role->libelle;
+
+        // Le type d'avis est déduit du rôle connecté — jamais du formulaire
+        // pour éviter qu'un utilisateur se fasse passer pour un autre acteur
+        $typeAvis = match(true) {
+            $role === 'chef_departement' || $user->est_responsable_departement => 'chef_departement',
+            $role === 'agent_rh'                                                => 'agent_rh',
+            $role === 'responsable_direction'                                   => 'responsable_direction',
+            $role === 'sg'                                                      => 'sg',
+            $role === 'dg'                                                      => 'dg',
+            $role === 'pca'                                                     => 'pca',
+            default                                                             => $role,
+        };
+
+        // Enregistrement de l'avis
+        AvisJouissance::create([
+            'demande_jouissance_id' => $demande->id,
+            'avis'                  => $request->avis,
+            'type'                  => $typeAvis,
+            'commentaire'           => $request->commentaire,
+        ]);
+
+        // Avis défavorable → arrêt immédiat du circuit
+        if ($request->avis === 'defavorable') {
+            $demande->update(['statut' => 'rejetee']);
+
+            return redirect()
+                ->route('demande_jouissances.show', $demande->id)
+                ->with('success', 'Avis défavorable enregistré. La demande est rejetée.');
+        }
+
+        // Avis favorable : on recharge les avis pour recalculer
+        // le prochain acteur avec les nouvelles données
+        $demande->load('avis');
+        $prochainActeur = $demande->prochainActeur();
+
+        if ($prochainActeur === null) {
+            // Plus d'acteur → demande validée
+            $demande->update(['statut' => 'validee']);
+
+            // Décrémenter le solde congé de l'agent
+            $agent        = $demande->user;
+            $nouveauSolde = max(0, $agent->solde_conge - $demande->nombre_jour);
+            $agent->update(['solde_conge' => $nouveauSolde]);
+
+            return redirect()
+                ->route('demande_jouissances.show', $demande->id)
+                ->with('success', "Demande validée. Solde mis à jour ({$nouveauSolde} jours restants).");
+        }
+
+        // Il reste des étapes → en_cours
+        $demande->update(['statut' => 'en_cours']);
 
         return redirect()
-            ->route('avis_jouissances.index')
-            ->with('success', 'Avis enregistré');
+            ->route('demande_jouissances.show', $demande->id)
+            ->with('success', 'Avis favorable enregistré. Circuit en cours.');
     }
 
-   
-    public function edit($id)
-    {
-        $avis = AvisJouissance::findOrFail($id);
-        $demande = DemandeJouissance::all();
-
-        return view('avis_jouissances.edit', compact('avis', 'demande'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
+    // =========================================================
+    // UPDATE / DESTROY — réservés à l'admin
+    // =========================================================
     public function update(Request $request, $id)
     {
         $request->validate([
-            'avis'        => 'required|in:favorable,defavorable,en_attente',
-            'commentaire' => 'nullable|string',
+            'avis'        => 'required|in:favorable,defavorable',
+            'commentaire' => 'nullable|string|max:500',
         ]);
 
         $avis = AvisJouissance::findOrFail($id);
         $avis->update($request->only(['avis', 'commentaire']));
+
         return redirect()
-            ->route('avis_jouissances.index')
-            ->with('success', 'Avis modifié');
-   
+            ->route('demande_jouissances.show', $avis->demande_jouissance_id)
+            ->with('success', 'Avis modifié.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
-        AvisJouissance::findOrFail($id)->delete();
+        $avis        = AvisJouissance::findOrFail($id);
+        $demandeId   = $avis->demande_jouissance_id;
+        $avis->delete();
+
         return redirect()
-            ->route('avis_jouissances.index')
-            ->with('success', 'Avis supprimé');
+            ->route('demande_jouissances.show', $demandeId)
+            ->with('success', 'Avis supprimé.');
     }
 }

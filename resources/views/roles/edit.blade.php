@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Modifier rôle')
+@section('title', 'Modifier le rôle')
 @section('page-title', 'Gestion des rôles')
 
 @section('content')
@@ -7,11 +7,9 @@
     <div class="col-md-6">
         <div class="card shadow-sm">
             <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-pencil me-2"></i>Modifier le rôle
-                </h5>
+                <h5 class="mb-0">Modifier le rôle</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
 
                 @if($errors->any())
                     <div class="alert alert-danger">
@@ -23,53 +21,35 @@
                     </div>
                 @endif
 
-                <form action="{{ route('roles.update', $role->id) }}"
-                      method="POST" id="formRole">
+                <form action="{{ route('roles.update', $role->id) }}" method="POST">
                     @csrf
                     @method('PUT')
 
-                    <div class="mb-3">
-                        <label for="libelle" class="form-label fw-bold">
-                            Libellé <span class="text-danger">*</span>
-                        </label>
-                        <input type="text"
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Libellé du rôle</label>
+                        <input type="text" name="libelle"
                                class="form-control @error('libelle') is-invalid @enderror"
-                               id="libelle"
-                               name="libelle"
-                               value="{{ old('libelle', $role->libelle) }}">
+                               value="{{ old('libelle', $role->libelle) }}"
+                               required>
                         @error('libelle')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                        <small class="text-danger">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            Attention : modifier ce libellé peut casser le circcuit de
+                            validation si ce rôle est l'un des 8 rôles système reconnus.
+                        </small>
                     </div>
 
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-check-lg me-1"></i> Mettre à jour
                         </button>
-                        <a href="{{ route('roles.index') }}"
-                           class="btn btn-secondary">
-                            <i class="bi bi-x-lg me-1"></i> Annuler
-                        </a>
+                        <a href="{{ route('roles.index') }}" class="btn btn-secondary">Annuler</a>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
-@endsection
-
-@section('scripts')
-<script>
-    document.getElementById('formRole').addEventListener('submit', function(e) {
-        const libelle = document.getElementById('libelle').value.trim();
-        if (libelle === '') {
-            e.preventDefault();
-            document.getElementById('libelle').classList.add('is-invalid');
-            document.getElementById('libelle').focus();
-        }
-    });
-    document.getElementById('libelle').addEventListener('input', function() {
-        this.classList.remove('is-invalid');
-    });
-</script>
 @endsection

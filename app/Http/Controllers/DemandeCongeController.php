@@ -3,91 +3,116 @@
 namespace App\Http\Controllers;
 
 use App\Models\DemandeConge;
-use App\Models\User;
 use Illuminate\Http\Request;
 
 class DemandeCongeController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    //la liste est filtrer selon le rôle
     public function index()
     {
-        $demandes = DemandeConge::with('user', 'avisConge')->get();
-        return view('demande_conges.index', compact('demandes'));
-    }
-        
-    
+        $user = auth()->user();
+        $role = $user->role->libelle;
 
-    /**
-     * Show the form for creating a new resource.
-     */
+        // L'agent ne voit que ses propres demandes et si il est un responsable ceux de sa juridiction également
+        $demande = DemandeConge::with('user.departement.direction', 'avisConge')
+            ->when(!in_array($role, ['agent_rh', 'admin']), function ($q) use ($user) { 
+                //tout utilisateur qui n'est pas admin ou rh ne voit que ses demandes
+                $q->where('user_id', $user->id);
+            })
+            ->latest()
+            ->get();
+
+        return view('demande_conges.index', compact('demande'));
+    }
+
     public function create()
     {
         $user = auth()->user();
         return view('demande_conges.create', compact('user'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        
-    $request->validate([
-            'lieu_jouissance' => 'required|string',
-            'user_id'  => 'required|exists:users,id',
+        $request->validate([
+            'lieu_jouissance' => 'required|in:Afrique,Asie,Amerique,Europe',
         ]);
-        DemandeConge::create($request->only([
-            'lieu_jouissance',
-            'user_id',
-            
-        ]));;
-        return redirect()->route('demande_conges.index')->with('success', 'Demande de congé créée');
-    }
 
-   
-    public function edit($id)
-    {
-         $demande = DemandeConge::findOrFail($id);
-        return view('demande_conges.edit', compact('demande'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-         $request->validate([
-            'lieu_jouissance' => 'required|string',
-            'statut' => 'required|in:en_attente,compilee,validee',
+        DemandeConge::create([
+            'lieu_jouissance' => $request->lieu_jouissance,
+            // user_id vient de l'utilisateur connecté, jamais du formulaire
+            'user_id' => auth()->id(),
         ]);
-        $demande = DemandeConge::findOrFail($id);
-        $demande->update($request->only([
-            'lieu_jouissance', 
-            'statut'
-        ]));
 
         return redirect()
             ->route('demande_conges.index')
-            ->with('success', 'Demande modifiée');
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-         DemandeConge::findOrFail($id)->delete();
-        return redirect()
-            ->route('demande_conges.index')
-            ->with('success', 'Demande supprimée');
+            ->with('success', 'Demande de congé soumise avec succès.');
     }
 
     public function show($id)
-{
-    $demande = DemandeConge::with('user', 'avisConge')
-                ->findOrFail($id);
-    return view('demande_conges.show', compact('demande'));
-}
+    {
+        $demande = DemandeConge::with(
+            'user.departement.direction',
+            'avisConge'
+        )->findOrFail($id);
+
+        $user = auth()->user();
+
+        // Permet d'afficher ou pas le bouton "Compiler" dans la vue
+        $peutCompiler = $demande->peutEtreCompileePar($user);
+
+        return view('demande_conges.show', compact('demande', 'peutCompiler'));
+    }
+
+    public function edit($id)
+    {
+        $demande = DemandeConge::findOrFail($id);
+
+        // Modifiable seulement par l'auteur, et seulement si
+        // pas encore compilée
+        if ($demande->user_id !== auth()->id() || $demande->estCompilee()) {
+            return redirect()
+                ->route('demande_conges.show', $id)
+                ->with('error', 'Cette demande ne peut plus être modifiée.');
+        }
+
+        return view('demande_conges.edit', compact('demande'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $demande = DemandeConge::findOrFail($id);
+
+        if ($demande->user_id !== auth()->id() || $demande->estCompilee()) {
+            return redirect()
+                ->route('demande_conges.show', $id)
+                ->with('error', 'Modification non autorisée.');
+        }
+
+        $request->validate([
+            'lieu_jouissance' => 'required|in:Afrique,Asie,Amerique,Europe',
+        ]);
+
+        $demande->update($request->only(['lieu_jouissance']));
+
+        return redirect()
+            ->route('demande_conges.index')
+            ->with('success', 'Demande modifiée avec succès.');
+    }
+
+    public function destroy($id)
+    {
+        $demande = DemandeConge::findOrFail($id);
+
+        if ($demande->user_id !== auth()->id() || $demande->estCompilee()) {
+            return redirect()
+                ->route('demande_conges.index')
+                ->with('error', 'Suppression non autorisée.');
+        }
+
+        $demande->delete();
+
+        return redirect()
+            ->route('demande_conges.index')
+            ->with('success', 'Demande supprimée.');
+    }
 }

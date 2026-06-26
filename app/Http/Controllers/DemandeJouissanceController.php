@@ -7,139 +7,260 @@ use Illuminate\Http\Request;
 
 class DemandeJouissanceController extends Controller
 {
-    
     public function index()
     {
-        $demande = DemandeJouissance::with('user', 'avis')->get();
-        return view('demande_jouissances.index', compact('demande'));
+        $user = auth()->user();
+        $role = $user->role->libelle;
+
+        $demandes = DemandeJouissance::with('user.departement.direction', 'avis')
+            ->when($role === 'agent', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->when($role === 'chef_departement' || $user->est_responsable_departement, function ($q) use ($user) {
+                $q->whereHas('user', function ($q2) use ($user) {
+                    $q2->where('departement_id', $user->departement_id);
+                });
+            })
+            ->when($role === 'responsable_direction', function ($q) use ($user) {
+                $directionId = $user->departement->direction_id;
+                $q->whereHas('user.departement', function ($q2) use ($directionId) {
+                    $q2->where('direction_id', $directionId);
+                });
+            })
+            ->when(in_array($role, ['agent_rh', 'sg', 'dg', 'pca']), function ($q) {
+                // RH, SG, DG, PCA voient toutes les demandes
+            })
+            ->latest()
+            ->get();
+
+        return view('demande_jouissances.index', compact('demandes'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-         $user = auth()->user();
+        $user = auth()->user();
         return view('demande_jouissances.create', compact('user'));
     }
 
     public function store(Request $request)
-{
-    $request->validate([
-        'date_debut' => 'required|date',
-        'date_fin'   => 'required|date|after_or_equal:date_debut',
-    ]);
-
-    // calcul nombre de jours
-    $dateDebut = new \DateTime($request->date_debut);
-    $dateFin   = new \DateTime($request->date_fin);
-    $nombreJour = $dateDebut->diff($dateFin)->days + 1;
-
-    // génération du numéro (OBLIGATOIRE AVANT INSERT)
-    $last = DemandeJouissance::orderBy('id', 'desc')->first();
-    $nextNumber = $last ? $last->id + 1 : 1;
-
-    $numDemande = $nextNumber; // IMPORTANT (INTEGER)
-
-    // INSERT complet
-    DemandeJouissance::create([
-        'num_demande' => $numDemande,   // 🔥 IMPORTANT
-        'date_debut'  => $request->date_debut,
-        'date_fin'    => $request->date_fin,
-        'nombre_jour' => $nombreJour,
-        'user_id'     => auth()->id(),
-    ]);
-
-    return redirect()
-        ->route('demande_jouissances.index')
-        ->with('success', 'Demande créée avec succès.');
-}
-
-
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    // public function store(Request $request)
-    // {
-        
-    //     $request->validate([
-        
-    //         'date_debut'     => 'required|date',
-    //         'date_fin'       => 'required|date|after_or_equal:date_debut',  
-    //     ]);
-        
-    //     $dateDebut = new \DateTime($request->date_debut);
-    //     $dateFin = new \DateTime($request->date_fin);
-    //     $nombreJour = $dateDebut->diff($dateFin)->days + 1;
-
-    //   DemandeJouissance::create([
-    //   'num_demande'  => $request->num_demande,
-    //   'date_debut'  => $request->date_debut,
-    //   'date_fin'    => $request->date_fin,
-    //   'nombre_jour' => $nombreJour,
-    //   'user_id'     => auth()->id(),
-    //  ]);
-    //  return redirect()
-    //         ->route('demande_jouissances.index')
-    //         ->with('success', 'Demande créée avec succès.');
-    // }
-
-
-
-
-    /**
-     * Display the specified resource.
-     */
-    public function show($id)
-    {
-        $demande = DemandeJouissance::with(
-            'user.departement.direction',
-            'avis'
-        )->findOrFail($id);
-
-        return view('demande_jouissances.show', compact('demande'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
-    {
-        $demande = DemandeJouissance::findOrFail($id);
-        return view('demande_jouissances.edit', compact('demande'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
     {
         $request->validate([
             'date_debut'  => 'required|date',
             'date_fin'    => 'required|date|after_or_equal:date_debut',
             'nombre_jour' => 'required|integer|min:1',
-            'statut'      => 'required|in:en_attente,en_cours,validee,rejetee',
         ]);
 
+        DemandeJouissance::create([
+            'num_demande'  => time(),
+            'date_debut'   => $request->date_debut,
+            'date_fin'     => $request->date_fin,
+            'nombre_jour'  => $request->nombre_jour,
+            'user_id'      => auth()->id(),
+            'statut'       => 'en_attente',
+        ]);
+
+        return redirect()
+            ->route('demande_jouissances.index')
+            ->with('success', 'Demande de jouissance soumise avec succès.');
+    }
+
+     public function show($id)
+     {
+    $demande = DemandeJouissance::with(
+        'user.departement.direction',
+        'avis'
+    )->findOrFail($id);
+
+    $user = auth()->user();
+
+    $peutAgir       = $demande->peutDonnerAvis($user);
+    $prochainActeur = $demande->prochainActeur();
+
+    // Ajout dernière étape traitée pour afficher "Étape actuelle"
+  
+    $derniereEtape = $demande->avis->last()?->type;
+
+    //vérifie si l'auteur peut abandonner
+    $peutAbandonner = $demande->peutEtreAbandonneePar($user);
+
+    // Agent du même département que l'agent
+    $agentsMemeDepartement = \App\Models\User::where('departement_id', $demande->user->departement_id)
+        ->where('id', '!=', $demande->user_id)
+        ->get();
+
+    return view('demande_jouissances.show', compact(
+        'demande',
+        'peutAgir',
+        'prochainActeur',
+        'derniereEtape',
+        'peutAbandonner',
+        'agentsMemeDepartement'
+    ));
+}
+
+    public function edit($id)
+    {
         $demande = DemandeJouissance::findOrFail($id);
+
+        if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
+            return redirect()
+                ->route('demande_jouissances.show', $id)
+                ->with('error', 'Cette demande ne peut plus être modifiée.');
+        }
+
+        return view('demande_jouissances.edit', compact('demande'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $demande = DemandeJouissance::findOrFail($id);
+
+        if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
+            return redirect()
+                ->route('demande_jouissances.show', $id)
+                ->with('error', 'Modification non autorisée.');
+        }
+
+        $request->validate([
+            'date_debut'  => 'required|date',
+            'date_fin'    => 'required|date|after_or_equal:date_debut',
+            'nombre_jour' => 'required|integer|min:1',
+        ]);
+
         $demande->update($request->only([
-            'date_debut', 'date_fin', 'nombre_jour', 'statut'
+            'date_debut', 'date_fin', 'nombre_jour',
         ]));
 
         return redirect()
             ->route('demande_jouissances.index')
-            ->with('success', 'Demande modifiée');
+            ->with('success', 'Demande modifiée avec succès.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
-        DemandeJouissance::findOrFail($id)->delete();
+        $demande = DemandeJouissance::findOrFail($id);
+
+        if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
+            return redirect()
+                ->route('demande_jouissances.index')
+                ->with('error', 'Suppression non autorisée.');
+        }
+
+        $demande->delete();
+
         return redirect()
-            ->route('demande_jouissances.index') 
-            ->with('success', 'Demande supprimée');
+            ->route('demande_jouissances.index')
+            ->with('success', 'Demande supprimée.');
+    }
+
+    
+
+
+
+
+
+
+public function uploadCessation(Request $request, $id)
+{
+    $request->validate([
+        // Accepte PDF, JPG, PNG — max 5MB
+        'certificat_cessation' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+    ]);
+
+    $demande = DemandeJouissance::findOrFail($id);
+
+    // Sécurité : seulement l'auteur, seulement si validée, pas encore clôturée
+    if ($demande->user_id !== auth()->id()
+        || $demande->statut !== 'validee'
+        || $demande->estCloturee()) {
+        return redirect()
+            ->route('demande_jouissances.show', $id)
+            ->with('error', 'Action non autorisée.');
+    }
+
+    // Si un ancien fichier existe, on le supprime avant d'en stocker un nouveau
+    if ($demande->certificat_cessation) {   \Storage::disk('public')->delete($demande->certificat_cessation);
+    }
+    $path = $request->file('certificat_cessation')
+                    ->store('certificats/jouissance', 'public');
+
+    $demande->update(['certificat_cessation' => $path]);
+
+    return redirect()
+        ->route('demande_jouissances.show', $id)
+        ->with('success', 'Certificat de cessation uploadé avec succès.');
+}
+
+/**
+ * AJOUT : upload du certificat de prise de service.
+ * Même logique que uploadCessation().
+ */
+public function uploadPriseService(Request $request, $id)
+{
+    $request->validate([
+        'certificat_prise_service' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+    ]);
+
+    $demande = DemandeJouissance::findOrFail($id);
+
+    if ($demande->user_id !== auth()->id()
+        || $demande->statut !== 'validee'
+        || $demande->estCloturee()) {
+        return redirect()
+            ->route('demande_jouissances.show', $id)
+            ->with('error', 'Action non autorisée.');
+    }
+
+    if ($demande->certificat_prise_service) {
+        \Storage::disk('public')->delete($demande->certificat_prise_service);
+    }
+
+    $path = $request->file('certificat_prise_service')
+                    ->store('certificats/jouissance', 'public');
+
+    $demande->update(['certificat_prise_service' => $path]);
+
+    return redirect()
+        ->route('demande_jouissances.show', $id)
+        ->with('success', 'Certificat de prise de service uploadé avec succès.');
+    }
+
+  public function cloturer($id)
+   {
+    $demande = DemandeJouissance::findOrFail($id);
+
+    if (!$demande->peutEtreClotureeePar(auth()->user())) {
+        return redirect()
+            ->route('demande_jouissances.show', $id)
+            ->with('error', 'Vous ne pouvez pas clôturer cette demande. Vérifiez que les deux certificats sont uploadés.');
+    }
+
+    // On enregistre la date et l'heure de clôture
+    $demande->update(['cloturee_at' => now()]);
+
+    return redirect()
+        ->route('demande_jouissances.show', $id)
+        ->with('success', 'Demande clôturée avec succès.');
+   }
+
+    public function telecharger($id)
+     {
+    $demande = DemandeJouissance::with(
+        'user.departement.direction',
+        'avis'
+    )->findOrFail($id);
+
+    if ($demande->statut !== 'validee') {
+        return redirect()
+            ->route('demande_jouissances.show', $id)
+            ->with('error', 'La demande doit être validée pour télécharger.');
+    }
+
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+        'pdf.jouissance',
+        compact('demande')
+    );
+
+    return $pdf->download("jouissance_{$demande->num_demande}.pdf");
     }
 }

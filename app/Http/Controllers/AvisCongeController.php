@@ -9,94 +9,61 @@ use Illuminate\Http\Request;
 class AvisCongeController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        $avis = AvisConge::with('demandeConge')->get();
-        return view('avis_conges.index', compact('avis'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(Request $request)
-    {
-        $demande = DemandeConge::with('user')
-        ->findOrFail($request->demande_conge_id);
-        return view('avis_conges.create', compact('demande'));
-    }
-
-    /**
-     * Store a newly created resource in storage.
+     * Marque la demande comme "compilée" par l'agent RH.
+     * Pas de favorable/défavorable ici : la migration avis_conges
+     * impose 'favorable' par défaut puisqu'il n'y a pas de rejet
+     * possible pour un congé administratif (c'est juste informatif).
      */
     public function store(Request $request)
     {
         $request->validate([
-            'avis'             => 'required|in:favorable,defavorable,en_attente',
-            
-            // Seul l'agent_RH intervient sur les demandes de congés
-            'type'             => 'required|in:agent_rh',
-            'commentaire'      => 'nullable|string',
             'demande_conge_id' => 'required|exists:demande_conges,id',
+            'commentaire'      => 'nullable|string|max:500',
         ]);
 
-        AvisConge::create($request->only([
-            'avis', 'type', 'commentaire', 'demande_conge_id'
-        ]));
+        $demande = DemandeConge::with('avisConge')->findOrFail($request->demande_conge_id);
+        $user = auth()->user();
+
+        if (!$demande->peutEtreCompileePar($user)) {
+            return redirect()
+                ->route('demande_conges.show', $demande->id)
+                ->with('error', 'Vous n\'êtes pas autorisé à compiler cette demande.');
+        }
+
+        AvisConge::create([
+            'demande_conge_id' => $demande->id,
+            'avis'             => 'favorable', // toujours favorable : juste un accusé de traitement
+            'type'             => 'agent_rh',
+            'commentaire'      => $request->commentaire,
+        ]);
 
         return redirect()
-            ->route('avis_conges.index')
-            ->with('success', 'Avis enregistré');
+            ->route('demande_conges.show', $demande->id)
+            ->with('success', 'Demande compilée avec succès.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    
-    public function edit($id)
-    {
-        $avis = AvisConge::findOrFail($id);
-        $demandes = DemandeConge::all();
-        return view('avis_conges.edit', compact('avis', 'demande'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, $id)
     {
         $request->validate([
-            'avis'        => 'required|in:favorable,defavorable,en_attente',
-            'commentaire' => 'nullable|string',
+            'commentaire' => 'nullable|string|max:500',
         ]);
+
         $avis = AvisConge::findOrFail($id);
-        $avis->update($request->only(['avis', 'commentaire']));
+        $avis->update($request->only(['commentaire']));
 
         return redirect()
-            ->route('avis_conges.index')
-            ->with('success', 'Avis modifié');
+            ->route('demande_conges.show', $avis->demande_conge_id)
+            ->with('success', 'Avis modifié.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
-        AvisConge::findOrFail($id)->delete();
-        
+        $avis = AvisConge::findOrFail($id);
+        $demandeId = $avis->demande_conge_id;
+        $avis->delete();
+
         return redirect()
-            ->route('avis_conges.index')
-            ->with('success', 'Avis supprimé');
+            ->route('demande_conges.show', $demandeId)
+            ->with('success', 'Compilation annulée.');
     }
-
-    public function show($id)
-{
-    // Charge la demande avec l'utilisateur et ses avis
-    $demande = DemandeConge::with('user', 'avisconge')
-        ->findOrFail($id);
-
-    return view('demande_conges.show', compact('demande'));
-}
-
 }

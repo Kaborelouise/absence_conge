@@ -7,7 +7,7 @@
     <div class="col-md-8">
         <div class="card shadow-sm">
             <div class="card-header text-white text-center"
-                 style="background-color:#1e2a3a; padding: 20px;">
+                 style="background-color:#1B384F; padding: 20px;">
                 <h5 class="mb-0">Nouvelle demande d'autorisation d'absence</h5>
             </div>
             <div class="card-body p-4">
@@ -25,13 +25,8 @@
                 <form action="{{ route('demande_absences.store') }}" method="POST"
                       enctype="multipart/form-data">
                     @csrf
-                    {{-- user_id caché --}}
-                    <input type="hidden" name="user_id" value="{{ auth()->user()->id }}">
-                    {{-- num_demande auto généré --}}
-                    <input type="hidden" name="num_demande"
-                           value="{{ rand(100000, 999999) }}">
 
-                    {{-- Ligne 1 : Date début + Date fin --}}
+                    {{-- première ligne on a la date de début et la date de fin--}}
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Date de début</label>
@@ -40,7 +35,6 @@
                                    id="date_debut"
                                    class="form-control @error('date_debut') is-invalid @enderror"
                                    value="{{ old('date_debut') }}"
-                                   placeholder="JJ/mm/aa"
                                    required>
                             @error('date_debut')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -53,7 +47,6 @@
                                    id="date_fin"
                                    class="form-control @error('date_fin') is-invalid @enderror"
                                    value="{{ old('date_fin') }}"
-                                   placeholder="JJ/mm/aa"
                                    required>
                             @error('date_fin')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -61,37 +54,62 @@
                         </div>
                     </div>
 
-                    {{-- Ligne 2 : Durée + Motif --}}
+                    {{-- deuxième ligne on a la durée (calculée automatiquement) plus le Motif qui est une liste déroulante (liste déroulante) --}}
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="form-label">Durée (calculer automatiquement)</label>
+                            <label class="form-label">Durée (calculée automatiquement)</label>
                             <input type="text"
                                    id="duree"
                                    class="form-control"
                                    readonly
-                                   placeholder="">
+                                   placeholder="Sélectionnez les dates">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Motif</label>
-                            <input type="text"
-                                   name="motif"
-                                   class="form-control @error('motif') is-invalid @enderror"
-                                   value="{{ old('motif') }}"
-                                   required>
+     
+                            <select name="motif"
+                                    class="form-select @error('motif') is-invalid @enderror"
+                                    required>
+                                <option value=""> Motif de l'absence </option>
+                                <option value="evenement_familliaux"
+                                    {{ old('motif') === 'evenement_familliaux' ? 'selected' : '' }}>
+                                    Évènements familiaux (décès)
+                                </option>
+                                <option value="jouissance_de_reliquat_de_congé_paye"
+                                    {{ old('motif') === 'jouissance_de_reliquat_de_congé_paye' ? 'selected' : '' }}>
+                                    Jouissance de reliquats de congés payés
+                                </option>
+                                <option value="convenances_personnelles"
+                                    {{ old('motif') === 'convenances_personnelles' ? 'selected' : '' }}>
+                                    Convenances personnelles
+                                </option>
+                                <option value="autre"
+                                    {{ old('motif') === 'autre' ? 'selected' : '' }}>
+                                    Autre
+                                </option>
+                            </select>
                             @error('motif')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
 
-                    {{-- Ligne 3 : Intérimaire + Solde disponible --}}
+                    {{-- troisième ligne on a intérimaire (liste déroulante) et le Solde disponible --}}
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="form-label">Intérimaire désigné</label>
-                            <input type="text"
-                                   name="interimaire"
-                                   class="form-control"
-                                   value="{{ old('interimaire') }}">
+                            <label class="form-label">
+                                Intérimaire désigné
+                                <span class="text-muted" style="font-size:11px;"></span>
+                            </label>
+                            <select name="interimaire" class="form-select">
+                                <option value=""> Aucun intérimaire </option>
+                                @foreach($agentsMemeDepartement as $agent)
+                                    <option value="{{ $agent->nom }} {{ $agent->prenom }}"
+                                        {{ old('interimaire') === $agent->nom.' '.$agent->prenom ? 'selected' : '' }}>
+                                        {{ $agent->nom }} {{ $agent->prenom }} — {{ $agent->poste }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Solde disponible</label>
@@ -102,7 +120,7 @@
                         </div>
                     </div>
 
-                    {{-- Ligne 4 : Justificatif centré --}}
+                    {{-- Quatrième ligne, on a le Justificatif  --}}
                     <div class="mb-4 text-center">
                         <label class="form-label d-block">
                             Joindre un justificatif (optionnel)
@@ -111,19 +129,20 @@
                                class="form-control text-center"
                                style="cursor:pointer; max-width:400px; margin:auto">
                             <i class="bi bi-paperclip me-1"></i>
-                            <span id="fichier-label">cliquer pour joindre un fichier</span>
+                            <span id="fichier-label">Cliquer pour joindre un fichier</span>
                         </label>
                         <input type="file"
                                name="fichier"
                                id="fichier"
                                class="d-none"
                                accept=".pdf,.jpg,.jpeg,.png">
+                        <small class="text-muted">Formats acceptés : PDF, JPG, PNG</small>
                     </div>
 
                     {{-- Boutons --}}
                     <div class="d-flex justify-content-center gap-3">
                         <button type="submit" class="btn btn-primary px-4">
-                            <i class="bi bi-send me-1"></i> soumettre
+                            <i class="bi bi-send me-1"></i> Soumettre
                         </button>
                         <a href="{{ route('demande_absences.index') }}"
                            class="btn btn-secondary px-4">
@@ -140,7 +159,10 @@
 
 @section('scripts')
 <script>
-    // Calcul automatique de la durée
+    // Calcul automatique de la durée à partir des dates saisies.
+    // Math.ceil arrondit au jour supérieur.
+    // Le résultat est affiché dans le champ readonly 
+    // (pas envoyé au serveur, juste informatif)
     function calculerDuree() {
         const debut = document.getElementById('date_debut').value;
         const fin   = document.getElementById('date_fin').value;
@@ -156,12 +178,12 @@
     document.getElementById('date_debut').addEventListener('change', calculerDuree);
     document.getElementById('date_fin').addEventListener('change', calculerDuree);
 
-    // Afficher le nom du fichier sélectionné
+    // là on affiche le nom du fichier sélectionné dans le label
     document.getElementById('fichier').addEventListener('change', function() {
         const label = document.getElementById('fichier-label');
         label.textContent = this.files[0]
             ? this.files[0].name
-            : 'cliquer pour joindre un fichier';
+            : 'Cliquer pour joindre un fichier';
     });
 </script>
 @endsection

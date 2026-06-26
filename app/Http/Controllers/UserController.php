@@ -9,23 +9,19 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    // on récupère tous les utilisateurs avec leurs rôles, les départements et directions associé
     
     public function index()
     {
-        // on rcupere tous les utilisateurs avec leurs rôles, départements et directions associés
-        // et leur departement et direction associé 
-        // with() évite les problème de N+1 (trop de requêtes à la base de données)
         
-        $utilisateurs = User::with('role', 'departement.direction')->get();
-        return view('utilisateurs.index', compact('utilisateurs'));
-        // compact('utilisateurs') : permet de passer la variable $utilisateurs à la vue
+        $users = User::with('role', 'departement.direction')->get();
+
+        return view('utilisateurs.index', compact('users'));
     }
 
     
     public function create()
     {
-        // on récupère  tous les roles et les departements
+        // On récupère les rôles pour la liste déroulante
 
         $roles = Role::all();
 
@@ -87,52 +83,58 @@ class UserController extends Controller
    
     public function edit($id)
     {
-        $utilisateur= User::findOrFail($id);
+        $user = User::findOrFail($id);
         $roles = Role::all();
         $departements = Departement::with('direction')->get();
 
         return view('utilisateurs.edit', compact(
-            'utilisateur',
+            'user',
             'roles',
             'departements'
         ));
     }
 
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            
-            'matricule' => 'required|integer|unique:users,matricule,'.$id,
-            'nom'       => 'required|string|max:255',
-            'prenom'    => 'required|string|max:255',
-            'poste'     => 'required|string|max:255',
-            'email'     => 'required|email|unique:users,email,'.$id,
+public function update(Request $request, $id)
+{
+    $request->validate([
+        'matricule' => 'required|integer|unique:users,matricule,'.$id,
+        'nom'       => 'required|string|max:255',
+        'prenom'    => 'required|string|max:255',
+        'poste'     => 'required|string|max:255',
+        'email'     => 'required|email|unique:users,email,'.$id,
+        'password'  => 'nullable|string|min:8',
+        'role_id'        => 'required|exists:roles,id',
+        'departement_id' => 'required|exists:departements,id',
+        'est_responsable_departement' => 'boolean',
+        'est_responsable_direction'   => 'boolean',
+        'solde_conge'   => 'nullable|integer',
+        'solde_absence' => 'nullable|integer',
+    ]);
 
-            // 'sometimes' valide si le champ est présent dans la requête, sinon il l'ignore
-            
-            'password'       => 'sometimes|string|min:8',
-            'role_id'        => 'required|exists:roles,id',
-            'departement_id' => 'required|exists:departements,id',
-            'est_responsable_departement' => 'boolean',
-            'est_responsable_direction'   => 'boolean',
-            'solde_conge'   => 'nullable|integer',
-            'solde_absence' => 'nullable|integer',
-        ]);
+    $user = User::findOrFail($id);
 
-        $utilisateur = User::findOrFail($id);
-        $utilisateur->update($request->only([
-            'matricule', 'nom', 'prenom', 'poste',
-            'email', 'password', 'signature',
-            'est_responsable_departement',
-            'est_responsable_direction',
-            'solde_conge', 'solde_absence',
-            'role_id', 'departement_id',
-        ]));
+    // On récupère tous les champs SAUF password
+    $data = $request->only([
+        'matricule', 'nom', 'prenom', 'poste',
+        'email', 'signature',
+        'est_responsable_departement',
+        'est_responsable_direction',
+        'solde_conge', 'solde_absence',
+        'role_id', 'departement_id',
+    ]);
 
-        return redirect()
-            ->route('utilisateurs.index')
-            ->with('success', 'Utilisateur modifié avec succès');
+    // On n'ajoute le mot de passe QUE s'il a été réellement rempli
+   
+    if ($request->filled('password')) {
+        $data['password'] = $request->password;
     }
+
+    $user->update($data);
+
+    return redirect()
+        ->route('utilisateurs.index')
+        ->with('success', 'Utilisateur modifié avec succès');
+}
 
    
     public function destroy($id)

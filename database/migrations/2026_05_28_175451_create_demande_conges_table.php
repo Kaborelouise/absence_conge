@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
 
             $table->enum('lieu_jouissance',[
+                'Burkina faso',
                 'Afrique',
+                'Canada',
                 'Asie',
                 'Amerique',
                 'Europe',
-
             ]);
 
             $table->enum('statut', [
@@ -35,10 +36,6 @@ return new class extends Migration
         });
 
     }
-
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('demande_conges');

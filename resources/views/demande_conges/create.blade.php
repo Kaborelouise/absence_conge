@@ -1,25 +1,15 @@
 @extends('layouts.app')
-
 @section('title', 'Nouvelle demande de congé')
-@section('page-title', 'Demande de congé')
+@section('page-title', 'Demande de congé administratif')
 
 @section('content')
 <div class="row justify-content-center">
-    <div class="col-md-7">
-
-       
-
-        {{-- Formulaire de demande --}}
+    <div class="col-md-6">
         <div class="card shadow-sm">
-
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-calendar2-check me-2"></i>
-                    Nouvelle demande de congé
-                </h5>
+            <div class="card-header text-white text-center" style="background-color:#1e2a3a; padding: 20px;">
+                <h5 class="mb-0">Nouvelle demande de congé</h5>
             </div>
-
-            <div class="card-body">
+            <div class="card-body p-4">
 
                 @if($errors->any())
                     <div class="alert alert-danger">
@@ -34,70 +24,40 @@
                 <form action="{{ route('demande_conges.store') }}" method="POST">
                     @csrf
 
-                    <input type="hidden"
-                           name="user_id"
-                           value="{{ $user->id }}">
-
-                    {{-- Lieu de jouissance --}}
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">
-                            Lieu de jouissance
-                            <span class="text-danger">*</span>
-                        </label>
-
+                    <div class="mb-4">
+                        <label class="form-label">Lieu de jouissance</label>
                         <select name="lieu_jouissance"
-                                class="form-select">
-                            <option value="">
-                                -- Sélectionner --
-                            </option>
-
-                            <option value="Afrique"
-                                {{ old('lieu_jouissance') == 'Afrique' ? 'selected' : '' }}>
-                                Afrique
-                            </option>
-
-                            <option value="Asie"
-                                {{ old('lieu_jouissance') == 'Asie' ? 'selected' : '' }}>
-                                Asie
-                            </option>
-
-                            <option value="Amerique"
-                                {{ old('lieu_jouissance') == 'Amerique' ? 'selected' : '' }}>
-                                Amérique
-                            </option>
-
-                            <option value="Europe"
-                                {{ old('lieu_jouissance') == 'Europe' ? 'selected' : '' }}>
-                                Europe
-                            </option>
+                                class="form-select @error('lieu_jouissance') is-invalid @enderror"
+                                required>
+                            <option value="">-- Choisir un lieu --</option>
+                            <option value="Afrique" {{ old('lieu_jouissance') == 'Afrique' ? 'selected' : '' }}>Afrique</option>
+                            <option value="Asie" {{ old('lieu_jouissance') == 'Asie' ? 'selected' : '' }}>Asie</option>
+                            <option value="Amerique" {{ old('lieu_jouissance') == 'Amerique' ? 'selected' : '' }}>Amérique</option>
+                            <option value="Europe" {{ old('lieu_jouissance') == 'Europe' ? 'selected' : '' }}>Europe</option>
                         </select>
-
                         @error('lieu_jouissance')
-                            <div class="text-danger small">
-                                {{ $message }}
-                            </div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
-                    <div class="d-flex gap-2">
-                        <button type="submit"
-                                class="btn btn-success">
-                            <i class="bi bi-send me-1"></i>
-                            Soumettre la demande
-                        </button>
+                    <div class="alert alert-info" style="font-size:13px;">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Cette demande sera compilée par le service RH, puis imprimée
+                        pour signature hors plateforme.
+                    </div>
 
-                        <a href="{{ route('demande_conges.index') }}"
-                           class="btn btn-secondary">
-                            <i class="bi bi-arrow-left me-1"></i>
-                            Retour
+                    <div class="d-flex justify-content-center gap-3">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-send me-1"></i> Soumettre
+                        </button>
+                        <a href="{{ route('demande_conges.index') }}" class="btn btn-secondary px-4">
+                            Annuler
                         </a>
                     </div>
 
                 </form>
-
             </div>
         </div>
-
     </div>
 </div>
 @endsection
