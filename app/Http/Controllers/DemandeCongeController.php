@@ -7,16 +7,16 @@ use Illuminate\Http\Request;
 
 class DemandeCongeController extends Controller
 {
+    //la liste est filtrer selon le rôle
     public function index()
     {
         $user = auth()->user();
         $role = $user->role->libelle;
 
-        // L'agent ne voit que ses propres demandes.
-        // L'agent RH (et l'admin) voient tout, car c'est lui
-        // qui doit tout les compliler
+        // L'agent ne voit que ses propres demandes et si il est un responsable ceux de sa juridiction également
         $demandes = DemandeConge::with('user.departement.direction', 'avisConge')
-            ->when($role === 'agent' || ($role !== 'agent_rh' && $role !== 'admin'), function ($q) use ($user) {
+            ->when(!in_array($role, ['agent_rh', 'admin']), function ($q) use ($user) { 
+                //tout utilisateur qui n'est pas admin ou rh ne voit que ses demandes
                 $q->where('user_id', $user->id);
             })
             ->latest()

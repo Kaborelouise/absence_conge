@@ -80,6 +80,9 @@ class DemandeJouissanceController extends Controller
   
     $derniereEtape = $demande->avis->last()?->type;
 
+    //vérifie si l'auteur peut abandonner
+    $peutAbandonner = $demande->peutEtreAbandonneePar($user);
+
     // Agent du même département que l'agent
     $agentsMemeDepartement = \App\Models\User::where('departement_id', $demande->user->departement_id)
         ->where('id', '!=', $demande->user_id)
@@ -90,6 +93,7 @@ class DemandeJouissanceController extends Controller
         'peutAgir',
         'prochainActeur',
         'derniereEtape',
+        'peutAbandonner',
         'agentsMemeDepartement'
     ));
 }

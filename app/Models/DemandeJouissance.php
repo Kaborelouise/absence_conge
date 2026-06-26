@@ -56,6 +56,26 @@ class DemandeJouissance extends Model
         return ['chef_departement', 'agent_rh', 'responsable_direction'];
     }
 
+    /**
+ * L'auteur peut abandonner sa demande seulement si
+ * elle n'est pas encore validée, rejetée ou abandonnée.
+ */
+     public function peutEtreAbandonneePar(User $user): bool
+    {
+          // Si déjà abandonnée
+          if ($this->abandonnee ?? false) {
+           return false;
+        }
+
+          // Si déjà terminée
+        if (in_array($this->statut, ['validee', 'rejetee'])) {
+        return false;
+    }
+
+    // Seulement l'auteur peut abandonner
+      return $this->user_id === $user->id;
+    }
+
     public function prochainActeur(): ?string
     {
         $circuit = $this->circuitAttendu();

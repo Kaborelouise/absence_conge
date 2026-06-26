@@ -56,4 +56,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('demande_absences/{id}/telecharger', [DemandeAbsenceController::class, 'telecharger'])
     ->name('demande_absences.telecharger');
+
+
+
+    Route::get('demende_jouissance/{id}/abandonner', [DemandeJouissanceController::class, 'abandonner'])
+    ->name('demande_jouissances.abandonner');
 });

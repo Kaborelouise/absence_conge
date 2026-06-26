@@ -5,7 +5,7 @@
 @section('content')
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h5 class="fw-bold mb-0">Détail / Suivi de la demande</h5>
+    <h5 class="fw-bold mb-0">Détail / suivi de la demande #{{ $demande->num_demande }}</h5>
     <a href="{{ route('demande_absences.index') }}" class="btn btn-sm btn-secondary">
         <i class="bi bi-arrow-left me-1"></i> Retour
     </a>
@@ -121,7 +121,6 @@
             </div>
         </div>
     </div>
-
     <div class="col-md-6">
 
         <div class="card shadow-sm mb-3">
@@ -194,6 +193,9 @@
                     Votre demande a été validée. Vous pouvez télécharger
                     l'autorisation d'absence et clôturer le processus.
                 </p>
+                {{-- ajout du bouton télécharger.
+                    Route 'demande_absences.telecharger' à créer
+                    dans le controller --}}
                 <a href="{{ route('demande_absences.telecharger', $demande->id) }}"
                    class="btn btn-success px-4 mb-2">
                     <i class="bi bi-download me-2"></i>

@@ -68,8 +68,7 @@
                     </td>
                     <td>
                         <a href="{{ route('demande_jouissances.show', $demande->id) }}"
-                           class="btn btn-sm btn-outline-primary btn-action">
-                            <i class="bi bi-eye"></i>
+                           class="btn btn-sm btn-outline-primary btn-action">voir
                         </a>
 
                         @if($modifiable)

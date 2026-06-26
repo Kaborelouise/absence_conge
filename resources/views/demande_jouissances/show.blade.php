@@ -5,7 +5,7 @@
 @section('content')
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h5 class="fw-bold mb-0">Détail / Suivi de la demande</h5>
+    <h5 class="fw-bold mb-0">Détail / Suivi de la demande #{{ $demande->num_demande }}</h5>
     <a href="{{ route('demande_jouissances.index') }}" class="btn btn-sm btn-secondary">
         <i class="bi bi-arrow-left me-1"></i> Retour
     </a>
@@ -24,13 +24,37 @@
     </div>
 @endif
 
+@if($demande->abandonnee ?? false)
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        Cette demande a été <strong>abandonnée</strong> par l'agent.
+        Elle ne peut plus être traitée.
+    </div>
+@endif
+
 <div class="row g-3">
+
+    {{-- COLONNE GAUCHE --}}
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
             <div class="card-header text-white" style="background:#1B384F;">
                 <i class="bi bi-file-text me-2"></i> Informations de la demande
             </div>
             <div class="card-body p-0">
+
+                {{-- On définit $etapeLabels ici une seule fois
+                     pour l'utiliser dans toute la vue --}}
+                @php
+                    $etapeLabels = [
+                        'chef_departement'      => 'Avis Supérieur Hiérarchique',
+                        'agent_rh'              => 'Avis Directeur RH',
+                        'responsable_direction' => 'Décision Directeur de Service',
+                        'sg'                    => 'Décision Secrétaire Général',
+                        'dg'                    => 'Décision Directeur Général',
+                        'pca'                   => 'Décision PCA',
+                    ];
+                @endphp
+
                 <table class="table table-sm mb-0">
                     <tr>
                         <th class="ps-3" style="width:40%">Numéro</th>
@@ -63,33 +87,28 @@
                     <tr>
                         <th class="ps-3">Étape actuelle</th>
                         <td>
-                            @php
-                              
-                                $etapeLabels = [
-                                    'chef_departement'      => 'Avis Chef Département',
-                                    'agent_rh'              => 'Avis Agent RH',
-                                    'responsable_direction' => 'Décision Responsable Direction',
-                                    'sg'                    => 'Décision Secrétaire Général',
-                                    'dg'                    => 'Décision Directeur Général',
-                                    'pca'                   => 'Décision PCA',
-                                ];
-                            @endphp
+                            @if($demande->abandonnee ?? false)
+                                {{-- Demande abandonnée --}}
+                                <span class="badge bg-warning text-dark">Abandonnée</span>
 
-                            @if($demande->statut === 'validee')
+                            @elseif($demande->statut === 'validee')
+                                {{-- Circuit terminé favorablement --}}
                                 <span class="badge-statut badge-validee">Validée</span>
 
                             @elseif($demande->statut === 'rejetee')
+                                {{-- Circuit arrêté par avis défavorable --}}
                                 <span class="badge-statut badge-rejetee">Rejetée</span>
 
-                            @elseif($demande->statut === 'en_attente')
-                                <span class="badge-statut badge-en_attente">
-                                    Initiation
-                                </span>
-
-                            @else
+                            @elseif($derniereEtape)
+                                {{-- Au moins un avis donné :
+                                     on affiche la DERNIÈRE étape complétée --}}
                                 <span class="badge-statut badge-en_cours">
                                     {{ $etapeLabels[$derniereEtape] ?? $derniereEtape }}
                                 </span>
+
+                            @else
+                                {{-- Aucun avis encore : demande tout juste initiée --}}
+                                <span class="badge-statut badge-en_attente">Initiation</span>
                             @endif
                         </td>
                     </tr>
@@ -98,7 +117,7 @@
         </div>
     </div>
 
-
+    {{-- COLONNE DROITE --}}
     <div class="col-md-6">
 
         <div class="card shadow-sm mb-3">
@@ -137,25 +156,28 @@
                     </p>
                 @endforelse
 
-                {{-- Prochaine étape attendue --}}
-                @if(!in_array($demande->statut, ['validee', 'rejetee']) && $prochainActeur)
+                {{-- Prochaine étape : visible si circuit pas terminé
+                     et pas abandonnée --}}
+                @if(!($demande->abandonnee ?? false) && !in_array($demande->statut, ['validee', 'rejetee']) && $prochainActeur)
                     <div class="alert alert-info mb-0 mt-2 py-2" style="font-size:12px;">
-                        <i class="bi bi-arrow-right-circle me-1"></i>
-                        Prochaine étape :
+                        <i class="bi bi-clock me-1"></i>
+                        En attente de :
                         <strong>{{ $etapeLabels[$prochainActeur] ?? $prochainActeur }}</strong>
                     </div>
                 @endif
 
             </div>
         </div>
-        @if($peutAgir && !in_array($demande->statut, ['validee', 'rejetee']))
+
+        {{-- Bouton donner avis : double vérification --}}
+        @if($peutAgir && !($demande->abandonnee ?? false) && !in_array($demande->statut, ['validee', 'rejetee']))
         <div class="d-grid mb-3">
             <button type="button"
                     class="btn btn-primary"
                     data-bs-toggle="modal"
                     data-bs-target="#modalAvisJouissance">
                 <i class="bi bi-pencil-square me-2"></i>
-                @if(in_array(auth()->user()->role->libelle, ['sg','dg','pca','responsable_direction']))
+                @if(in_array(auth()->user()->role->libelle, ['responsable_direction','sg','dg','pca']))
                     Prendre ma décision
                 @else
                     Donner mon avis
@@ -163,6 +185,21 @@
             </button>
         </div>
         @endif
+
+        {{-- Bouton abandonner --}}
+        @if(isset($peutAbandonner) && $peutAbandonner)
+        <div class="d-grid mb-3">
+            <button type="button"
+                    class="btn btn-warning"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalAbandonner">
+                <i class="bi bi-x-octagon me-2"></i>
+                Abandonner la demande
+            </button>
+        </div>
+        @endif
+
+        {{-- Bloc clôture si validée --}}
         @if($demande->statut === 'validee' && $demande->user_id === auth()->id())
         <div class="card shadow-sm border-success">
             <div class="card-header text-white" style="background:#198754;">
@@ -172,8 +209,7 @@
                 <p style="font-size:13px;" class="text-muted mb-3">
                     Votre demande a été validée. Veuillez imprimer les
                     certificats de cessation et de prise de service,
-                    les faire signer, puis les charger ici pour clôturer
-                    le processus
+                    les faire signer, puis les charger ici.
                 </p>
                 <div class="alert alert-warning py-2" style="font-size:12px;">
                     <i class="bi bi-printer me-1"></i>
@@ -194,19 +230,19 @@
     </div>
 </div>
 
-@if($peutAgir && !in_array($demande->statut, ['validee', 'rejetee']))
-<div class="modal fade" id="modalAvisJouissance" tabindex="-1"
-     aria-labelledby="modalAvisJouissanceLabel" aria-hidden="true">
+{{-- MODAL DONNER AVIS --}}
+@if($peutAgir && !($demande->abandonnee ?? false) && !in_array($demande->statut, ['validee', 'rejetee']))
+<div class="modal fade" id="modalAvisJouissance" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
 
             <div class="modal-header text-white" style="background:#1B384F;">
-                <h5 class="modal-title" id="modalAvisJouissanceLabel">
+                <h5 class="modal-title">
                     <i class="bi bi-pencil-square me-2"></i>
                     @if(in_array(auth()->user()->role->libelle, ['responsable_direction','sg','dg','pca']))
                         Prendre ma décision
                     @else
-                        Donner mon avis 
+                        Donner mon avis
                     @endif
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -217,19 +253,16 @@
                 <input type="hidden" name="demande_jouissance_id" value="{{ $demande->id }}">
 
                 <div class="modal-body">
+
                     @if(auth()->user()->role->libelle === 'agent_rh')
                     <div class="alert alert-info py-2 mb-3" style="font-size:13px;">
                         <i class="bi bi-info-circle me-1"></i>
-                        Solde congé restant de l'agent :
-                        <strong>{{ $demande->user->solde_conge }} jours</strong>
+                        Solde congé restant : <strong>{{ $demande->user->solde_conge }} jours</strong>
                         <br>
-                        <small class="text-muted">
-                            Jours demandés : {{ $demande->nombre_jour }} jour(s)
-                        </small>
+                        <small class="text-muted">Jours demandés : {{ $demande->nombre_jour }} jour(s)</small>
                     </div>
                     @endif
 
-                    {{-- Avis favorable ou défavorable--}}
                     <div class="mb-3">
                         <label class="form-label fw-bold">
                             @if(in_array(auth()->user()->role->libelle, ['responsable_direction','sg','dg','pca']))
@@ -261,6 +294,7 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="mb-3">
                         <label class="form-label fw-bold" id="labelCommentaireJouissance">
                             Commentaire
@@ -279,17 +313,52 @@
                         Annuler
                     </button>
                     <button type="submit" class="btn btn-primary px-4">
-                        <i class="bi bi-send me-1"></i> Soumettre 
+                        <i class="bi bi-send me-1"></i> Soumettre
                     </button>
                 </div>
-
             </form>
         </div>
     </div>
 </div>
-
 @endif
+
+{{-- MODAL ABANDONNER --}}
+@if(isset($peutAbandonner) && $peutAbandonner)
+<div class="modal fade" id="modalAbandonner" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background:#fd7e14;">
+                <h5 class="modal-title">
+                    <i class="bi bi-x-octagon me-2"></i> Abandonner la demande
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Attention !</strong> Cette action est irréversible.
+                </div>
+                <p>Êtes-vous sûr de vouloir abandonner cette demande ?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Annuler
+                </button>
+                <form action="{{ route('demande_jouissances.abandonner', $demande->id) }}"
+                      method="POST" class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-warning px-4">
+                        <i class="bi bi-x-octagon me-1"></i> Oui, abandonner
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 @endsection
+
 @section('scripts')
 <script>
 function toggleMotifJouissance(valeur) {
@@ -310,4 +379,4 @@ function toggleMotifJouissance(valeur) {
     }
 }
 </script>
-@endsection 
+@endsection
