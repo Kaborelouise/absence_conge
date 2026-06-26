@@ -50,19 +50,12 @@ class JustificatifAbsenceController extends Controller
             ->with('success', 'Justificatif ajouté');
     }
 
-        
-
-    // /**
-    //  * Display the specified resource.
-    //  */
     public function show(JustificatifAbsence $justificatifAbsence)
     {
-     //
+     
     }
 
-    // /**
-    //  * Show the form for editing the specified resource.
-    //  */
+    
     public function edit($id)
     {
       $justificatif = JustificatifAbsence::findOrFail($id);
@@ -70,10 +63,6 @@ class JustificatifAbsenceController extends Controller
         return view('justificatifabsence.edit', compact('justificatifabsence', 'demandes'));
     
     }
-
-    // /**
-    //  * Update the specified resource in storage.
-    //  */
     public function update(Request $request, $id)
     { 
         $request->validate([
@@ -100,10 +89,6 @@ class JustificatifAbsenceController extends Controller
 
          
     }
-
-    // /**
-    //  * Remove the specified resource from storage.
-    //  */
     public function destroy(JustificatifAbsence $justificatifAbsence)
     {
      JustificatifAbsence::findOrFail($id)->delete();

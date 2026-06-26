@@ -205,6 +205,21 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
+            @if($demande->abandonnee ?? false)
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        Cette demande a été <strong>abandonnée</strong> par l'agent.
+        Elle ne peut plus être traitée.
+    </div>
+@endif
+
+            @if($demande->abandonnee ?? false)
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        Cette demande a été <strong>abandonnée</strong> par l'agent.
+        Elle ne peut plus être traitée.
+    </div>
+@endif
             <form action="{{ route('avis_absences.store') }}" method="POST">
                 @csrf
                 <input type="hidden" name="demande_absence_id" value="{{ $demande->id }}">
@@ -294,11 +309,45 @@
                         Annuler
                     </button>
                     <button type="submit" class="btn btn-primary px-4">
-                        <i class="bi bi-send me-1"></i> Soumettre
+                        <i class="bi bi-send me-1"></i> Soumettre 
                     </button>
                 </div>
 
             </form>
+        </div>
+    </div>
+</div>
+@endif
+
+@if(isset($peutAbandonner) && $peutAbandonner)
+<div class="modal fade" id="modalAbandonnerAbsence" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background:#fd7e14;">
+                <h5 class="modal-title">
+                    <i class="bi bi-x-octagon me-2"></i> Abandonner la demande
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Attention !</strong> Cette action est irréversible.
+                </div>
+                <p>Êtes-vous sûr de vouloir abandonner cette demande ?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Annuler
+                </button>
+                <form action="{{ route('demande_absences.abandonner', $demande->id) }}"
+                      method="POST" class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-warning px-4">
+                        <i class="bi bi-x-octagon me-1"></i> Oui, abandonner
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </div>

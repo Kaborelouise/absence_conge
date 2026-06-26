@@ -34,7 +34,7 @@
 
 <div class="row g-3">
 
-    {{-- COLONNE GAUCHE --}}
+    {{-- Colonne de gauche --}}
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
             <div class="card-header text-white" style="background:#1B384F;">
@@ -46,8 +46,8 @@
                      pour l'utiliser dans toute la vue --}}
                 @php
                     $etapeLabels = [
-                        'chef_departement'      => 'Avis Supérieur Hiérarchique',
-                        'agent_rh'              => 'Avis Directeur RH',
+                        'chef_departement'      => 'Avis Chef de département',
+                        'agent_rh'              => 'Avis Agent RH',
                         'responsable_direction' => 'Décision Directeur de Service',
                         'sg'                    => 'Décision Secrétaire Général',
                         'dg'                    => 'Décision Directeur Général',
@@ -116,8 +116,6 @@
             </div>
         </div>
     </div>
-
-    {{-- COLONNE DROITE --}}
     <div class="col-md-6">
 
         <div class="card shadow-sm mb-3">
@@ -156,8 +154,8 @@
                     </p>
                 @endforelse
 
-                {{-- Prochaine étape : visible si circuit pas terminé
-                     et pas abandonnée --}}
+                {{-- Prochaine étape visible si le circuit n'est pas terminé
+                     et n'est pas abandonnée --}}
                 @if(!($demande->abandonnee ?? false) && !in_array($demande->statut, ['validee', 'rejetee']) && $prochainActeur)
                     <div class="alert alert-info mb-0 mt-2 py-2" style="font-size:12px;">
                         <i class="bi bi-clock me-1"></i>
@@ -169,7 +167,7 @@
             </div>
         </div>
 
-        {{-- Bouton donner avis : double vérification --}}
+        {{-- Bouton donner avis double vérification--}}
         @if($peutAgir && !($demande->abandonnee ?? false) && !in_array($demande->statut, ['validee', 'rejetee']))
         <div class="d-grid mb-3">
             <button type="button"
@@ -199,7 +197,7 @@
         </div>
         @endif
 
-        {{-- Bloc clôture si validée --}}
+        {{-- Bloc de clôture si la demande est validée --}}
         @if($demande->statut === 'validee' && $demande->user_id === auth()->id())
         <div class="card shadow-sm border-success">
             <div class="card-header text-white" style="background:#198754;">
@@ -230,7 +228,7 @@
     </div>
 </div>
 
-{{-- MODAL DONNER AVIS --}}
+{{-- Modal donner un avis --}}
 @if($peutAgir && !($demande->abandonnee ?? false) && !in_array($demande->statut, ['validee', 'rejetee']))
 <div class="modal fade" id="modalAvisJouissance" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -322,7 +320,7 @@
 </div>
 @endif
 
-{{-- MODAL ABANDONNER --}}
+{{-- modal abandonner --}}
 @if(isset($peutAbandonner) && $peutAbandonner)
 <div class="modal fade" id="modalAbandonner" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -374,7 +372,7 @@ function toggleMotifJouissance(valeur) {
     } else {
         label.innerHTML         = 'Commentaire <span class="text-muted fw-normal">(optionnel)</span>';
         commentaire.classList.remove('border-danger');
-        commentaire.placeholder = 'Remarques éventuelles...';
+        commentaire.placeholder = '...';
         commentaire.required    = false;
     }
 }

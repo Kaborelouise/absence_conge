@@ -18,8 +18,7 @@ return new class extends Migration
             $table->boolean('abandonnee')->default(false)->after('statut');
         });
 
-        // Ajout statut sur demande_conges (qui n'en avait pas)
-        // + abandonnee aussi
+        // Ajout statut sur demande_conges
         Schema::table('demande_conges', function (Blueprint $table) {
             $table->enum('statut', ['en_attente', 'compilee', 'rejetee'])
                   ->default('en_attente')

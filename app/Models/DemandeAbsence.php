@@ -15,7 +15,14 @@ class DemandeAbsence extends Model
         'retenue_salaire',
         'statut',
         'user_id',
-    ];
+        'abandonnee',
+        ];
+
+        protected $cast =[
+            'abandonnee' => 'boolean',
+            'retenue_salaire' => 'boolean',
+
+        ];
 
     public function user()
     {
@@ -39,7 +46,6 @@ class DemandeAbsence extends Model
         $role  = $user->role->libelle;
 
         // on calcul la durée pour déterminer le validateur final
-        // diffInDays retourne un entier positif
         $jours = \Carbon\Carbon::parse($this->date_debut)
                                ->diffInDays($this->date_fin);
         $validateurFinal = $jours > 5 ? 'dg' : 'sg';
@@ -65,13 +71,9 @@ class DemandeAbsence extends Model
         }
 
         // Cas Agent simple d'un département 
-
         return ['chef_departement', 'responsable_direction', 'agent_rh', $validateurFinal];
     }
-
-    // Retourne le type d'avis attendu à l'étape actuelle.
-
-
+    // Retourne le type d'avis attendu à l'étape actuelle
     public function prochainActeur(): ?string
     {
         $circuit = $this->circuitAttendu();
@@ -91,6 +93,7 @@ class DemandeAbsence extends Model
     }
 
     // cette fonction vérifie si l'utilisateur peut donner son avis
+
     public function peutDonnerAvis(User $user): bool
     {
         if (in_array($this->statut, ['validee', 'rejetee'])) {
@@ -122,4 +125,18 @@ class DemandeAbsence extends Model
 
         return false;
     }
+    //l'auteur peut abandonner sa demande si elle n'est pas encore traiter
+      public function peutEtreAbandonneePar(User $user): bool
+    {
+    if ($this->abandonnee ?? false) {
+        return false;
+    }
+
+    if (in_array($this->statut, ['validee', 'rejetee'])) {
+        return false;
+    }
+
+    return $this->user_id === $user->id;
+     }
+    
 }

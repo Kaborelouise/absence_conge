@@ -193,9 +193,7 @@
                     Votre demande a été validée. Vous pouvez télécharger
                     l'autorisation d'absence et clôturer le processus.
                 </p>
-                {{-- ajout du bouton télécharger.
-                    Route 'demande_absences.telecharger' à créer
-                    dans le controller --}}
+                {{-- ajout du bouton télécharger route 'demande_absences.telecharger' à créer dans le controller --}}
                 <a href="{{ route('demande_absences.telecharger', $demande->id) }}"
                    class="btn btn-success px-4 mb-2">
                     <i class="bi bi-download me-2"></i>
@@ -218,7 +216,7 @@
                     @if(in_array(auth()->user()->role->libelle, ['sg','dg','pca']))
                        Décision
                     @else
-                        Donner mon avis
+                        Donner mon avis 
                     @endif
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>

@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
 
             $table->enum('lieu_jouissance',[
+                'Burkina faso',
                 'Afrique',
+                'Canada',
                 'Asie',
                 'Amerique',
                 'Europe',
-
             ]);
             $table->foreignId('user_id')
                 ->constrained('users');
@@ -28,10 +29,6 @@ return new class extends Migration
         });
 
     }
-
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('demande_conges');

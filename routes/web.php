@@ -61,4 +61,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('demende_jouissance/{id}/abandonner', [DemandeJouissanceController::class, 'abandonner'])
     ->name('demande_jouissances.abandonner');
+
+    Route::get('demende_absence/{id}/abandonner', [DemandeAbsenceController::class, 'abandonner'])
+    ->name('demande_absences.abandonner');
 });

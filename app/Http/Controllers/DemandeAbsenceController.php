@@ -84,6 +84,9 @@ public function create()
     $peutAgir       = $demande->peutDonnerAvis($user);
     $prochainActeur = $demande->prochainActeur();
     $derniereEtape = $demande->avisAbsence->last()?->type;
+
+    $peutAbandonner = $demande->peutEtreAbandonneePar ($user);
+
     $agentsMemeDepartement = \App\Models\User::where('departement_id', $demande->user->departement_id)
         ->where('id', '!=', $demande->user_id)
         ->get();
@@ -93,6 +96,7 @@ public function create()
         'peutAgir', 
         'prochainActeur', 
         'derniereEtape',
+        'peutAbandonner',
         'agentsMemeDepartement'
     ));
  }
@@ -151,4 +155,21 @@ public function create()
             ->route('demande_absences.index')
             ->with('success', 'Demande supprimée.');
     }
+
+        public function abandonner($id)
+        {
+        $demande = DemandeAbsence::findOrFail($id);
+
+         if (!$demande->peutEtreAbandonneePar(auth()->user())) {
+        return redirect() 
+            ->route('demande_absences.show', $id)
+            ->with('error', 'Vous ne pouvez pas abandonner cette demande.');
+       }
+
+        $demande->update(['abandonnee' => true]);
+
+        return redirect()
+          ->route('demande_absences.index')
+          ->with('success', 'Demande abandonnée.');
+        }
 }

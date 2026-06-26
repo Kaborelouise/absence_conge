@@ -14,7 +14,7 @@ class DemandeCongeController extends Controller
         $role = $user->role->libelle;
 
         // L'agent ne voit que ses propres demandes et si il est un responsable ceux de sa juridiction également
-        $demandes = DemandeConge::with('user.departement.direction', 'avisConge')
+        $demande = DemandeConge::with('user.departement.direction', 'avisConge')
             ->when(!in_array($role, ['agent_rh', 'admin']), function ($q) use ($user) { 
                 //tout utilisateur qui n'est pas admin ou rh ne voit que ses demandes
                 $q->where('user_id', $user->id);
@@ -22,7 +22,7 @@ class DemandeCongeController extends Controller
             ->latest()
             ->get();
 
-        return view('demande_conges.index', compact('demandes'));
+        return view('demande_conges.index', compact('demande'));
     }
 
     public function create()
