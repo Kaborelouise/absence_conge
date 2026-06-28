@@ -46,6 +46,7 @@
                 @php
                     $peutAgirIci = $demande->peutDonnerAvis(auth()->user());
                     $estAuteur   = $demande->user_id === auth()->id();
+                    // $modifiable visible uniquement par l'auteur si la demande est en attente
                     $modifiable  = $estAuteur && $demande->statut === 'en_attente';
                 @endphp
 
@@ -57,22 +58,23 @@
                     <td>{{ \Carbon\Carbon::parse($demande->date_fin)->format('d/m/Y') }}</td>
                     <td>{{ $demande->motif }}</td>
                     <td>
-                       
-                 @if($peutAgirIci)
-                    <span class="badge bg-warning text-dark" style="font-size:11px;">
-                   <i class="bi bi-clock me-1"></i> À traiter
-                     </span>
-                    @else
-                   <span class="badge-statut badge-{{ $demande->statut }}">
-                            {{ ucfirst(str_replace('_',' ',$demande->statut)) }}
-                     </span>
-                @endif
+                        @if($peutAgirIci)
+                            <span class="badge bg-warning text-dark" style="font-size:11px;">
+                                <i class="bi bi-clock me-1"></i> À traiter
+                            </span>
+                        @else
+                            <span class="badge-statut badge-{{ $demande->statut }}">
+                                {{ ucfirst(str_replace('_',' ',$demande->statut)) }}
+                            </span>
+                        @endif
                     </td>
                     <td>
+                        {{-- Bouton Voir : visible par tous --}}
                         <a href="{{ route('demande_absences.show', $demande->id) }}"
                            class="btn btn-sm btn-outline-primary btn-action">Voir
                         </a>
 
+                        {{-- Bouton Modifier : auteur uniquement, demande en attente --}}
                         @if($modifiable)
                         <a href="{{ route('demande_absences.edit', $demande->id) }}"
                            class="btn btn-sm btn-success btn-action">
@@ -80,6 +82,7 @@
                         </a>
                         @endif
 
+                        {{-- Bouton Supprimer : auteur uniquement, demande en attente --}}
                         @if($modifiable)
                         <form action="{{ route('demande_absences.destroy', $demande->id) }}"
                               method="POST" class="d-inline">
@@ -91,6 +94,18 @@
                             </button>
                         </form>
                         @endif
+
+                        @if($modifiable)
+                        <form action="{{ route('demande_absences.abandonner', $demande->id) }}"
+                              method="POST" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-warning btn-action"
+                                    onclick="return confirm('Abandonner cette demande ?')">
+                                Abandonner
+                            </button>
+                        </form>
+                        @endif
+
                     </td>
                 </tr>
                 @empty
@@ -114,4 +129,4 @@ document.getElementById('recherche').addEventListener('input', function () {
     });
 });
 </script>
-@endsection 
+@endsection
