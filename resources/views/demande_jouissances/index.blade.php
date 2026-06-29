@@ -7,7 +7,6 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="mb-0 fw-bold">Liste des demandes de jouissance</h5>
-
     <a href="{{ route('demande_jouissances.create') }}" class="btn btn-primary btn-sm">
         <i class="bi bi-plus-lg me-1"></i> Nouvelle demande
     </a>
@@ -28,7 +27,8 @@
         </div>
 
         <table class="table table-hover" id="tableJouissances">
-            <thead class="table-dark">
+            {{-- CORRECTION : table-anptic-dark pour cohérence avec les autres pages --}}
+            <thead class="table-anptic-dark">
                 <tr>
                     <th>N° Demande</th>
                     <th>Agent</th>
@@ -46,7 +46,8 @@
                 @php
                     $peutAgirIci = $demande->peutDonnerAvis(auth()->user());
                     $estAuteur   = $demande->user_id === auth()->id();
-                    $modifiable  = $estAuteur && $demande->statut === 'en_attente';
+                    // Modifiable : auteur, en attente, et pas encore abandonnée
+                    $modifiable  = $estAuteur && $demande->statut === 'en_attente' && !$demande->abandonnee;
                 @endphp
 
                 <tr>
@@ -57,28 +58,31 @@
                     <td>{{ \Carbon\Carbon::parse($demande->date_fin)->format('d/m/Y') }}</td>
                     <td>{{ $demande->nombre_jour }}</td>
                     <td>
-                        <span class="badge-statut badge-{{ $demande->statut }}">
-                            {{ ucfirst(str_replace('_',' ',$demande->statut)) }}
-                        </span>
-                        @if($peutAgirIci)
-                            <span class="badge bg-warning text-dark ms-1" style="font-size:10px;">
-                                À traiter
+                        {{-- CORRECTION : cas abandonnée affiché en priorité --}}
+                        @if($demande->abandonnee)
+                            <span class="badge-statut badge-rejetee">Abandonnée</span>
+                        @elseif($peutAgirIci)
+                            <span class="badge bg-warning text-dark" style="font-size:11px;">
+                                <i class="bi bi-clock me-1"></i> À traiter
+                            </span>
+                        @else
+                            <span class="badge-statut badge-{{ $demande->statut }}">
+                                {{ ucfirst(str_replace('_', ' ', $demande->statut)) }}
                             </span>
                         @endif
                     </td>
                     <td>
+                        {{-- Bouton Voir : visible par tous --}}
                         <a href="{{ route('demande_jouissances.show', $demande->id) }}"
-                           class="btn btn-sm btn-outline-primary btn-action">voir
+                           class="btn btn-sm btn-outline-primary btn-action">Voir
                         </a>
 
+                        {{-- Boutons Modifier / Supprimer / Abandonner : auteur, en attente, pas abandonnée --}}
                         @if($modifiable)
                         <a href="{{ route('demande_jouissances.edit', $demande->id) }}"
                            class="btn btn-sm btn-success btn-action">
                             Modifier
                         </a>
-                        @endif
-
-                        @if($modifiable)
                         <form action="{{ route('demande_jouissances.destroy', $demande->id) }}"
                               method="POST" class="d-inline">
                             @csrf
@@ -86,6 +90,15 @@
                             <button type="submit" class="btn btn-sm btn-danger btn-action"
                                     onclick="return confirm('Supprimer cette demande ?')">
                                 Supprimer
+                            </button>
+                        </form>
+                        {{-- AJOUT : bouton Abandonner --}}
+                        <form action="{{ route('demande_jouissances.abandonner', $demande->id) }}"
+                              method="POST" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-warning btn-action"
+                                    onclick="return confirm('Abandonner cette demande ?')">
+                                Abandonner
                             </button>
                         </form>
                         @endif

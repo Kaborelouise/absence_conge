@@ -7,10 +7,14 @@ use Illuminate\Http\Request;
 
 class DirectionController extends Controller
 {
+    // AJOUT : protection admin sur toutes les méthodes
+    public function __construct()
+    {
+        $this->middleware('admin');
+    }
+
     public function index()
     {
-        // with('departements') charge les départements de chaque direction
-        // withCount('departements') ajoute le compte directement pour la vérification avant suppression dans la vue
         $directions = Direction::with('departements')->withCount('departements')->get();
         return view('directions.index', compact('directions'));
     }
@@ -27,10 +31,7 @@ class DirectionController extends Controller
             'libelle_long'  => 'required|string|max:255',
         ]);
 
-        Direction::create($request->only([
-            'libelle_court',
-            'libelle_long',
-        ]));
+        Direction::create($request->only(['libelle_court', 'libelle_long']));
 
         return redirect()
             ->route('directions.index')
@@ -51,12 +52,7 @@ class DirectionController extends Controller
         ]);
 
         $direction = Direction::findOrFail($id);
-
-        // On précise explicitement les champs attendus plutôt que d'utiliser all()
-        $direction->update($request->only([
-            'libelle_court',
-            'libelle_long',
-        ]));
+        $direction->update($request->only(['libelle_court', 'libelle_long']));
 
         return redirect()
             ->route('directions.index')
@@ -67,8 +63,7 @@ class DirectionController extends Controller
     {
         $direction = Direction::withCount('departements')->findOrFail($id);
 
-        // Sécurité empêche la suppression si des départementssont encore rataché a cette direction
-        if ($direction->departements_count > 0) { 
+        if ($direction->departements_count > 0) {
             return redirect()
                 ->route('directions.index')
                 ->with('error', "Impossible de supprimer cette direction : {$direction->departements_count} département(s) y sont rattachés.");

@@ -7,22 +7,19 @@ use Illuminate\Http\Request;
 
 class DemandeCongeController extends Controller
 {
-    //la liste est filtrer selon le rôle
     public function index()
     {
         $user = auth()->user();
         $role = $user->role->libelle;
 
-        // L'agent ne voit que ses propres demandes et si il est un responsable ceux de sa juridiction également
-        $demande = DemandeConge::with('user.departement.direction', 'avisConge')
-            ->when(!in_array($role, ['agent_rh', 'admin']), function ($q) use ($user) { 
-                //tout utilisateur qui n'est pas admin ou rh ne voit que ses demandes
+        $demandes = DemandeConge::with('user.departement.direction', 'avisConge')
+            ->when(!in_array($role, ['agent_rh', 'admin']), function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             })
             ->latest()
             ->get();
 
-        return view('demande_conges.index', compact('demande'));
+        return view('demande_conges.index', compact('demandes'));
     }
 
     public function create()
@@ -39,8 +36,7 @@ class DemandeCongeController extends Controller
 
         DemandeConge::create([
             'lieu_jouissance' => $request->lieu_jouissance,
-            // user_id vient de l'utilisateur connecté, jamais du formulaire
-            'user_id' => auth()->id(),
+            'user_id'         => auth()->id(),
         ]);
 
         return redirect()
@@ -57,18 +53,17 @@ class DemandeCongeController extends Controller
 
         $user = auth()->user();
 
-        // Permet d'afficher ou pas le bouton "Compiler" dans la vue
-        $peutCompiler = $demande->peutEtreCompileePar($user);
+        $peutCompiler   = $demande->peutEtreCompileePar($user);
+        // AJOUT : vérification si l'utilisateur peut abandonner la demande
+        $peutAbandonner = $demande->peutEtreAbandonneePar($user);
 
-        return view('demande_conges.show', compact('demande', 'peutCompiler'));
+        return view('demande_conges.show', compact('demande', 'peutCompiler', 'peutAbandonner'));
     }
 
     public function edit($id)
     {
         $demande = DemandeConge::findOrFail($id);
 
-        // Modifiable seulement par l'auteur, et seulement si
-        // pas encore compilée
         if ($demande->user_id !== auth()->id() || $demande->estCompilee()) {
             return redirect()
                 ->route('demande_conges.show', $id)
@@ -114,5 +109,23 @@ class DemandeCongeController extends Controller
         return redirect()
             ->route('demande_conges.index')
             ->with('success', 'Demande supprimée.');
+    }
+
+    // AJOUT : méthode abandonner
+    public function abandonner($id)
+    {
+        $demande = DemandeConge::findOrFail($id);
+
+        if (!$demande->peutEtreAbandonneePar(auth()->user())) {
+            return redirect()
+                ->route('demande_conges.show', $id)
+                ->with('error', 'Vous ne pouvez pas abandonner cette demande.');
+        }
+
+        $demande->update(['abandonnee' => true]);
+
+        return redirect()
+            ->route('demande_conges.index')
+            ->with('success', 'Demande abandonnée.');
     }
 }

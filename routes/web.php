@@ -40,9 +40,15 @@ Route::middleware('auth')->group(function () {
 
     // DEMANDES
     Route::resource('demande_absences', DemandeAbsenceController::class);
+    Route::post('demande_absences/{id}/abandonner', [DemandeAbsenceController::class, 'abandonner'])
+    ->name('demande_absences.abandonner');
     Route::resource('justificatifabsence', JustificatifAbsenceController::class)
+     ->only(['create', 'store', 'destroy']);
+    Route::get('demande_absences/{id}/telecharger', [DemandeAbsenceController::class, 'telecharger'])
+        ->name('demande_absences.telecharger');
+ 
     
-        ->only(['create', 'store', 'destroy']);
+       
     Route::resource('avis_absences', AvisAbsenceController::class)
         ->only(['create', 'store', 'edit', 'update', 'destroy']);
     Route::resource('demande_conges', DemandeCongeController::class);
@@ -51,21 +57,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('demande_jouissances', DemandeJouissanceController::class);
     Route::resource('avis_jouissances', AvisJouissanceController::class)
         ->only(['create', 'store', 'edit', 'update', 'destroy']);
+    Route::post('demande_jouissances/{id}/abandonner', [DemandeJouissanceController::class, 'abandonner'])
+        ->name('demande_jouissances.abandonner');
+ 
 
-        
-
-    Route::get('demande_absences/{id}/telecharger', [DemandeAbsenceController::class, 'telecharger'])
-    ->name('demande_absences.telecharger');
-
-
-
-    Route::get('demande_jouissances/{id}/abandonner', [DemandeJouissanceController::class, 'abandonner'])
-    ->name('demande_jouissances.abandonner');
-
-    Route::post('demande_absence/{id}/abandonner', [DemandeAbsenceController::class, 'abandonner'])
-    ->name('demande_absences.abandonner');
-
-    // AJOUT : routes pour la clôture jouissance
+    // Ajout routes pour la clôture de demande jouissance
     Route::post('demande_jouissances/{id}/upload-cessation', [DemandeJouissanceController::class, 'uploadCessation'])
     ->name('demande_jouissances.upload_cessation');
 
@@ -77,4 +73,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('demande_jouissances/{id}/telecharger', [DemandeJouissanceController::class, 'telecharger'])
     ->name('demande_jouissances.telecharger');
+
+    Route::post('demande_conges/{id}/abandonner', [DemandeCongeController::class, 'abandonner'])
+    ->name('demande_conges.abandonner');
 });

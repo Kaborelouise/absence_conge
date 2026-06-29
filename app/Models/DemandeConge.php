@@ -9,6 +9,7 @@ class DemandeConge extends Model
     protected $fillable = [
         'lieu_jouissance',
         'user_id',
+        'abandonnee',
     ];
 
     public function user()
@@ -33,5 +34,17 @@ class DemandeConge extends Model
         }
 
         return $user->role->libelle === 'agent_rh';
+    }
+
+    //un agent peut abandonner sa demande si elle n'est pas encore compilée
+    public function peutEtreAbandonneePar(User $user): bool
+
+    {
+        if ($this->abandonnee || $this->estCompilee())
+            {
+                return false;
+            }
+
+            return $this->user_id === $user->id;
     }
 }

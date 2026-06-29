@@ -7,6 +7,12 @@ use Illuminate\Http\Request;
 
 class RoleController extends Controller
 {
+    // protection admin sur toutes les méthodes
+    public function __construct()
+    {
+        $this->middleware('admin');
+    }
+
     public function index()
     {
         $roles = Role::withCount('utilisateurs')->get();
@@ -46,7 +52,6 @@ class RoleController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-
             'libelle' => 'required|string|max:255|unique:roles,libelle,'.$id,
         ]);
 
@@ -62,8 +67,6 @@ class RoleController extends Controller
     {
         $role = Role::withCount('utilisateurs')->findOrFail($id);
 
-        // pour la sécurité, on empêche la suppression si des utilisateurs
-        //utilisent encore ce rôle. Sinon soit la base refuse
         if ($role->utilisateurs_count > 0) {
             return redirect()
                 ->route('roles.index')
