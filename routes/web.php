@@ -56,7 +56,7 @@ Route::middleware('auth')->group(function () {
         ->only(['create', 'store', 'edit', 'update', 'destroy']);
     Route::resource('demande_jouissances', DemandeJouissanceController::class);
     Route::resource('avis_jouissances', AvisJouissanceController::class)
-        ->only(['create', 'store', 'edit', 'update', 'destroy']);
+        ->  only(['create', 'store', 'edit', 'update', 'destroy']);
     Route::post('demande_jouissances/{id}/abandonner', [DemandeJouissanceController::class, 'abandonner'])
         ->name('demande_jouissances.abandonner');
  

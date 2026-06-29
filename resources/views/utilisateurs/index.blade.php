@@ -27,6 +27,10 @@
             <input type="text" id="recherche" class="form-control w-25" placeholder="Rechercher...">
         </div>
 
+
+
+      {{ auth()->user()->role->libelle ?? 'pas de role' }}
+
         <table class="table table-hover" id="tableUsers">
             <thead class="table-dark">
                 <tr>
