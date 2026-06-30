@@ -27,8 +27,8 @@ class DemandeJouissanceController extends Controller
                     $q2->where('direction_id', $directionId);
                 });
             })
-            ->when(in_array($role, ['agent_rh', 'sg', 'dg', 'pca']), function ($q) {
-                // RH, SG, DG, PCA voient toutes les demandes
+            ->when(in_array($role, ['agent_rh', 'sg', 'dg', 'pca', 'admin']), function ($q) {
+                // Ces rôles voient toutes les demandes 
             })
             ->latest()
             ->get();
@@ -51,12 +51,12 @@ class DemandeJouissanceController extends Controller
         ]);
 
         DemandeJouissance::create([
-            'num_demande'  => time(),
-            'date_debut'   => $request->date_debut,
-            'date_fin'     => $request->date_fin,
-            'nombre_jour'  => $request->nombre_jour,
-            'user_id'      => auth()->id(),
-            'statut'       => 'en_attente',
+            'num_demande' => time(),
+            'date_debut'  => $request->date_debut,
+            'date_fin'    => $request->date_fin,
+            'nombre_jour' => $request->nombre_jour,
+            'user_id'     => auth()->id(),
+            'statut'      => 'en_attente',
         ]);
 
         return redirect()
@@ -71,8 +71,7 @@ class DemandeJouissanceController extends Controller
             'avis'
         )->findOrFail($id);
 
-        $user = auth()->user();
-
+        $user           = auth()->user();
         $peutAgir       = $demande->peutDonnerAvis($user);
         $prochainActeur = $demande->prochainActeur();
         $derniereEtape  = $demande->avis->last()?->type;
@@ -83,12 +82,8 @@ class DemandeJouissanceController extends Controller
             ->get();
 
         return view('demande_jouissances.show', compact(
-            'demande',
-            'peutAgir',
-            'prochainActeur',
-            'derniereEtape',
-            'peutAbandonner',
-            'agentsMemeDepartement'
+            'demande', 'peutAgir', 'prochainActeur',
+            'derniereEtape', 'peutAbandonner', 'agentsMemeDepartement'
         ));
     }
 
@@ -121,9 +116,7 @@ class DemandeJouissanceController extends Controller
             'nombre_jour' => 'required|integer|min:1',
         ]);
 
-        $demande->update($request->only([
-            'date_debut', 'date_fin', 'nombre_jour',
-        ]));
+        $demande->update($request->only(['date_debut', 'date_fin', 'nombre_jour']));
 
         return redirect()
             ->route('demande_jouissances.index')
@@ -147,7 +140,6 @@ class DemandeJouissanceController extends Controller
             ->with('success', 'Demande supprimée.');
     }
 
-    // AJOUT : méthode abandonner — même logique que DemandeAbsenceController
     public function abandonner($id)
     {
         $demande = DemandeJouissance::findOrFail($id);
@@ -165,74 +157,73 @@ class DemandeJouissanceController extends Controller
             ->with('success', 'Demande abandonnée.');
     }
 
-    public function uploadCessation(Request $request, $id)
+    //Télécharger le certificat de cessation de service. Disponible dès que la demande est validée.
+     
+    public function telechargerCessation($id)
     {
-        $request->validate([
-            'certificat_cessation' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-        ]);
+        $demande = DemandeJouissance::with('user.departement.direction', 'avis')
+            ->findOrFail($id);
 
-        $demande = DemandeJouissance::findOrFail($id);
-
-        if ($demande->user_id !== auth()->id()
-            || $demande->statut !== 'validee'
-            || $demande->estCloturee()) {
+        // Sécurité : seulement l'auteur et seulement si validée
+        if ($demande->user_id !== auth()->id() || $demande->statut !== 'validee') {
             return redirect()
                 ->route('demande_jouissances.show', $id)
-                ->with('error', 'Action non autorisée.');
+                ->with('error', 'Téléchargement non autorisé.');
         }
 
-        if ($demande->certificat_cessation) {
-            \Storage::disk('public')->delete($demande->certificat_cessation);
-        }
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+            'pdf.jouissance_cessation',
+            compact('demande')
+        );
 
-        $path = $request->file('certificat_cessation')
-                        ->store('certificats/jouissance', 'public');
-
-        $demande->update(['certificat_cessation' => $path]);
-
-        return redirect()
-            ->route('demande_jouissances.show', $id)
-            ->with('success', 'Certificat de cessation uploadé avec succès.');
+        return $pdf->download("cessation_service_{$demande->num_demande}.pdf");
     }
 
-    public function uploadPriseService(Request $request, $id)
+    // Télécharger le certificat de prise de service. Disponible 2 jours avant la date de fin.
+
+    public function telechargerReprise($id)
     {
-        $request->validate([
-            'certificat_prise_service' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-        ]);
+        $demande = DemandeJouissance::with('user.departement.direction', 'avis')
+            ->findOrFail($id);
 
-        $demande = DemandeJouissance::findOrFail($id);
+        $dateFin    = \Carbon\Carbon::parse($demande->date_fin);
+        $aujourdhui = \Carbon\Carbon::today();
 
+        // Sécurité : auteur, validée, et 2 jours avant la fin
         if ($demande->user_id !== auth()->id()
             || $demande->statut !== 'validee'
-            || $demande->estCloturee()) {
+            || $aujourdhui->lt($dateFin->copy()->subDays(2))) {
             return redirect()
                 ->route('demande_jouissances.show', $id)
-                ->with('error', 'Action non autorisée.');
+                ->with('error', 'Le certificat de reprise sera disponible 2 jours avant votre retour ('
+                    . $dateFin->copy()->subDays(2)->format('d/m/Y') . ').');
         }
 
-        if ($demande->certificat_prise_service) {
-            \Storage::disk('public')->delete($demande->certificat_prise_service);
-        }
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+            'pdf.jouissance_reprise',
+            compact('demande')
+        );
 
-        $path = $request->file('certificat_prise_service')
-                        ->store('certificats/jouissance', 'public');
-
-        $demande->update(['certificat_prise_service' => $path]);
-
-        return redirect()
-            ->route('demande_jouissances.show', $id)
-            ->with('success', 'Certificat de prise de service uploadé avec succès.');
+        return $pdf->download("reprise_service_{$demande->num_demande}.pdf");
     }
 
+    // Clôturer la demande après le retour de l'agent Disponible uniquement après la date de fin.
+    
+     
     public function cloturer($id)
     {
-        $demande = DemandeJouissance::findOrFail($id);
+        $demande    = DemandeJouissance::findOrFail($id);
+        $aujourdhui = \Carbon\Carbon::today();
+        $dateFin    = \Carbon\Carbon::parse($demande->date_fin);
 
-        if (!$demande->peutEtreClotureeePar(auth()->user())) {
+        // Sécurité auteur, validée, après la date de fin, pas déjà clôturée
+        if ($demande->user_id !== auth()->id()
+            || $demande->statut !== 'validee'
+            || $aujourdhui->lte($dateFin)
+            || $demande->estCloturee()) {
             return redirect()
                 ->route('demande_jouissances.show', $id)
-                ->with('error', 'Vous ne pouvez pas clôturer cette demande. Vérifiez que les deux certificats sont uploadés.');
+                ->with('error', 'Clôture non autorisée. Vérifiez que votre congé est terminé.');
         }
 
         $demande->update(['cloturee_at' => now()]);
@@ -240,26 +231,5 @@ class DemandeJouissanceController extends Controller
         return redirect()
             ->route('demande_jouissances.show', $id)
             ->with('success', 'Demande clôturée avec succès.');
-    }
-
-    public function telecharger($id)
-    {
-        $demande = DemandeJouissance::with(
-            'user.departement.direction',
-            'avis'
-        )->findOrFail($id);
-
-        if ($demande->statut !== 'validee') {
-            return redirect()
-                ->route('demande_jouissances.show', $id)
-                ->with('error', 'La demande doit être validée pour télécharger.');
-        }
-
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
-            'pdf.jouissance',
-            compact('demande')
-        );
-
-        return $pdf->download("jouissance_{$demande->num_demande}.pdf");
     }
 }

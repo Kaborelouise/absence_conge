@@ -64,7 +64,7 @@
                         </td>
                     </tr>
                     <tr>
-                        <th class="ps-3">Motif</th>
+                        <th class="ps-3">Motif</th> 
                         <td>
                             @php
                                 $motifLabels = [
@@ -99,20 +99,26 @@
                                 ];
                             @endphp
 
-                            @if($demande->statut === 'validee')
-                                <span class="badge-statut badge-validee">Validée</span>
+                           @if($demande->statut === 'validee' && $demande->user_id === auth()->id())
+                            <a href="{{ route('demande_absences.telecharger', $demande->id) }}" class="btn btn-success">
+                            <i class="bi bi-download me-1"></i> Télécharger l'autorisation
+                            </a>
+                        
                             @elseif($demande->statut === 'rejetee')
                                 <span class="badge-statut badge-rejetee">Rejetée</span>
+
                             @elseif($demande->statut === 'en_attente')
                                 <span class="badge-statut badge-en_attente">
                                     Initiation — en attente de :
                                     {{ $etapeLabels[$prochainActeur] ?? $prochainActeur }}
                                 </span>
+
                             @else
                                 <span class="badge-statut badge-en_cours">
                                     En cours — {{ $etapeLabels[$prochainActeur] ?? $prochainActeur }}
                                 </span>
                             @endif
+                            
                         </td>
                     </tr>
                 </table>
@@ -309,7 +315,7 @@
                         Annuler
                     </button>
                     <button type="submit" class="btn btn-primary px-4">
-                        <i class="bi bi-send me-1"></i> Soumettre 
+                        <i class="bi bi-send me-1"></i> Soumettre  
                     </button>
                 </div>
 

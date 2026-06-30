@@ -27,8 +27,8 @@ class DemandeAbsenceController extends Controller
                     $q2->where('direction_id', $directionId);
                 });
             })
-            ->when(in_array($role, ['agent_rh', 'sg', 'dg', 'pca']), function ($q) {
-                // RH, SG, DG, PCA voient toutes les demandes
+            ->when(in_array($role, ['agent_rh', 'sg', 'dg', 'pca', 'admin']), function ($q) {
+                // Ces rôles voient toutes les demandes
             })
             ->latest()
             ->get();
@@ -36,16 +36,13 @@ class DemandeAbsenceController extends Controller
         return view('demande_absences.index', compact('demandes'));
     }
 
-public function create()
-{
-    $user = auth()->user();
-
-    $agentsMemeDepartement = \App\Models\User::where('departement_id', $user->departement_id)
-        ->where('id', '!=', $user->id)
-        ->get();
-
-    return view('demande_absences.create', compact('user', 'agentsMemeDepartement'));
-}
+    public function create()
+    {
+        $user = auth()->user();
+        $agentsMemeDepartement = \App\Models\User::where('departement_id', $user->departement_id)
+            ->where('id', '!=', $user->id)->get();
+        return view('demande_absences.create', compact('user', 'agentsMemeDepartement'));
+    }
 
     public function store(Request $request)
     {
@@ -57,119 +54,113 @@ public function create()
         ]);
 
         DemandeAbsence::create([
-            'num_demande'  => time(),
-            'date_debut'   => $request->date_debut,
-            'date_fin'     => $request->date_fin,
-            'motif'        => $request->motif,
-            'interimaire'  => $request->interimaire,
-            'user_id'      => auth()->id(),
-            'statut'       => 'en_attente',
+            'num_demande' => time(),
+            'date_debut'  => $request->date_debut,
+            'date_fin'    => $request->date_fin,
+            'motif'       => $request->motif,
+            'interimaire' => $request->interimaire,
+            'user_id'     => auth()->id(),
+            'statut'      => 'en_attente',
         ]);
 
-        return redirect()
-            ->route('demande_absences.index')
+        return redirect()->route('demande_absences.index')
             ->with('success', 'Demande soumise avec succès.');
     }
 
-     public function show($id)
-     {
-    $demande = DemandeAbsence::with(
-        'user.departement.direction',
-        'justificatifAbsence',
-        'avisAbsence'
-    )->findOrFail($id);
+    public function show($id)
+    {
+        $demande = DemandeAbsence::with(
+            'user.departement.direction', 'justificatifAbsence', 'avisAbsence'
+        )->findOrFail($id);
 
-    $user = auth()->user();
+        $user           = auth()->user();
+        $peutAgir       = $demande->peutDonnerAvis($user);
+        $prochainActeur = $demande->prochainActeur();
+        $derniereEtape  = $demande->avisAbsence->last()?->type;
+        $peutAbandonner = $demande->peutEtreAbandonneePar($user);
 
-    $peutAgir       = $demande->peutDonnerAvis($user);
-    $prochainActeur = $demande->prochainActeur();
-    $derniereEtape = $demande->avisAbsence->last()?->type;
+        $agentsMemeDepartement = \App\Models\User::where('departement_id', $demande->user->departement_id)
+            ->where('id', '!=', $demande->user_id)->get();
 
-    $peutAbandonner = $demande->peutEtreAbandonneePar ($user);
+        return view('demande_absences.show', compact(
+            'demande', 'peutAgir', 'prochainActeur',
+            'derniereEtape', 'peutAbandonner', 'agentsMemeDepartement'
+        ));
+    }
 
-    $agentsMemeDepartement = \App\Models\User::where('departement_id', $demande->user->departement_id)
-        ->where('id', '!=', $demande->user_id)
-        ->get();
-
-    return view('demande_absences.show', compact(
-        'demande', 
-        'peutAgir', 
-        'prochainActeur', 
-        'derniereEtape',
-        'peutAbandonner',
-        'agentsMemeDepartement'
-    ));
- }
     public function edit($id)
     {
         $demande = DemandeAbsence::findOrFail($id);
-
         if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
-            return redirect()
-                ->route('demande_absences.show', $id)
+            return redirect()->route('demande_absences.show', $id)
                 ->with('error', 'Cette demande ne peut plus être modifiée.');
         }
-
         return view('demande_absences.edit', compact('demande'));
     }
 
     public function update(Request $request, $id)
     {
         $demande = DemandeAbsence::findOrFail($id);
-
         if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
-            return redirect()
-                ->route('demande_absences.show', $id)
+            return redirect()->route('demande_absences.show', $id)
                 ->with('error', 'Modification non autorisée.');
         }
-
         $request->validate([
             'date_debut'  => 'required|date',
             'date_fin'    => 'required|date|after_or_equal:date_debut',
             'motif'       => 'required|string|max:500',
             'interimaire' => 'nullable|string|max:255',
         ]);
-
-        $demande->update($request->only([
-            'date_debut', 'date_fin', 'motif', 'interimaire',
-        ]));
-
-        return redirect()
-            ->route('demande_absences.index')
+        $demande->update($request->only(['date_debut', 'date_fin', 'motif', 'interimaire']));
+        return redirect()->route('demande_absences.index')
             ->with('success', 'Demande modifiée avec succès.');
     }
 
     public function destroy($id)
     {
         $demande = DemandeAbsence::findOrFail($id);
-
         if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
-            return redirect()
-                ->route('demande_absences.index')
+            return redirect()->route('demande_absences.index')
                 ->with('error', 'Suppression non autorisée.');
         }
-
         $demande->delete();
-
-        return redirect()
-            ->route('demande_absences.index')
+        return redirect()->route('demande_absences.index')
             ->with('success', 'Demande supprimée.');
     }
 
-        public function abandonner($id)
-        {
+    public function abandonner($id)
+    {
         $demande = DemandeAbsence::findOrFail($id);
-
-         if (!$demande->peutEtreAbandonneePar(auth()->user())) {
-        return redirect() 
-            ->route('demande_absences.show', $id)
-            ->with('error', 'Vous ne pouvez pas abandonner cette demande.');
-       }
-
-        $demande->update(['abandonnee' => true]);
-
-        return redirect()
-          ->route('demande_absences.index')
-          ->with('success', 'Demande abandonnée.');
+        if (!$demande->peutEtreAbandonneePar(auth()->user())) {
+            return redirect()->route('demande_absences.show', $id)
+                ->with('error', 'Vous ne pouvez pas abandonner cette demande.');
         }
+        $demande->update(['abandonnee' => true]);
+        return redirect()->route('demande_absences.index')
+            ->with('success', 'Demande abandonnée.');
+    }
+
+    /**
+     * Télécharger la demande d'absence validée au format PDF.
+     * Visible uniquement par l'auteur quand la demande est validée.
+     */
+    public function telecharger($id)
+    {
+        $demande = DemandeAbsence::with(
+            'user.departement.direction', 'avisAbsence'
+        )->findOrFail($id);
+
+        // Sécurité : seulement l'auteur et seulement si validée
+        if ($demande->user_id !== auth()->id() || $demande->statut !== 'validee') {
+            return redirect()->route('demande_absences.show', $id)
+                ->with('error', 'Téléchargement non autorisé.');
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+            'pdf.absence',
+            compact('demande')
+        );
+
+        return $pdf->download("autorisation_absence_{$demande->num_demande}.pdf");
+    }
 }
