@@ -1,3 +1,4 @@
+
 @extends('layouts.app')
 @section('title', 'Nouveau rôle')
 @section('page-title', 'Gestion des rôles')
@@ -6,9 +7,10 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card shadow-sm">
-            <div class="card-header text-white" style="background-color:#1e2a3a; padding: 20px;">
-                <h5 class="mb-0">Créer un nouveau rôle</h5>
-            </div>
+                <div class="card-header text-white text-center"
+                    style="background-color: #1B384F; padding: 20px;">
+                    <h5 class="mb-0">Ajouter un rôle</h5>
+                </div>
             <div class="card-body p-4">
 
                 @if($errors->any())
@@ -42,8 +44,7 @@
                     </div>
 
                     <div class="d-flex justify-content-center gap-3">
-                        <button type="submit" class="btn btn-primary px-4">
-                            <i class="bi bi-check-lg me-1"></i> Créer
+                        <button type="submit" class="btn btn-primary px-4"> Créer
                         </button>
                         <a href="{{ route('roles.index') }}" class="btn btn-secondary px-4">
                             Annuler

@@ -34,7 +34,7 @@
         </div>
 
         <table class="table table-hover" id="tableRoles">
-            <thead class="table-dark">
+            <thead class="table-anptic-dark">
                 <tr>
                     <th>Libellé</th>
                     <th>Nombre d'utilisateurs</th>

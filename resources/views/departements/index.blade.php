@@ -33,7 +33,7 @@
         </div>
 
         <table class="table table-hover" id="tableDepartements">
-            <thead class="table-dark">
+            <thead class="table-anptic-dark">
                 <tr>
                     <th>Libellé court</th>
                     <th>Libellé long</th>
@@ -55,7 +55,7 @@
                     </td>
                     <td>
                         <a href="{{ route('departements.edit', $departement->id) }}"
-                           class="btn btn-sm btn-success btn-action">
+                           class="btn btn-sm btn-warning btn-action">
                             Modifier
                         </a>
 

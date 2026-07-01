@@ -28,7 +28,6 @@
 
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
-            {{-- CORRECTION : couleur harmonisée avec le sidebar #1B384F --}}
             <div class="card-header card-header-anptic">
                 <i class="bi bi-file-text me-2"></i> Informations de la demande
             </div>
@@ -66,7 +65,6 @@
     <div class="col-md-6">
 
         <div class="card shadow-sm mb-3">
-            {{-- CORRECTION : couleur harmonisée avec le sidebar #1B384F --}}
             <div class="card-header card-header-anptic">
                 <i class="bi bi-diagram-3 me-2"></i> Suivi
             </div>
@@ -99,7 +97,7 @@
             </div>
         </div>
 
-        {{-- Bouton compiler : seulement visible pour l'agent RH, si pas déjà compilée --}}
+        {{-- Bouton compiler seulement visible pour l'agent RH, si pas déjà compilée --}}
         @if($peutCompiler)
         <div class="card shadow-sm border-primary mb-3">
             <div class="card-header card-header-anptic">
@@ -123,21 +121,6 @@
             </div>
         </div>
         @endif
-
-        {{-- AJOUT : bouton Abandonner — auteur uniquement, demande pas encore compilée --}}
-        @if(isset($peutAbandonner) && $peutAbandonner)
-        <div class="d-grid">
-            <form action="{{ route('demande_conges.abandonner', $demande->id) }}"
-                  method="POST">
-                @csrf
-                <button type="submit" class="btn btn-warning w-100"
-                        onclick="return confirm('Abandonner cette demande de congé ?')">
-                    <i class="bi bi-x-octagon me-2"></i> Abandonner la demande
-                </button>
-            </form>
-        </div>
-        @endif
-
     </div>
 </div>
 @endsection

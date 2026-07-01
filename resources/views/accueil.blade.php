@@ -10,6 +10,17 @@
 
 {{-- Message de bienvenue
  --}}
+
+ <style>
+    .custom-btn {
+        background-color: #1b384f;
+        color: #ffffff;
+    }
+    .custom-btn:hover {
+        background-color: #000000;
+        color: #ffffff;
+    }
+ </style>
 <div class="text-center mb-5 mt-4">
     <h2 class="fw-bold mb-3">Bienvenue</h2> 
     <p class="text-muted">
@@ -23,7 +34,7 @@
 
     <div class="col-md-4">
         <div class="card h-100 text-center p-4">
-            <i class="bi bi-person-x text-primary mb-3"
+            <i class="bi bi-person-x  mb-3"
                style="font-size:2.5rem"></i>
             <h5 class="fw-bold mb-2">Autorisation d'absence</h5>
             <p class="text-muted small mb-4">
@@ -31,14 +42,14 @@
                 suivez son avancement à chaque étape
             </p>
             <a href="{{ route('demande_absences.create') }}"
-               class="btn btn-primary mt-auto">
+               class="btn custom-btn mt-auto">
                 Demande d'absence
             </a>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card h-100 text-center p-4">
-            <i class="bi bi-calendar2-check text-success mb-3"
+            <i class="bi bi-calendar2-check mb-3"
                style="font-size:2.5rem"></i>
             <h5 class="fw-bold mb-2">Demande de congé administratif</h5>
             <p class="text-muted small mb-4">
@@ -46,7 +57,7 @@
                 soumettez votre demande directement
             </p>
             <a href="{{ route('demande_conges.create') }}"
-               class="btn btn-success mt-auto">
+               class="btn custom-btn mt-auto">
                 Demande congé
             </a>
         </div>
@@ -54,7 +65,7 @@
 
     <div class="col-md-4">
         <div class="card h-100 text-center p-4">
-            <i class="bi bi-calendar2-week text-warning mb-3"
+            <i class="bi bi-calendar2-week mb-3"
                style="font-size:2.5rem"></i>
             <h5 class="fw-bold mb-2">Demande de jouissance de congé</h5>
             <p class="text-muted small mb-4">
@@ -62,7 +73,7 @@
                 jouissance de congé en ligne
             </p>
             <a href="{{ route('demande_jouissances.create') }}"
-               class="btn btn-warning mt-auto">
+               class="btn custom-btn mt-auto">
                 Demande jouissance
             </a>
         </div>

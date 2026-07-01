@@ -11,6 +11,7 @@
     <a href="{{ route('utilisateurs.create') }}" class="btn btn-primary btn-sm">
         <i class="bi bi-plus-lg me-1"></i> Nouvel utilisateur
     </a>
+    
 </div>
 
 @if(session('success'))
@@ -29,18 +30,18 @@
 
 
 
-      {{ auth()->user()->role->libelle ?? 'pas de role' }}
+      {{-- {{ auth()->user()->role->libelle ?? 'pas de role' }} --}}
 
         <table class="table table-hover" id="tableUsers">
-            <thead class="table-dark">
+            <thead class="table-anptic-dark">
                 <tr>
                     <th>Matricule</th>
                     <th>Nom</th>
                     <th>Prénom</th>
-                    <th>Email</th>
-                    <th>Poste</th>
+                    {{-- <th>Email</th>
+                    <th>Poste</th> --}}
                     <th>Rôle</th>
-                    <th>Département</th>
+                    {{-- <th>Département</th> --}}
                     <th>Direction</th>
                     <th>Actions</th>
                 </tr>
@@ -52,14 +53,19 @@
                     <td>{{ $user->matricule }}</td>
                     <td>{{ $user->nom }}</td>
                     <td>{{ $user->prenom }}</td>
-                    <td>{{ $user->email }}</td>
-                    <td>{{ $user->poste }}</td>
+                    {{-- <td>{{ $user->email }}</td>
+                    <td>{{ $user->poste }}</td> --}}
                     <td>{{ ucfirst(str_replace('_', ' ', $user->role->libelle ?? '—')) }}</td>
-                    <td>{{ $user->departement->libelle_court ?? '—' }}</td>
+                    {{-- <td>{{ $user->departement->libelle_court ?? '—' }}</td> --}}
                     <td>{{ $user->departement->direction->libelle_court ?? '—' }}</td>
                     <td>
+
+                        <a href="{{ route('utilisateurs.show', $user->id) }}"
+                           class="btn btn-sm btn-outline-primary btn-action">Voir
+                        </a>
+
                         <a href="{{ route('utilisateurs.edit', $user->id) }}"
-                           class="btn btn-sm btn-success btn-action">
+                            class="btn btn-sm btn-warning btn-action">
                             Modifier
                         </a>
 

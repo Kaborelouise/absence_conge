@@ -33,7 +33,7 @@
                 left: 0;
                 width: 230px;
                 height: 100vh;
-                background-color: #1B384F;
+                background-color: #1b384f;
                 overflow-y: auto;
                 z-index: 1000;
                 display: flex;
@@ -41,12 +41,13 @@
             }
 
             .sidebar-brand {
-                padding: 18px;
-                border-bottom: 3px solid rgba(255, 255, 255, 1);
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                text-decoration: none;
+                /* padding: 18px; */
+                /* border-bottom: 3px solid rgba(255, 255, 255, 1); */
+                /* display: flex; */
+                /* align-items: center; */
+                text-align: center;
+                /* gap: 12px; */
+                /* text-decoration: none; */
             }
 
             .sidebar-brand-text {
@@ -212,19 +213,19 @@
     </head>
     <body>
 
-        <!-- Sidebar-->
+        {{-- Sidebar --}}
         <div class="sidebar">
-
-            <a href="{{ route('accueil') }}" class="sidebar-brand">
-                <img src="{{ asset('images/logo_anptic.png') }}"
-                     alt="Logo ANPTIC"
-                     style="width: 50px; height: 50px; object-fit: contain; flex-shrink: 0;">
-                <div class="sidebar-brand-text">
-                    <span class="brand-subtitle">
-                       Gestion des congés et<br>des autorisations d'absence
-                    </span>
-                </div>
-            </a>
+            <div class="text-center mt-3">
+                <a href="{{ route('accueil') }}" class="sidebar-brand">
+                    <img src="{{ asset('images/logo_anptic.png') }}" alt="Logo ANPTIC" style="width: 100px; height: 100px; object-fit: contain; flex-shrink: 0;">
+                </a>
+            </div>
+            
+            {{-- <div>
+                <span>
+                    Gestion des congés et<br>des autorisations d'absence
+                </span>
+            </div> --}}
 
             <div class="sidebar-section-title">Menu principal</div>
 
@@ -250,13 +251,13 @@
 
             <a href="{{ route('demande_conges.index') }}"
                class="sidebar-link {{ request()->routeIs('demande_conges.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar2-check"></i>
+                <i class="bi bi-bookmark-plus"></i>
                 <span>Demande de congé</span>
             </a>
 
             <a href="{{ route('demande_jouissances.index') }}"
                class="sidebar-link {{ request()->routeIs('demande_jouissances.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar2-check"></i>
+                <i class="bi bi-bookmark-check"></i>
                 <span>Demande de jouissance</span>
             </a>
 
@@ -289,7 +290,7 @@
 
         </div>
 
-        <!-- Contenu principal -->
+        {{-- Contenu principal --}}
         <div class="main-wrapper">
 
             <div class="top-bar">
@@ -335,7 +336,7 @@
             </div>
 
         </div>
-        
+
 
         <!-- Bootstrap JS pour la liste déroulante-->
 

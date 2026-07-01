@@ -35,7 +35,7 @@
                     <th>Département</th>
                     <th>Date début</th>
                     <th>Date fin</th>
-                    <th>Motif</th>
+                    {{-- <th>Motif</th> --}}
                     <th>Statut</th>
                     <th>Actions</th>
                 </tr>
@@ -56,7 +56,7 @@
                     <td>{{ $demande->user->departement->libelle_court ?? '—' }}</td>
                     <td>{{ \Carbon\Carbon::parse($demande->date_debut)->format('d/m/Y') }}</td>
                     <td>{{ \Carbon\Carbon::parse($demande->date_fin)->format('d/m/Y') }}</td>
-                    <td>{{ $demande->motif }}</td>
+                    {{-- <td>{{ $demande->motif }}</td> --}}
                     <td>
                         @if($peutAgirIci)
                             <span class="badge bg-warning text-dark" style="font-size:11px;">
@@ -77,7 +77,7 @@
                         {{-- Bouton Modifier : auteur uniquement, demande en attente --}}
                         @if($modifiable)
                         <a href="{{ route('demande_absences.edit', $demande->id) }}"
-                           class="btn btn-sm btn-success btn-action">
+                            class="btn btn-sm btn-warning btn-action">
                             Modifier
                         </a>
                         @endif
@@ -99,8 +99,8 @@
                         <form action="{{ route('demande_absences.abandonner', $demande->id) }}"
                               method="POST" class="d-inline">
                             @csrf
-                            <button type="submit" class="btn btn-sm btn-warning btn-action"
-                                    onclick="return confirm('Abandonner cette demande ?')">
+                            <button type="submit" class="btn btn-sm btn-dark btn-action"
+                                    onclick="return confirm('Abandonner cette demande ?')"> 
                                 Abandonner
                             </button>
                         </form>

@@ -8,12 +8,7 @@ use Illuminate\Http\Request;
 
 class AvisCongeController extends Controller
 {
-    /**
-     * Marque la demande comme "compilée" par l'agent RH.
-     * Pas de favorable/défavorable ici : la migration avis_conges
-     * impose 'favorable' par défaut puisqu'il n'y a pas de rejet
-     * possible pour un congé administratif (c'est juste informatif).
-     */
+// pas de refus pour une demande de congé juste un accusé de traitement par l'agent RH
     public function store(Request $request)
     {
         $request->validate([

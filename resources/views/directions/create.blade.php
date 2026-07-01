@@ -1,4 +1,3 @@
-{{--FICHIER : resources/views/directions/create.blade.php a pour role Formulaire pour créer une nouvelle direction--}}
 
 @extends('layouts.app')
 @section('title', 'Nouvelle direction')
@@ -8,18 +7,15 @@
 <div class="row justify-content-center">
     {{-- justify-content-center : centre la carte horizontalement --}}
 
-    <div class="col-md-6">
-        {{-- col-md-6 : sur écran moyen (≥768px) → largeur 50%
-             Sur mobile → largeur 100% automatiquement --}}
+    <div class="col-md-8">
 
         <div class="card shadow-sm">
 
-            <div class="card-header bg-dark text-white">
-                {{-- bg-dark : fond sombre, text-white : texte blanc --}}
-                <h5 class="mb-0">
-                    </i>Ajouter une direction
-                </h5>
-            </div>
+                        <div class="card-header text-white text-center"
+                    style="background-color: #1B384F; padding: 20px;">
+                    <h5 class="mb-0">Ajouter une direction</h5>
+                </div>
+
 
             <div class="card-body">
 
@@ -94,20 +90,22 @@
                     </div>
 
                     {{-- Boutton --}}
-                    <div class="d-flex gap-2">
-                        {{-- gap-2 veut dire espace de 0.5rem entre les boutons --}}
-
-                        {{-- type="submit" envoie le formulaire --}}
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg me-1"></i> Enregistrer
+                    <div class="d-flex justify-content-center gap-3">
+                        <button type="submit" class="btn btn-primary px-4">
+                            Enregistrer
                         </button>
 
                         {{-- Annuler fais un lien vers la liste C'est un <a> pas un <button> Retourne à la liste SANS envoyer de données --}}
                         <a href="{{ route('directions.index') }}"
-                           class="btn btn-secondary">
+                           class="btn btn-secondary px-4">
                             </i> Annuler
                         </a>
                     </div>
+
+
+
+
+
                 </form>
             </div>
         </div>

@@ -112,6 +112,12 @@ class UserController extends Controller
             ->with('success', 'Utilisateur modifié avec succès');
     }
 
+
+    public function show(User $utilisateur)
+        {
+            return view('utilisateurs.show', compact('utilisateur'));
+        }
+
     public function destroy($id)
     {
         User::findOrFail($id)->delete();

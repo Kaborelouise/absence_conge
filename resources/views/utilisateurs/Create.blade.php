@@ -6,11 +6,13 @@
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card shadow-sm">
-            <div class="card-header text-white" style="background-color:#1e2a3a; padding: 20px;">
-                <h5 class="mb-0">Créer un nouvel utilisateur</h5>
-            </div>
-            <div class="card-body p-4">
+                <div class="card-header text-white text-center"
+                    style="background-color: #1B384F; padding: 20px;">
+                    <h5 class="mb-0">Ajouter un utilisateur</h5>
+                </div>
+            <div class="card-body">
 
+                {{-- Affiche toutes les erreurs de validation --}}
                 @if($errors->any())
                     <div class="alert alert-danger">
                         <ul class="mb-0">
@@ -21,84 +23,117 @@
                     </div>
                 @endif
 
-                <form action="{{ route('utilisateurs.store') }}" method="POST">
+                <form action="{{ route('utilisateurs.store') }}"
+                      method="POST" id="formUser">
                     @csrf
 
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Matricule</label>
-                            <input type="number" name="matricule"
+                    <div class="row g-3">
+
+                        {{-- Matricule --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Matricule <span class="text-danger">*</span>
+                            </label>
+                            <input type="number"
+                                   name="matricule"
                                    class="form-control @error('matricule') is-invalid @enderror"
-                                   value="{{ old('matricule') }}" required>
+                                   value="{{ old('matricule') }}"
+                                   required>
                             @error('matricule')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Nom</label>
-                            <input type="text" name="nom"
+
+                        {{-- Nom --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Nom <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                   name="nom"
                                    class="form-control @error('nom') is-invalid @enderror"
-                                   value="{{ old('nom') }}" required>
+                                   value="{{ old('nom') }}"
+                                   required>
                             @error('nom')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Prénom</label>
-                            <input type="text" name="prenom"
+
+                        {{-- Prénom --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Prénom <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                   name="prenom"
                                    class="form-control @error('prenom') is-invalid @enderror"
-                                   value="{{ old('prenom') }}" required>
+                                   value="{{ old('prenom') }}"
+                                   required>
                             @error('prenom')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                    </div>
 
-                    <div class="row g-3 mb-3">
+                        {{-- Poste --}}
                         <div class="col-md-6">
-                            <label class="form-label">Email</label>
-                            <input type="email" name="email"
-                                   class="form-control @error('email') is-invalid @enderror"
-                                   value="{{ old('email') }}" required>
-                            @error('email')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Mot de passe</label>
-                            <input type="password" name="password"
-                                   class="form-control @error('password') is-invalid @enderror" required>
-                            @error('password')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Poste</label>
-                            <input type="text" name="poste"
-                                   class="form-control @error('poste') is-invalid @enderror" value="{{ old('poste') }}" required>
+                            <label class="form-label fw-bold">
+                                Poste <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                   name="poste"
+                                   class="form-control @error('poste') is-invalid @enderror"
+                                   value="{{ old('poste') }}"
+                                   required>
                             @error('poste')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Signature</label>
-                            <input type="text" name="signature" class="form-control" value="{{ old('signature') }}">
-                        </div>
-                    </div>
 
-                    <div class="row g-3 mb-3">
+                        {{-- Email --}}
                         <div class="col-md-6">
-                            <label class="form-label">Rôle</label>
+                            <label class="form-label fw-bold">
+                                Email <span class="text-danger">*</span>
+                            </label>
+                            <input type="email"
+                                   name="email"
+                                   class="form-control @error('email') is-invalid @enderror"
+                                   value="{{ old('email') }}"
+                                   required>
+                            @error('email')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        {{-- Mot de passe --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Mot de passe <span class="text-danger">*</span>
+                            </label>
+                            <input type="password"
+                                   name="password"
+                                   class="form-control @error('password') is-invalid @enderror"
+                                   required>
+                            @error('password')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        {{-- Rôle --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Rôle <span class="text-danger">*</span>
+                            </label>
                             <select name="role_id"
-                                    class="form-select @error('role_id') is-invalid @enderror" required>
-                                <option value=""> Choisir un rôle </option>
+                                    class="form-select @error('role_id') is-invalid @enderror"
+                                    required>
+                                <option value="">-- Choisir un rôle --</option>
+                                {{-- On boucle sur $roles envoyé par le controller
+                                     $role->id c'est la valeur qu'on envoieau serveur
+                                     $role->libelle s'est le texte visible par l'utilisateur --}}
                                 @foreach($roles as $role)
                                     <option value="{{ $role->id }}"
                                         {{ old('role_id') == $role->id ? 'selected' : '' }}>
-                                        {{ ucfirst(str_replace('_', ' ', $role->libelle)) }}
+                                        {{ $role->libelle }}
                                     </option>
                                 @endforeach
                             </select>
@@ -106,15 +141,22 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+
+                        {{-- Département --}}
                         <div class="col-md-6">
-                            <label class="form-label">Département</label>
+                            <label class="form-label fw-bold">
+                                Département <span class="text-danger">*</span>
+                            </label>
                             <select name="departement_id"
-                                    class="form-select @error('departement_id') is-invalid @enderror" required>
-                                <option value="">Choisir un département</option>
-                                @foreach($departements as $departement)
-                                    <option value="{{ $departement->id }}"
-                                        {{ old('departement_id') == $departement->id ? 'selected' : '' }}>
-                                        {{ $departement->libelle_court }} ({{ $departement->direction->libelle_court ?? '—' }})
+                                    class="form-select @error('departement_id') is-invalid @enderror"
+                                    required>
+                                <option value="">-- Choisir un département --</option>
+                                {{-- On affiche "Département (Direction)" pour plus de clarté --}}
+                                @foreach($departements as $dep)
+                                    <option value="{{ $dep->id }}"
+                                        {{ old('departement_id') == $dep->id ? 'selected' : '' }}>
+                                        {{ $dep->libelle_long }}
+                                        ({{ $dep->direction->libelle_court ?? '' }})
                                     </option>
                                 @endforeach
                             </select>
@@ -122,50 +164,62 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                    </div>
 
-                    <div class="row g-3 mb-4">
+                        {{-- Solde congé --}}
                         <div class="col-md-6">
+                            <label class="form-label fw-bold">Solde congé (jours)</label>
+                            <input type="number"
+                                   name="solde_conge"
+                                   class="form-control"
+                                   value="{{ old('solde_conge', 30) }}">
+                            {{-- 30 : valeur par défaut --}}
+                        </div>
+
+                        {{-- Solde absence --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Solde absence (jours)</label>
+                            <input type="number"
+                                   name="solde_absence"
+                                   class="form-control"
+                                   value="{{ old('solde_absence', 10) }}">
+                            {{-- 10 : valeur par défaut --}}
+                        </div>
+
+                        {{-- Responsabilités --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Responsabilités</label>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox"
-                                       name="est_responsable_departement" value="1" id="est_chef_dept"
+                                <input type="checkbox"
+                                       name="est_responsable_departement"
+                                       value="1"
+                                       class="form-check-input"
+                                       id="resp_dep"
                                        {{ old('est_responsable_departement') ? 'checked' : '' }}>
-                                <label class="form-check-label" for="est_chef_dept">
-                                    Responsable de département
+                                <label class="form-check-label" for="resp_dep">
+                                    Chef de département
                                 </label>
                             </div>
-                        </div>
-                        <div class="col-md-6">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox"
-                                       name="est_responsable_direction" value="1" id="est_resp_dir"
+                                <input type="checkbox"
+                                       name="est_responsable_direction"
+                                       value="1"
+                                       class="form-check-input"
+                                       id="resp_dir"
                                        {{ old('est_responsable_direction') ? 'checked' : '' }}>
-                                <label class="form-check-label" for="est_resp_dir">
+                                <label class="form-check-label" for="resp_dir">
                                     Responsable de direction
                                 </label>
                             </div>
                         </div>
+
                     </div>
 
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label">Solde congé (jours)</label>
-                            <input type="number" name="solde_conge"
-                                   class="form-control" value="{{ old('solde_conge', 30) }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Solde absence (jours)</label>
-                            <input type="number" name="solde_absence"
-                                   class="form-control" value="{{ old('solde_absence', 10) }}">
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-center gap-3">
-                        <button type="submit" class="btn btn-primary px-4">
-                            <i class="bi bi-check-lg me-1"></i> Créer
+                    <div class="d-flex gap-2 justify-content-center gap-3">
+                        <button type="submit" class="btn btn-primary  px-4"> Enregistrer
                         </button>
-                        <a href="{{ route('utilisateurs.index') }}" class="btn btn-secondary px-4">
-                            Annuler
+                        <a href="{{ route('utilisateurs.index') }}"
+                           class="btn btn-secondary px-4">
+                        Annuler
                         </a>
                     </div>
 

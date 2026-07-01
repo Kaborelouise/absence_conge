@@ -17,8 +17,12 @@
     <body class="font-sans text-gray-900 antialiased">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
             <div>
-                <a href="/">
+                {{-- <a href="/">
                     <x-application-logo class="w-20 h-20 fill-current text-gray-500" />
+                </a> --}}
+
+                 <a href="{{ route('accueil') }}" class="sidebar-brand">
+                    <img src="{{ asset('images/logo_anptic2.png') }}" alt="Logo ANPTIC" style="width: 150px; height: 150px; object-fit: contain; flex-shrink: 0;">
                 </a>
             </div>
 

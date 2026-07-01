@@ -27,7 +27,7 @@ class AvisJouissanceController extends Controller
 
         $user = auth()->user();
 
-        // Sécurité : vérifier que c'est bien le tour de cet utilisateur
+        // Sécurité vérifier que c'est bien le tour de cet utilisateur
         if (!$demande->peutDonnerAvis($user)) {
             return redirect()
                 ->route('demande_jouissances.show', $demande->id)
@@ -92,9 +92,8 @@ class AvisJouissanceController extends Controller
             ->with('success', 'Avis favorable enregistré. Circuit en cours.');
     }
 
-    // =========================================================
-    // UPDATE / DESTROY — réservés à l'admin
-    // =========================================================
+    // suppression et modification réservé a l'admin
+
     public function update(Request $request, $id)
     {
         $request->validate([
