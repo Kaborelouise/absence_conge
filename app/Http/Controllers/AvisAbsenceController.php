@@ -37,7 +37,9 @@ class AvisAbsenceController extends Controller
             $role === 'sg'                                                      => 'sg',
             $role === 'dg'                                                      => 'dg',
             $role === 'pca'                                                     => 'pca',
-            default                                                             => $role,
+            default     
+            
+                => $role,
         };
 
         if ($role === 'agent_rh') {
@@ -51,6 +53,7 @@ class AvisAbsenceController extends Controller
             'avis'               => $request->avis,
             'type'               => $typeAvis,
             'commentaire'        => $request->commentaire,
+            'user_id'            => $user->id, // On enregistre l'utilisateur qui a donné l'avis
         ]);
 
         if ($request->avis === 'defavorable') {

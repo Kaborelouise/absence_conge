@@ -199,7 +199,7 @@
         </div>
         @endif
 
-        {{-- Section clôture visible par l'auteur si demande validée --}}
+        {{-- Section clôture visible par l'auteur si la demande est validée--}}
         @if($demande->statut === 'validee' && $estAuteur)
         <div class="card shadow-sm border-success">
             <div class="card-header text-white" style="background:#198754;">
@@ -228,10 +228,10 @@
                             Certificat de cessation de service
                         </h6>
                         <p class="text-muted" style="font-size:12px;">
-                            Téléchargez avant votre départ, imprimez et faites signer
+                            Téléchargez votre certificat, imprimez et faites signer
                             par votre responsable.
                         </p>
-                        {{-- Toujours disponible dès validation --}}
+                        {{-- disponible dès que la demande est validée--}}
                         <a href="{{ route('demande_jouissances.telecharger_cessation', $demande->id) }}"
                            class="btn btn-outline-primary btn-sm">
                             <i class="bi bi-download me-1"></i>
@@ -241,7 +241,7 @@
 
                     <hr>
 
-                    {{-- Étape2  Certificat prise de service disponible 2jours avant la fin du congé --}}
+                    {{-- Étape 2 Certificat prise de service disponible 2jours avant la fin du congé --}}
                     <div class="mb-3">
                         <h6 class="fw-bold">
                             <span class="badge {{ $peutTelechargerReprise ? 'bg-primary' : 'bg-secondary' }} me-2">2</span>

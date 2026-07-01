@@ -160,7 +160,7 @@
                 @empty
                     <p class="text-muted text-center mb-0">
                         <i class="bi bi-hourglass me-1"></i>
-                       Aucun avis pour le moment 
+                       Aucun avis pour le moment
                     </p>
                 @endforelse
 
@@ -185,7 +185,7 @@
                 @if(in_array(auth()->user()->role->libelle, ['sg','dg','pca']))
                     Valider ou rejeter la demande
                 @else
-                    Donner mon Avis 
+                    Donner mo avis
                 @endif
             </button>
         </div>
@@ -212,11 +212,11 @@
             </div>
 
             @if($demande->abandonnee ?? false)
-    <div class="alert alert-warning">
-        <i class="bi bi-exclamation-triangle me-2"></i>
-        Cette demande a été <strong>abandonnée</strong> par l'agent.
-        Elle ne peut plus être traitée.
-    </div>
+         <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Cette demande a été <strong>abandonnée</strong> par l'agent.
+            Elle ne peut plus être traitée.
+     </div>
 @endif
 
             @if($demande->abandonnee ?? false)
@@ -235,7 +235,7 @@
                     @if(auth()->user()->role->libelle === 'agent_rh')
                     <div class="alert alert-info py-2 mb-3" style="font-size:13px;">
                         <i class="bi bi-info-circle me-1"></i>
-                        Solde d'absence restant de l'agent :
+                        Solde d'absence restant de l'agent : 
                         <strong>{{ $demande->user->solde_absence }} jours</strong>
                     </div>
                     <div class="mb-3">
@@ -292,7 +292,7 @@
                                        id="defavorable"
                                        onchange="toggleMotif(this.value)">
                                 <label class="form-check-label text-danger fw-bold" for="defavorable">
-                                    <i class="bi bi-x-circle me-1"></i> Défavorable
+                                    <i class="bi bi-x-circle me-1"></i> Défavrable
                                 </label>
                             </div>
                         </div>
