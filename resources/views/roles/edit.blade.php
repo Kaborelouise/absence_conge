@@ -6,7 +6,7 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">
+            <div class="card-header text-white text-center" style="background-color:#1B384F; padding: 20px;">
                 <h5 class="mb-0">Modifier le rôle</h5>
             </div>
             <div class="card-body p-4">
@@ -41,11 +41,10 @@
                         </small>
                     </div>
 
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-lg me-1"></i> Mettre à jour
+                    <div class="d-flex gap-2 justify-content-center gap-3">
+                        <button type="submit" class="btn btn-primary  px-4"> Enregistrer
                         </button>
-                        <a href="{{ route('roles.index') }}" class="btn btn-secondary">Annuler</a>
+                        <a href="{{ route('roles.index') }}" class="btn btn-secondary px-4">Annuler</a>
                     </div>
                 </form>
             </div>

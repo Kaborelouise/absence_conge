@@ -27,6 +27,7 @@
                    placeholder="Rechercher...">
         </div>
 
+        <div class="table-responsive">
         <table class="table table-hover" id="tableAbsences">
             <thead class="table-anptic-dark">
                 <tr>
@@ -116,6 +117,7 @@
 
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 @endsection

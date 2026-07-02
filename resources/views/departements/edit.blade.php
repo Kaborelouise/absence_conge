@@ -6,7 +6,8 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">
+            <div class="card-header text-white text-center"
+                    style="background-color: #1B384F; padding: 20px;">
                 <h5 class="mb-0">Modifier le département</h5>
             </div>
             <div class="card-body p-4">
@@ -20,17 +21,6 @@
                         </ul>
                     </div>
                 @endif
-
-                {{-- 
-                    Différence clé avec create.blade.php : on envoie
-                    vers 'departements.update' (et pas 'store'), et on
-                    ajoute @method('PUT').
-                    
-                    Pourquoi @method('PUT') ? Les navigateurs HTML ne
-                    savent envoyer que GET ou POST nativement. Laravel
-                    simule PUT/PATCH/DELETE via un champ caché _method
-                    que le framework intercepte et traite comme si la
-                    requête avait vraiment été envoyée en PUT. --}}
                 <form action="{{ route('departements.update', $departement->id) }}" method="POST">
                     @csrf
                     @method('PUT')
@@ -106,11 +96,12 @@
                         </div>
                     @endif
 
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-lg me-1"></i> Mettre à jour
+                    <div class="d-flex justify-content-center gap-3">
+                         <button type="submit" class="btn btn-primary px-4"> Enregistrer</button>
                         </button>
-                        <a href="{{ route('departements.index') }}" class="btn btn-secondary">Annuler</a>
+                        <a href="{{ route('departements.index') }}" class="btn btn-secondary px-4">
+                            Annuler
+                        </a>
                     </div>
                 </form>
             </div>

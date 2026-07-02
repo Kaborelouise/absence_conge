@@ -32,6 +32,7 @@
             <input type="text" id="recherche" class="form-control w-25" placeholder="Rechercher...">
         </div>
 
+        <div class="table-responsive">
         <table class="table table-hover" id="tableDepartements">
             <thead class="table-anptic-dark">
                 <tr>

@@ -44,7 +44,7 @@
                     </div>
 
                     <div class="d-flex justify-content-center gap-3">
-                        <button type="submit" class="btn btn-primary px-4"> Créer
+                        <button type="submit" class="btn btn-primary px-4"> Enregistrer</button>
                         </button>
                         <a href="{{ route('roles.index') }}" class="btn btn-secondary px-4">
                             Annuler

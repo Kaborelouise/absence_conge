@@ -5,7 +5,7 @@
 @section('content')
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h5 class="fw-bold mb-0">Détail /Suivi de la demande</h5>
+    <h5 class="fw-bold mb-0">Détail / Suivi de la demande</h5>
     <a href="{{ route('demande_absences.index') }}" class="btn btn-sm btn-secondary">
         <i class="bi bi-arrow-left me-1"></i> Retour
     </a>
@@ -24,13 +24,24 @@
     </div>
 @endif
 
+@php
+    $etapeLabels = [
+        'chef_departement'      => 'Avis Chef Département',
+        'responsable_direction' => 'Avis Responsable Direction',
+        'agent_rh'              => 'Vérification RH',
+        'sg'                    => 'Validation Secrétaire Général',
+        'dg'                    => 'Validation Directeur Général',
+        'pca'                   => 'Validation PCA',
+    ];
+@endphp
+
 <div class="row g-3">
 
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
-           <div class="card-header card-header-anptic">
-             <i class="bi bi-file-text me-2"></i> Informations de la demande
-          </div>
+            <div class="card-header card-header-anptic">
+                <i class="bi bi-file-text me-2"></i> Informations de la demande
+            </div>
             <div class="card-body p-0">
                 <table class="table table-sm mb-0">
                     <tr>
@@ -64,7 +75,7 @@
                         </td>
                     </tr>
                     <tr>
-                        <th class="ps-3">Motif</th> 
+                        <th class="ps-3">Motif</th>
                         <td>
                             @php
                                 $motifLabels = [
@@ -88,37 +99,27 @@
                     <tr>
                         <th class="ps-3">Étape actuelle</th>
                         <td>
-                            @php
-                                $etapeLabels = [
-                                    'chef_departement'      => 'Avis Chef Département',
-                                    'responsable_direction' => 'Avis Responsable Direction',
-                                    'agent_rh'              => 'Vérification RH',
-                                    'sg'                    => 'Validation Secrétaire Général',
-                                    'dg'                    => 'Validation Directeur Général',
-                                    'pca'                   => 'Validation PCA',
-                                ];
-                            @endphp
+                            @if($demande->statut === 'validee')
+                                {{-- Demande entièrement validée --}}
+                                <span class="badge-statut badge-validee">Validée</span>
 
-                           @if($demande->statut === 'validee' && $demande->user_id === auth()->id())
-                            <a href="{{ route('demande_absences.telecharger', $demande->id) }}" class="btn btn-success">
-                            <i class="bi bi-download me-1"></i> Télécharger l'autorisation
-                            </a>
-                        
                             @elseif($demande->statut === 'rejetee')
+                                {{-- Demande rejetée --}}
                                 <span class="badge-statut badge-rejetee">Rejetée</span>
 
                             @elseif($demande->statut === 'en_attente')
+                                {{-- Aucun avis encore donné : initiation --}}
                                 <span class="badge-statut badge-en_attente">
-                                    Initiation — en attente de :
-                                    {{ $etapeLabels[$prochainActeur] ?? $prochainActeur }}
+                                    Initiation 
+                                    {{-- — en attente de : --}}
+                                    {{-- {{ $etapeLabels[$prochainActeur] ?? $prochainActeur }} --}}
                                 </span>
 
                             @else
                                 <span class="badge-statut badge-en_cours">
-                                    En cours — {{ $etapeLabels[$prochainActeur] ?? $prochainActeur }}
+                                    En cours — {{ $etapeLabels[$derniereEtape] ?? $derniereEtape }}
                                 </span>
                             @endif
-                            
                         </td>
                     </tr>
                 </table>
@@ -160,14 +161,15 @@
                 @empty
                     <p class="text-muted text-center mb-0">
                         <i class="bi bi-hourglass me-1"></i>
-                       Aucun avis pour le moment
+                        Aucun avis pour le moment
                     </p>
                 @endforelse
 
+                {{-- CORRECTION : prochaine étape = $prochainActeur (qui doit agir ensuite) --}}
                 @if(!in_array($demande->statut, ['validee', 'rejetee']) && $prochainActeur)
                     <div class="alert alert-info mb-0 mt-2 py-2" style="font-size:12px;">
                         <i class="bi bi-arrow-right-circle me-1"></i>
-                        Prochaine étape :
+                        En attente de :
                         <strong>{{ $etapeLabels[$prochainActeur] ?? $prochainActeur }}</strong>
                     </div>
                 @endif
@@ -175,8 +177,19 @@
             </div>
         </div>
 
+        {{-- Bouton télécharger si validée et auteur --}}
+        @if($demande->statut === 'validee' && $demande->user_id === auth()->id())
+        <div class="d-grid mb-3">
+            <a href="{{ route('demande_absences.telecharger', $demande->id) }}"
+               class="btn btn-success">
+                <i class="bi bi-download me-1"></i> Télécharger l'autorisation
+            </a>
+        </div>
+        @endif
+
+        {{-- Bouton donner avis --}}
         @if($peutAgir)
-        <div class="d-grid">
+        <div class="d-grid mb-3">
             <button type="button"
                     class="btn btn-primary"
                     data-bs-toggle="modal"
@@ -185,21 +198,36 @@
                 @if(in_array(auth()->user()->role->libelle, ['sg','dg','pca']))
                     Valider ou rejeter la demande
                 @else
-                    Donner mo avis
+                    Donner mon avis
                 @endif
             </button>
         </div>
         @endif
 
+        {{-- Bouton abandonner --}}
+        {{-- @if(isset($peutAbandonner) && $peutAbandonner)
+        <div class="d-grid">
+            <form action="{{ route('demande_absences.abandonner', $demande->id) }}"
+                  method="POST">
+                @csrf
+                <button type="submit" class="btn btn-warning w-100"
+                        onclick="return confirm('Abandonner cette demande ?')">
+                    <i class="bi bi-x-octagon me-2"></i> Abandonner la demande
+                </button>
+            </form>
+        </div>
+        @endif --}}
+
     </div>
 </div>
 
+{{-- Modal donner un avis --}}
 @if($peutAgir)
 <div class="modal fade" id="modalAvis" tabindex="-1" aria-labelledby="modalAvisLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
 
-            <div class="modal-header text-white" style="background:#1B384F;">
+            <div class="modal-header card-header-anptic">
                 <h5 class="modal-title" id="modalAvisLabel">
                     <i class="bi bi-pencil-square me-2"></i>
                     @if(in_array(auth()->user()->role->libelle, ['sg','dg','pca']))
@@ -211,21 +239,6 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
-            @if($demande->abandonnee ?? false)
-         <div class="alert alert-warning">
-            <i class="bi bi-exclamation-triangle me-2"></i>
-            Cette demande a été <strong>abandonnée</strong> par l'agent.
-            Elle ne peut plus être traitée.
-     </div>
-@endif
-
-            @if($demande->abandonnee ?? false)
-    <div class="alert alert-warning">
-        <i class="bi bi-exclamation-triangle me-2"></i>
-        Cette demande a été <strong>abandonnée</strong> par l'agent.
-        Elle ne peut plus être traitée.
-    </div>
-@endif
             <form action="{{ route('avis_absences.store') }}" method="POST">
                 @csrf
                 <input type="hidden" name="demande_absence_id" value="{{ $demande->id }}">
@@ -235,7 +248,7 @@
                     @if(auth()->user()->role->libelle === 'agent_rh')
                     <div class="alert alert-info py-2 mb-3" style="font-size:13px;">
                         <i class="bi bi-info-circle me-1"></i>
-                        Solde d'absence restant de l'agent : 
+                        Solde d'absence restant de l'agent :
                         <strong>{{ $demande->user->solde_absence }} jours</strong>
                     </div>
                     <div class="mb-3">
@@ -257,7 +270,7 @@
                             <span class="text-muted fw-normal">(optionnel)</span>
                         </label>
                         <select name="interimaire" class="form-select">
-                            <option value=""> Choisir un intérimaire </option>
+                            <option value="">Choisir un intérimaire</option>
                             @foreach($agentsMemeDepartement as $agent)
                                 <option value="{{ $agent->nom }} {{ $agent->prenom }}"
                                     {{ $demande->interimaire === $agent->nom.' '.$agent->prenom ? 'selected' : '' }}>
@@ -292,11 +305,12 @@
                                        id="defavorable"
                                        onchange="toggleMotif(this.value)">
                                 <label class="form-check-label text-danger fw-bold" for="defavorable">
-                                    <i class="bi bi-x-circle me-1"></i> Défavrable
+                                    <i class="bi bi-x-circle me-1"></i> Défavorable
                                 </label>
                             </div>
                         </div>
                     </div>
+
                     <div class="mb-3">
                         <label class="form-label fw-bold" id="labelCommentaire">
                             Commentaire
@@ -315,45 +329,11 @@
                         Annuler
                     </button>
                     <button type="submit" class="btn btn-primary px-4">
-                        <i class="bi bi-send me-1"></i> Soumettre  
+                        <i class="bi bi-send me-1"></i> Soumettre
                     </button>
                 </div>
 
             </form>
-        </div>
-    </div>
-</div>
-@endif
-
-@if(isset($peutAbandonner) && $peutAbandonner)
-<div class="modal fade" id="modalAbandonnerAbsence" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header text-white" style="background:#fd7e14;">
-                <h5 class="modal-title">
-                    <i class="bi bi-x-octagon me-2"></i> Abandonner la demande
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>Attention !</strong> Cette action est irréversible.
-                </div>
-                <p>Êtes-vous sûr de vouloir abandonner cette demande ?</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    Annuler
-                </button>
-                <form action="{{ route('demande_absences.abandonner', $demande->id) }}"
-                      method="POST" class="d-inline">
-                    @csrf
-                    <button type="submit" class="btn btn-warning px-4">
-                        <i class="bi bi-x-octagon me-1"></i> Oui, abandonner
-                    </button>
-                </form>
-            </div>
         </div>
     </div>
 </div>

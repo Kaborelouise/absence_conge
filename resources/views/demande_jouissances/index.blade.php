@@ -26,6 +26,7 @@
             <input type="text" id="recherche" class="form-control w-25" placeholder="Rechercher...">
         </div>
 
+        <div class="table-responsive">
         <table class="table table-hover" id="tableJouissances">
             {{-- CORRECTION : table-anptic-dark pour cohérence avec les autres pages --}}
             <thead class="table-anptic-dark">
@@ -112,6 +113,7 @@
 
             </tbody>
         </table>
+    </div>
     </div>
 </div>
 @endsection

@@ -6,9 +6,12 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card shadow-sm">
-            <div class="card-header text-white text-center" style="background-color:#1e2a3a; padding: 20px;">
+            <div class="card-header text-white text-center" style="background-color:#1B384F; padding: 20px;">
                 <h5 class="mb-0">Nouvelle demande de congé</h5>
             </div>
+
+
+           
             <div class="card-body p-4">
 
                 @if($errors->any())

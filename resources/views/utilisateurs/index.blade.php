@@ -11,7 +11,7 @@
     <a href="{{ route('utilisateurs.create') }}" class="btn btn-primary btn-sm">
         <i class="bi bi-plus-lg me-1"></i> Nouvel utilisateur
     </a>
-    
+
 </div>
 
 @if(session('success'))
@@ -30,8 +30,8 @@
 
 
 
+    <div class="table-responsive">
       {{-- {{ auth()->user()->role->libelle ?? 'pas de role' }} --}}
-
         <table class="table table-hover" id="tableUsers">
             <thead class="table-anptic-dark">
                 <tr>
@@ -88,6 +88,7 @@
 
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 @endsection

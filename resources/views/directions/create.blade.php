@@ -11,7 +11,7 @@
 
         <div class="card shadow-sm">
 
-                        <div class="card-header text-white text-center"
+                <div class="card-header text-white text-center"
                     style="background-color: #1B384F; padding: 20px;">
                     <h5 class="mb-0">Ajouter une direction</h5>
                 </div>

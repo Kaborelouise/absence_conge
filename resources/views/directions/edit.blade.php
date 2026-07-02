@@ -8,10 +8,8 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-pencil me-2"></i>Modifier la direction
-                </h5>
+            <div class="card-header text-white text-center" style="background-color:#1B384F; padding: 20px;">
+                <h5 class="mb-0">Modifier la direction</h5>
             </div>
             <div class="card-body">
 
@@ -65,14 +63,13 @@
                         @enderror
                     </div>
 
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 justify-content-center gap-3">
                         {{-- btn-success un bouton vert pour distinguer la modification de la création --}}
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-lg me-1"></i> Mettre à jour
+                        <button type="submit" class="btn btn-primary  px-4">
+                             Enregistrer
                         </button>
                         <a href="{{ route('directions.index') }}"
-                           class="btn btn-secondary">
-                            <i class="bi bi-x-lg me-1"></i> Annuler
+                           class="btn btn-secondary px-4"> Annuler
                         </a>
                     </div>
                 </form>

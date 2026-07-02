@@ -113,10 +113,13 @@ class UserController extends Controller
     }
 
 
-    public function show(User $utilisateur)
-        {
-            return view('utilisateurs.show', compact('utilisateur'));
-        }
+    public function show($id)
+    {
+        $user = User::with('role', 'departement.direction', 
+                        'demandeAbsences', 'demandeJouissances')
+                    ->findOrFail($id);
+        return view('utilisateurs.show', compact('user'));
+    }
 
     public function destroy($id)
     {

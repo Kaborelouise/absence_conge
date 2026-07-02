@@ -6,7 +6,8 @@
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">
+
+            <div class="card-header text-white text-center" style=" background-color: #1B384F; padding: 20px;">
                 <h5 class="mb-0">Modifier la demande d'absence</h5>
             </div>
             <div class="card-body">
@@ -106,12 +107,11 @@
 
                     </div>
 
-                    <div class="d-flex gap-2 mt-4">
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-lg me-1"></i> Mettre à jour
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="submit" class="btn btn-success"> Mettre à jour
                         </button>
                         <a href="{{ route('demande_absences.index') }}"
-                           class="btn btn-secondary">Annuler</a>
+                           class="btn btn-secondary px-3">Annuler</a>
                     </div>
                 </form>
             </div>

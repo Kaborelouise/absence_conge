@@ -32,6 +32,7 @@
                    placeholder="Rechercher...">
         </div>
 
+        <div class="table-responsive">
         <table class="table table-hover" id="tableConges">
             <thead class="table-anptic-dark">
                 <tr>
@@ -105,6 +106,7 @@
                 @endforelse
             </tbody>
         </table>
+    </div>
     </div>
 </div>
 @endsection

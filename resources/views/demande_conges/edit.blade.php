@@ -6,7 +6,7 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">
+            <div class="card-header text-white text-center" style="background-color:#1B384F; padding: 20px;">
                 <h5 class="mb-0">Modifier la demande de congé</h5>
             </div>
             <div class="card-body">
