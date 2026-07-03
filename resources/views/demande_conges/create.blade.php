@@ -6,12 +6,9 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card shadow-sm">
-            <div class="card-header text-white text-center" style="background-color:#1B384F; padding: 20px;">
+            <div class="card-header card-header-anptic text-center" style="padding: 20px;">
                 <h5 class="mb-0">Nouvelle demande de congé</h5>
             </div>
-
-
-           
             <div class="card-body p-4">
 
                 @if($errors->any())
@@ -28,25 +25,43 @@
                     @csrf
 
                     <div class="mb-4">
-                        <label class="form-label">Lieu de jouissance</label>
-                        <select name="lieu_jouissance"
-                                class="form-select @error('lieu_jouissance') is-invalid @enderror"
-                                required>
-                            <option value="">-- Choisir un lieu --</option>
-                            <option value="Afrique" {{ old('lieu_jouissance') == 'Afrique' ? 'selected' : '' }}>Afrique</option>
-                            <option value="Asie" {{ old('lieu_jouissance') == 'Asie' ? 'selected' : '' }}>Asie</option>
-                            <option value="Amerique" {{ old('lieu_jouissance') == 'Amerique' ? 'selected' : '' }}>Amérique</option>
-                            <option value="Europe" {{ old('lieu_jouissance') == 'Europe' ? 'selected' : '' }}>Europe</option>
-                        </select>
+                        <label class="form-label fw-bold">
+                            Lieu(x) de jouissance
+                            <span class="text-danger">*</span>
+
+                        </label>
+
+                        @php
+                            
+                            $lieux = ['Afrique', 'Burkina', 'Canada', 'Europe', 'Asie', 'USA'];
+                          
+                            $anciensChoix = old('lieu_jouissance', []);
+                        @endphp
+                        <div class="row">
+                            @foreach($lieux as $lieu)
+                            <div class="col-6 col-md-4 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           name="lieu_jouissance[]"
+                                           value="{{ $lieu }}"
+                                           id="lieu_{{ $lieu }}"
+                                           {{ in_array($lieu, $anciensChoix) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="lieu_{{ $lieu }}">
+                                        {{ $lieu }}
+                                    </label>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
                         @error('lieu_jouissance')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-danger mt-1" style="font-size:12px;">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="alert alert-info" style="font-size:13px;">
                         <i class="bi bi-info-circle me-1"></i>
-                        Cette demande sera compilée par le service RH, puis imprimée
-                        pour signature hors plateforme.
+                        Cette demande sera compilée par le service RH.
                     </div>
 
                     <div class="d-flex justify-content-center gap-3">

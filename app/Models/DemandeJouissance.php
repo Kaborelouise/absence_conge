@@ -17,7 +17,7 @@ class DemandeJouissance extends Model
         'certificat_cessation',
         'certificat_prise_service',
         'cloturee_at',
-    ];
+        ];
 
     protected $cast = [
         'abandonnee' => 'boolean',

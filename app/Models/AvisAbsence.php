@@ -21,7 +21,7 @@ class AvisAbsence extends Model
         return $this->belongsTo(DemandeAbsence::class);
     }
 
-    //relation avec l'utilisateur qui a donné l'avis
+    //relation avec l'utilisateur qui a donné l'avis 
     public function user()
     {
         return $this->belongsTo(User::class);

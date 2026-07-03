@@ -39,7 +39,7 @@
                     <th>N° Demande</th>
                     <th>Agent</th>
                     <th>Département</th>
-                    <th>Lieu de jouissance</th>
+                    <th>Lieu(x) de jouissance</th>
                     <th>Statut</th>
                     <th>Actions</th>
                 </tr>
@@ -48,7 +48,6 @@
                 @forelse($demandes as $demande)
                 @php
                     $estAuteur  = $demande->user_id === auth()->id();
-                    // Modifiable : auteur uniquement, pas encore compilée et pas abandonnée
                     $modifiable = $estAuteur && !$demande->estCompilee() && !$demande->abandonnee;
                 @endphp
 
@@ -56,7 +55,8 @@
                     <td>{{ $demande->num_demande }}</td>
                     <td>{{ $demande->user->nom ?? '' }} {{ $demande->user->prenom ?? '' }}</td>
                     <td>{{ $demande->user->departement->libelle_court ?? '—' }}</td>
-                    <td>{{ $demande->lieu_jouissance }}</td>
+                    {{-- MODIFICATION : affiche le tableau JSON comme liste séparée par des virgules --}}
+                    <td>{{ implode(', ', $demande->lieu_jouissance ?? []) }}</td>
                     <td>
                         @if($demande->abandonnee)
                             <span class="badge-statut badge-rejetee">Abandonnée</span>
@@ -67,12 +67,9 @@
                         @endif
                     </td>
                     <td>
-                        {{-- Bouton Voir : visible par tous --}}
                         <a href="{{ route('demande_conges.show', $demande->id) }}"
                            class="btn btn-sm btn-outline-primary btn-action">Voir
                         </a>
-
-                        {{-- Boutons Modifier / Supprimer / Abandonner : auteur uniquement, en attente --}}
                         @if($modifiable)
                         <a href="{{ route('demande_conges.edit', $demande->id) }}"
                            class="btn btn-sm btn-success btn-action">
@@ -96,7 +93,6 @@
                             </button>
                         </form>
                         @endif
-
                     </td>
                 </tr>
                 @empty
@@ -106,7 +102,7 @@
                 @endforelse
             </tbody>
         </table>
-    </div>
+        </div>
     </div>
 </div>
 @endsection

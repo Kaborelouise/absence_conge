@@ -84,7 +84,8 @@ class DemandeCongeController extends Controller
         }
 
         $request->validate([
-            'lieu_jouissance' => 'required|in:Afrique,Asie,Amerique,Europe',
+                    'lieu_jouissance'   => 'required|array|min:1',
+        'lieu_jouissance.*' => 'in:Afrique,Burkina,Canada,Europe,Asie,USA',
         ]);
 
         $demande->update($request->only(['lieu_jouissance']));

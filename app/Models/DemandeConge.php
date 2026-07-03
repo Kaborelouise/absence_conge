@@ -6,10 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class DemandeConge extends Model
 {
-    protected $fillable = [
+        protected $fillable = [
         'lieu_jouissance',
         'user_id',
         'abandonnee',
+                 ];
+
+    protected $casts = [
+        'lieu_jouissance' => 'array',
     ];
 
     public function user()

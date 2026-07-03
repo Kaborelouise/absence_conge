@@ -42,8 +42,13 @@
                         <td>{{ $demande->user->departement->libelle_court ?? '—' }}</td>
                     </tr>
                     <tr>
-                        <th class="ps-3">Lieu de jouissance</th>
-                        <td>{{ $demande->lieu_jouissance }}</td>
+                        <th class="ps-3">Lieu(x) de jouissance</th>
+                        <td>
+                            {{-- MODIFICATION : affiche chaque lieu comme un badge --}}
+                            @foreach($demande->lieu_jouissance ?? [] as $lieu)
+                                <span class="badge-statut badge-en_cours me-1">{{ $lieu }}</span>
+                            @endforeach
+                        </td>
                     </tr>
                     <tr>
                         <th class="ps-3">Statut</th>
@@ -97,7 +102,7 @@
             </div>
         </div>
 
-        {{-- Bouton compiler seulement visible pour l'agent RH, si pas déjà compilée --}}
+        {{-- Bouton compiler : seulement visible pour l'agent RH, si pas déjà compilée --}}
         @if($peutCompiler)
         <div class="card shadow-sm border-primary mb-3">
             <div class="card-header card-header-anptic">
@@ -121,6 +126,20 @@
             </div>
         </div>
         @endif
+
+        {{-- AJOUT : bouton abandonner visible par l'auteur si pas encore compilée --}}
+        @if(isset($peutAbandonner) && $peutAbandonner)
+        <div class="d-grid">
+            <form action="{{ route('demande_conges.abandonner', $demande->id) }}" method="POST">
+                @csrf
+                <button type="submit" class="btn btn-warning w-100"
+                        onclick="return confirm('Abandonner cette demande ?')">
+                    <i class="bi bi-x-octagon me-2"></i> Abandonner la demande
+                </button>
+            </form>
+        </div>
+        @endif
+
     </div>
 </div>
 @endsection

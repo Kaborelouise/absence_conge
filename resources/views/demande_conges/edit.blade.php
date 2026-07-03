@@ -6,7 +6,7 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card shadow-sm">
-            <div class="card-header text-white text-center" style="background-color:#1B384F; padding: 20px;">
+            <div class="card-header card-header-anptic text-center" style="padding: 20px;">
                 <h5 class="mb-0">Modifier la demande de congé</h5>
             </div>
             <div class="card-body">
@@ -26,17 +26,42 @@
                     @method('PUT')
 
                     <div class="mb-4">
-                        <label class="form-label fw-bold">Lieu de jouissance</label>
-                        <select name="lieu_jouissance"
-                                class="form-select @error('lieu_jouissance') is-invalid @enderror"
-                                required>
-                            <option value="Afrique" {{ old('lieu_jouissance', $demande->lieu_jouissance) == 'Afrique' ? 'selected' : '' }}>Afrique</option>
-                            <option value="Asie" {{ old('lieu_jouissance', $demande->lieu_jouissance) == 'Asie' ? 'selected' : '' }}>Asie</option>
-                            <option value="Amerique" {{ old('lieu_jouissance', $demande->lieu_jouissance) == 'Amerique' ? 'selected' : '' }}>Amérique</option>
-                            <option value="Europe" {{ old('lieu_jouissance', $demande->lieu_jouissance) == 'Europe' ? 'selected' : '' }}>Europe</option>
-                        </select>
+                        <label class="form-label fw-bold">
+                            Lieu(x) de jouissance
+                            <span class="text-danger">*</span>
+                            {{-- MODIFICATION : sélection multiple --}}
+                        </label>
+
+                        @php
+                            {{-- AJOUT : liste des lieux --}}
+                            $lieux = ['Afrique', 'Burkina', 'Canada', 'Europe', 'Asie', 'USA'];
+                            {{-- AJOUT : récupère les choix existants de la demande
+                                 old() reprend les anciens choix si erreur de validation --}}
+                            $choixActuels = old('lieu_jouissance', $demande->lieu_jouissance ?? []);
+                        @endphp
+
+                        {{-- SUPPRESSION : <select> remplacé par des cases à cocher --}}
+                        <div class="row">
+                            @foreach($lieux as $lieu)
+                            <div class="col-6 col-md-4 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           name="lieu_jouissance[]"
+                                           value="{{ $lieu }}"
+                                           id="lieu_{{ $lieu }}"
+                                           {{-- AJOUT : pré-cocher les lieux déjà sélectionnés --}}
+                                           {{ in_array($lieu, $choixActuels) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="lieu_{{ $lieu }}">
+                                        {{ $lieu }}
+                                    </label>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+
                         @error('lieu_jouissance')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-danger mt-1" style="font-size:12px;">{{ $message }}</div>
                         @enderror
                     </div>
 
