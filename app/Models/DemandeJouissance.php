@@ -21,9 +21,13 @@ class DemandeJouissance extends Model
 
     protected $cast = [
         'abandonnee' => 'boolean',
-        //pour la cloture on ajoute cast datetime
-        'cloture_at' => 'datetime',
+        'cloturee_at' => 'datetime',
     ];
+    public function nombreJours(): int
+    {
+        return \Carbon\Carbon::parse($this->date_debut)
+            ->diffInDays(\Carbon\Carbon::parse($this->date_fin)) + 1;
+    }
 
     public function estCloturee(): bool
     {
@@ -60,6 +64,9 @@ class DemandeJouissance extends Model
         if ($role === 'sg') {
             return ['agent_rh', 'dg'];
         }
+        if ($role === 'agent_rh') {
+            return ['sg'];
+        }
 
         // Cas du dg, RH puis PCA décide
         if ($role === 'dg') {
@@ -81,11 +88,6 @@ class DemandeJouissance extends Model
         // Chef Dpt → RH → Responsable de direction — INCHANGÉ
         return ['chef_departement', 'agent_rh', 'responsable_direction'];
     }
-
-    /**
- * L'auteur peut abandonner sa demande seulement si
- * elle n'est pas encore validée, rejetée ou abandonnée.
- */
      public function peutEtreAbandonneePar(User $user): bool
     {
           // Si déjà abandonnée

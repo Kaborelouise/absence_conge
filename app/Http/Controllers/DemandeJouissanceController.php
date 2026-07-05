@@ -47,21 +47,36 @@ class DemandeJouissanceController extends Controller
         $request->validate([
             'date_debut'  => 'required|date',
             'date_fin'    => 'required|date|after_or_equal:date_debut',
-            'nombre_jour' => 'required|integer|min:1',
         ]);
+
+        $user = auth()->user();
+
+        // Calcul serveur du nombre de jours, bornes incluses. On ignore
+        // volontairement $request->nombre_jour : voir le commentaire ci-dessus.
+        $jours = \Carbon\Carbon::parse($request->date_debut)
+            ->diffInDays(\Carbon\Carbon::parse($request->date_fin)) + 1;
+
+        if ($jours > $user->solde_conge) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', "Solde insuffisant : vous demandez {$jours} jour(s), il ne vous reste que {$user->solde_conge} jour(s) de congé.");
+        }
 
         DemandeJouissance::create([
             'num_demande' => time(),
             'date_debut'  => $request->date_debut,
             'date_fin'    => $request->date_fin,
-            'nombre_jour' => $request->nombre_jour,
-            'user_id'     => auth()->id(),
+            'nombre_jour' => $jours,
+            'user_id'     => $user->id,
             'statut'      => 'en_attente',
         ]);
 
+        // Réservation immédiate des jours sur le solde congé
+        $user->decrement('solde_conge', $jours);
+
         return redirect()
             ->route('demande_jouissances.index')
-            ->with('success', 'Demande de jouissance soumise avec succès.');
+            ->with('success', "Demande de jouissance soumise avec succès. {$jours} jour(s) réservé(s) sur votre solde.");
     }
 
     public function show($id)
@@ -99,7 +114,6 @@ class DemandeJouissanceController extends Controller
 
         return view('demande_jouissances.edit', compact('demande'));
     }
-
     public function update(Request $request, $id)
     {
         $demande = DemandeJouissance::findOrFail($id);
@@ -113,16 +127,40 @@ class DemandeJouissanceController extends Controller
         $request->validate([
             'date_debut'  => 'required|date',
             'date_fin'    => 'required|date|after_or_equal:date_debut',
-            'nombre_jour' => 'required|integer|min:1',
         ]);
 
-        $demande->update($request->only(['date_debut', 'date_fin', 'nombre_jour']));
+        $user = $demande->user;
+
+        $ancienJours = $demande->nombreJours();
+
+        $nouveauxJours = \Carbon\Carbon::parse($request->date_debut)
+            ->diffInDays(\Carbon\Carbon::parse($request->date_fin)) + 1;
+
+        $soldeDisponible = $user->solde_conge + $ancienJours;
+
+        if ($nouveauxJours > $soldeDisponible) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', "Solde insuffisant : vous demandez {$nouveauxJours} jour(s), il ne vous reste que {$soldeDisponible} jour(s) disponible(s).");
+        }
+
+        $demande->update([
+            'date_debut'  => $request->date_debut,
+            'date_fin'    => $request->date_fin,
+            'nombre_jour' => $nouveauxJours,
+        ]);
+
+        $user->update(['solde_conge' => $soldeDisponible - $nouveauxJours]);
 
         return redirect()
             ->route('demande_jouissances.index')
             ->with('success', 'Demande modifiée avec succès.');
     }
 
+    /**
+     * MODIFIÉ : restitution des jours réservés puisque la demande est supprimée
+     * avant validation.
+     */
     public function destroy($id)
     {
         $demande = DemandeJouissance::findOrFail($id);
@@ -133,6 +171,8 @@ class DemandeJouissanceController extends Controller
                 ->with('error', 'Suppression non autorisée.');
         }
 
+        $demande->user->increment('solde_conge', $demande->nombreJours());
+
         $demande->delete();
 
         return redirect()
@@ -140,6 +180,9 @@ class DemandeJouissanceController extends Controller
             ->with('success', 'Demande supprimée.');
     }
 
+    /**
+     * MODIFIÉ : même logique, restitution des jours réservés.
+     */
     public function abandonner($id)
     {
         $demande = DemandeJouissance::findOrFail($id);
@@ -149,6 +192,8 @@ class DemandeJouissanceController extends Controller
                 ->route('demande_jouissances.show', $id)
                 ->with('error', 'Vous ne pouvez pas abandonner cette demande.');
         }
+
+        $demande->user->increment('solde_conge', $demande->nombreJours());
 
         $demande->update(['abandonnee' => true]);
 
@@ -179,7 +224,7 @@ class DemandeJouissanceController extends Controller
         return $pdf->download("cessation_service_{$demande->num_demande}.pdf");
     }
 
-    // Télécharger le certificat de prise de service. Disponible 2 jours avant la date de fin.
+    // Télécharger le certificat de prise de service Disponible 2 jours avant la date de fin.
 
     public function telechargerReprise($id)
     {

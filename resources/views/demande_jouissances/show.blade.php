@@ -68,7 +68,7 @@
     {{-- Colonne gauche : infos demande --}}
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
-            <div class="card-header card-header-anptic">
+            <div class="card-header text-center card-header-anptic">
                 <i class="bi bi-file-text me-2"></i> Informations de la demande
             </div>
             <div class="card-body p-0">
@@ -130,7 +130,7 @@
     <div class="col-md-6">
 
         <div class="card shadow-sm mb-3">
-            <div class="card-header card-header-anptic">
+            <div class="card-header text-center card-header-anptic">
                 <i class="bi bi-diagram-3 me-2"></i> Suivi du circuit
             </div>
             <div class="card-body">
@@ -187,7 +187,7 @@
         @endif
 
         {{-- Bouton Abandonner auteur uniquement, demande pas encore traitée --}}
-        @if(isset($peutAbandonner) && $peutAbandonner)
+        {{-- @if(isset($peutAbandonner) && $peutAbandonner)
         <div class="d-grid mb-3">
             <form action="{{ route('demande_jouissances.abandonner', $demande->id) }}" method="POST">
                 @csrf
@@ -197,7 +197,7 @@
                 </button>
             </form>
         </div>
-        @endif
+        @endif --}}
 
         {{-- Section clôture visible par l'auteur si la demande est validée--}}
         @if($demande->statut === 'validee' && $estAuteur)

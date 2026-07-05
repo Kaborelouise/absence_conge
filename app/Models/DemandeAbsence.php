@@ -38,40 +38,55 @@ class DemandeAbsence extends Model
     {
         return $this->hasMany(AvisAbsence::class);
     }
-
+    public function nombreJours(): int
+    {
+        return \Carbon\Carbon::parse($this->date_debut)
+            ->diffInDays(\Carbon\Carbon::parse($this->date_fin)) + 1;
+    }
 
     public function circuitAttendu(): array
     {
         $user  = $this->user;
         $role  = $user->role->libelle;
+        $jours = $this->nombreJours();
 
-        // on calcul la durée pour déterminer le validateur final
-        $jours = \Carbon\Carbon::parse($this->date_debut)
-                               ->diffInDays($this->date_fin);
-        $validateurFinal = $jours > 5 ? 'dg' : 'sg';
-
-        // Cas du sg le DG valide toujours peu importe la durée
+        
         if ($role === 'sg') {
             return ['agent_rh', 'dg'];
         }
 
-        // Cas du dg cest le PCA qui valide toujours
+        if ($role === 'agent_rh') {
+            return ['sg'];
+        }
+
+        // Cas du dg cest le PCA qui valide toujours (même logique que ci-dessus)
         if ($role === 'dg') {
             return ['agent_rh', 'pca'];
         }
 
+      
+        if ($jours <= 2) {
+            $etapesFinales = [];
+        } elseif ($jours < 5) {
+            $etapesFinales = ['sg'];
+        } else {
+            $etapesFinales = ['dg'];
+        }
+
+
+
         // Cas du Responsable de direction 
         if ($role === 'responsable_direction') {
-            return ['agent_rh', $validateurFinal];
+            return array_merge(['agent_rh'], $etapesFinales);
         }
 
         // Cas Agent de direction ou Chef de département :
         if ($role === 'chef_departement' || $user->est_responsable_departement) {
-            return ['responsable_direction', 'agent_rh', $validateurFinal];
+            return array_merge(['responsable_direction', 'agent_rh'], $etapesFinales);
         }
 
         // Cas Agent simple d'un département 
-        return ['chef_departement', 'responsable_direction', 'agent_rh', $validateurFinal];
+        return array_merge(['chef_departement', 'responsable_direction', 'agent_rh'], $etapesFinales);
     }
     // Retourne le type d'avis attendu à l'étape actuelle
     public function prochainActeur(): ?string

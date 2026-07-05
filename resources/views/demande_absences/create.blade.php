@@ -11,7 +11,6 @@
                 <h5 class="mb-0">Nouvelle demande d'autorisation d'absence</h5>
             </div>
             <div class="card-body p-4">
-
                 @if($errors->any())
                     <div class="alert alert-danger">
                         <ul class="mb-0">
@@ -21,11 +20,20 @@
                         </ul>
                     </div>
                 @endif
+                @if(session('error'))
+                    <div class="alert alert-danger">
+                        {{ session('error') }}
+                    </div>
+                @endif
 
+                @if(session('success'))
+                    <div class="alert alert-success">
+                        {{ session('success') }}
+                    </div>
+                @endif
                 <form action="{{ route('demande_absences.store') }}" method="POST"
                       enctype="multipart/form-data">
                     @csrf
-
                     {{-- première ligne on a la date de début et la date de fin--}}
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
@@ -53,8 +61,7 @@
                             @enderror
                         </div>
                     </div>
-
-                    {{-- deuxième ligne on a la durée (calculée automatiquement) plus le Motif qui est une liste déroulante (liste déroulante) --}}
+                    {{-- deuxième ligne on a la durée (calculée automatiquement) plus le Motif qui est une liste déroulante --}}
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Durée (calculée automatiquement)</label>
@@ -66,7 +73,6 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Motif</label>
-     
                             <select name="motif"
                                     class="form-select @error('motif') is-invalid @enderror"
                                     required>
@@ -93,7 +99,6 @@
                             @enderror
                         </div>
                     </div>
-
                     {{-- troisième ligne on a intérimaire (liste déroulante) et le Solde disponible --}}
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
@@ -120,7 +125,7 @@
                         </div>
                     </div>
 
-                    {{-- Quatrième ligne, on a le Justificatif  --}}
+                    {{--Quatrième ligne, on a le Justificatif --}}
                     <div class="mb-4 text-center">
                         <label class="form-label d-block">
                             Joindre un justificatif (optionnel)
@@ -138,7 +143,6 @@
                                accept=".pdf,.jpg,.jpeg,.png">
                         <small class="text-muted">Formats acceptés : PDF, JPG, PNG</small>
                     </div>
-
                     {{-- Boutons --}}
                     <div class="d-flex justify-content-center gap-3">
                         <button type="submit" class="btn btn-primary px-4">
@@ -156,20 +160,16 @@
     </div>
 </div>
 @endsection
-
 @section('scripts')
 <script>
-    // Calcul automatique de la durée à partir des dates saisies.
-    // Math.ceil arrondit au jour supérieur.
-    // Le résultat est affiché dans le champ readonly 
-    // (pas envoyé au serveur, juste informatif)
+
     function calculerDuree() {
         const debut = document.getElementById('date_debut').value;
         const fin   = document.getElementById('date_fin').value;
         if (debut && fin) {
-            const diff = Math.ceil(
+            const diff = Math.round(
                 (new Date(fin) - new Date(debut)) / (1000 * 60 * 60 * 24)
-            );
+            ) + 1;
             document.getElementById('duree').value =
                 diff > 0 ? diff + ' jour(s)' : 'Date invalide';
         }

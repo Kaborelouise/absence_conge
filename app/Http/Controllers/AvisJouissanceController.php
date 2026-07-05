@@ -56,9 +56,11 @@ class AvisJouissanceController extends Controller
             'commentaire'           => $request->commentaire,
         ]);
 
-        // Avis défavorable → arrêt immédiat du circuit
+
         if ($request->avis === 'defavorable') {
             $demande->update(['statut' => 'rejetee']);
+
+            $demande->user->increment('solde_conge', $demande->nombreJours());
 
             return redirect()
                 ->route('demande_jouissances.show', $demande->id)
@@ -69,19 +71,12 @@ class AvisJouissanceController extends Controller
         // le prochain acteur avec les nouvelles données
         $demande->load('avis');
         $prochainActeur = $demande->prochainActeur();
-
         if ($prochainActeur === null) {
-            // Plus d'acteur → demande validée
             $demande->update(['statut' => 'validee']);
-
-            // Décrémenter le solde congé de l'agent
-            $agent        = $demande->user;
-            $nouveauSolde = max(0, $agent->solde_conge - $demande->nombre_jour);
-            $agent->update(['solde_conge' => $nouveauSolde]);
 
             return redirect()
                 ->route('demande_jouissances.show', $demande->id)
-                ->with('success', "Demande validée. Solde mis à jour ({$nouveauSolde} jours restants).");
+                ->with('success', 'Demande validée avec succès.');
         }
 
         // Il reste des étapes → en_cours

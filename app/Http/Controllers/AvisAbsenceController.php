@@ -56,8 +56,19 @@ class AvisAbsenceController extends Controller
             'user_id'            => $user->id, // On enregistre l'utilisateur qui a donné l'avis
         ]);
 
+        /**
+         * MODIFIÉ : le solde a été réservé (décrémenté) dès la CRÉATION de la demande
+         * (voir DemandeAbsenceController::store). Si un avis défavorable est donné,
+         * la demande n'aboutira jamais : il faut donc RESTITUER les jours réservés,
+         * sinon l'agent perdrait définitivement des jours pour une demande refusée —
+         * ce qui contredit la règle métier ("si une demande est refusée, pourquoi
+         * extraire ça du solde ?").
+         */
         if ($request->avis === 'defavorable') {
             $demande->update(['statut' => 'rejetee']);
+
+            // Restitution des jours réservés à la création, la demande est rejetée
+            $demande->user->increment('solde_absence', $demande->nombreJours());
 
             return redirect()
                 ->route('demande_absences.show', $demande->id)
@@ -67,19 +78,20 @@ class AvisAbsenceController extends Controller
         $demande->load('avisAbsence');
         $prochainActeur = $demande->prochainActeur();
 
+        /**
+         * MODIFIÉ : avant, ce bloc recalculait les jours et décrémentait le solde
+         * ICI, à la validation finale, avec un "max(0, ...)" qui camouflait un
+         * éventuel dépassement au lieu de le bloquer. Désormais, le solde a déjà
+         * été décrémenté dès la création de la demande (réservation immédiate) :
+         * il n'y a donc PLUS RIEN À FAIRE sur le solde à ce stade, on se contente
+         * de passer le statut à "validee".
+         */
         if ($prochainActeur === null) {
             $demande->update(['statut' => 'validee']);
 
-            $jours = \Carbon\Carbon::parse($demande->date_debut)
-                                   ->diffInDays($demande->date_fin);
-
-            $agent = $demande->user;
-            $nouveauSolde = max(0, $agent->solde_absence - $jours);
-            $agent->update(['solde_absence' => $nouveauSolde]);
-
             return redirect()
                 ->route('demande_absences.show', $demande->id)
-                ->with('success', "Demande validée avec succès. Solde mis à jour ({$nouveauSolde} jours restants).");
+                ->with('success', 'Demande validée avec succès.');
         }
 
         $demande->update(['statut' => 'en_cours']);

@@ -39,7 +39,6 @@
                     <th>N° Demande</th>
                     <th>Agent</th>
                     <th>Département</th>
-                    <th>Lieu(x) de jouissance</th>
                     <th>Statut</th>
                     <th>Actions</th>
                 </tr>
@@ -55,8 +54,7 @@
                     <td>{{ $demande->num_demande }}</td>
                     <td>{{ $demande->user->nom ?? '' }} {{ $demande->user->prenom ?? '' }}</td>
                     <td>{{ $demande->user->departement->libelle_court ?? '—' }}</td>
-                    {{-- MODIFICATION : affiche le tableau JSON comme liste séparée par des virgules --}}
-                    <td>{{ implode(', ', $demande->lieu_jouissance ?? []) }}</td>
+                    {{-- <td>{{ implode(', ', $demande->lieu_jouissance ?? []) }}</td> --}}
                     <td>
                         @if($demande->abandonnee)
                             <span class="badge-statut badge-rejetee">Abandonnée</span>

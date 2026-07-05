@@ -31,10 +31,18 @@ class DemandeCongeController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'lieu_jouissance' => 'required|in:Afrique,Asie,Amerique,Europe',
+            // CORRECTION : tableau au lieu d'une valeur unique
+            'lieu_jouissance'   => 'required|array|min:1',
+            'lieu_jouissance.*' => 'in:Afrique,Burkina,Canada,Europe,Asie,USA',
+        ], [
+            // Messages d'erreur en français
+            'lieu_jouissance.required' => 'Veuillez sélectionner au moins un lieu.',
+            'lieu_jouissance.min'      => 'Veuillez sélectionner au moins un lieu.',
+            'lieu_jouissance.*.in'     => 'Lieu de jouissance invalide.',
         ]);
 
         DemandeConge::create([
+            // Le cast 'array' dans le modèle convertit automatiquement en JSON
             'lieu_jouissance' => $request->lieu_jouissance,
             'user_id'         => auth()->id(),
         ]);
@@ -51,10 +59,8 @@ class DemandeCongeController extends Controller
             'avisConge'
         )->findOrFail($id);
 
-        $user = auth()->user();
-
+        $user           = auth()->user();
         $peutCompiler   = $demande->peutEtreCompileePar($user);
-        // AJOUT : vérification si l'utilisateur peut abandonner la demande
         $peutAbandonner = $demande->peutEtreAbandonneePar($user);
 
         return view('demande_conges.show', compact('demande', 'peutCompiler', 'peutAbandonner'));
@@ -84,8 +90,12 @@ class DemandeCongeController extends Controller
         }
 
         $request->validate([
-                    'lieu_jouissance'   => 'required|array|min:1',
-        'lieu_jouissance.*' => 'in:Afrique,Burkina,Canada,Europe,Asie,USA',
+            'lieu_jouissance'   => 'required|array|min:1',
+            'lieu_jouissance.*' => 'in:Afrique,Burkina,Canada,Europe,Asie,USA',
+        ], [
+            'lieu_jouissance.required' => 'Veuillez sélectionner au moins un lieu.',
+            'lieu_jouissance.min'      => 'Veuillez sélectionner au moins un lieu.',
+            'lieu_jouissance.*.in'     => 'Lieu de jouissance invalide.',
         ]);
 
         $demande->update($request->only(['lieu_jouissance']));
@@ -112,7 +122,6 @@ class DemandeCongeController extends Controller
             ->with('success', 'Demande supprimée.');
     }
 
-    // AJOUT : méthode abandonner
     public function abandonner($id)
     {
         $demande = DemandeConge::findOrFail($id);

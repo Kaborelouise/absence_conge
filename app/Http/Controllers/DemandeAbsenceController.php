@@ -43,7 +43,6 @@ class DemandeAbsenceController extends Controller
             ->where('id', '!=', $user->id)->get();
         return view('demande_absences.create', compact('user', 'agentsMemeDepartement'));
     }
-
     public function store(Request $request)
     {
         $request->validate([
@@ -53,18 +52,40 @@ class DemandeAbsenceController extends Controller
             'interimaire' => 'nullable|string|max:255',
         ]);
 
+        $user = auth()->user();
+
+        // Nombre de jours demandés, bornes incluses (ex: 1er au 6 janvier = 6 jours).
+        // On ne peut pas encore utiliser $demande->nombreJours() ici car l'objet
+        // DemandeAbsence n'existe pas encore : on calcule donc directement à partir
+        // des dates de la requête, avec la même formule que dans le modèle.
+        $jours = \Carbon\Carbon::parse($request->date_debut)
+            ->diffInDays(\Carbon\Carbon::parse($request->date_fin)) + 1;
+
+        // Vérification du solde AVANT toute création : on bloque la demande si
+        // l'agent n'a pas assez de jours restants. 
+        if ($jours > $user->solde_absence) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', "Solde insuffisant : vous demandez {$jours} jour(s), il ne vous reste que {$user->solde_absence} jour(s).");
+        }
+
         DemandeAbsence::create([
             'num_demande' => time(),
             'date_debut'  => $request->date_debut,
             'date_fin'    => $request->date_fin,
             'motif'       => $request->motif,
             'interimaire' => $request->interimaire,
-            'user_id'     => auth()->id(),
+            'user_id'     => $user->id,
             'statut'      => 'en_attente',
         ]);
 
+        // Réservation immédiate des jours : le solde baisse dès la création, avant
+        // même que la demande ait parcouru le circuit d'approbation. Si la demande
+        // est refusée/abandonnée/supprimée plus tard, ces jours seront restitués.
+        $user->decrement('solde_absence', $jours);
+
         return redirect()->route('demande_absences.index')
-            ->with('success', 'Demande soumise avec succès.');
+            ->with('success', "Demande soumise avec succès. {$jours} jour(s) réservé(s) sur votre solde.");
     }
 
     public function show($id)
@@ -111,11 +132,35 @@ class DemandeAbsenceController extends Controller
             'motif'       => 'required|string|max:500',
             'interimaire' => 'nullable|string|max:255',
         ]);
+
+        $user = $demande->user;
+
+        // Jours actuellement réservés par cette demande (avant modification)
+        $ancienJours = $demande->nombreJours();
+
+        // Jours que la demande occuperait avec les nouvelles dates
+        $nouveauxJours = \Carbon\Carbon::parse($request->date_debut)
+            ->diffInDays(\Carbon\Carbon::parse($request->date_fin)) + 1;
+
+        // Solde "virtuellement" disponible si on remettait d'abord l'ancienne réservation
+        $soldeDisponible = $user->solde_absence + $ancienJours;
+
+        if ($nouveauxJours > $soldeDisponible) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', "Solde insuffisant : vous demandez {$nouveauxJours} jour(s), il ne vous reste que {$soldeDisponible} jour(s) disponible(s).");
+        }
+
         $demande->update($request->only(['date_debut', 'date_fin', 'motif', 'interimaire']));
+
+        // On applique la nouvelle réservation en une seule écriture
+        $user->update(['solde_absence' => $soldeDisponible - $nouveauxJours]);
+
         return redirect()->route('demande_absences.index')
             ->with('success', 'Demande modifiée avec succès.');
     }
 
+ 
     public function destroy($id)
     {
         $demande = DemandeAbsence::findOrFail($id);
@@ -123,10 +168,15 @@ class DemandeAbsenceController extends Controller
             return redirect()->route('demande_absences.index')
                 ->with('error', 'Suppression non autorisée.');
         }
+
+        // Restitution des jours réservés à la création, puisque la demande est annulée
+        $demande->user->increment('solde_absence', $demande->nombreJours());
+
         $demande->delete();
         return redirect()->route('demande_absences.index')
             ->with('success', 'Demande supprimée.');
     }
+
 
     public function abandonner($id)
     {
@@ -135,15 +185,18 @@ class DemandeAbsenceController extends Controller
             return redirect()->route('demande_absences.show', $id)
                 ->with('error', 'Vous ne pouvez pas abandonner cette demande.');
         }
+
+        // Restitution des jours réservés, la demande n'ira pas au bout du circuit
+        $demande->user->increment('solde_absence', $demande->nombreJours());
+
         $demande->update(['abandonnee' => true]);
         return redirect()->route('demande_absences.index')
             ->with('success', 'Demande abandonnée.');
     }
 
-    /**
-     * Télécharger la demande d'absence validée au format PDF.
-     * Visible uniquement par l'auteur quand la demande est validée.
-     */
+
+    //  Télécharger la demande d'absence validée au format PDF.
+    //   Visible uniquement par l'auteur quand la demande est validée.
     public function telecharger($id)
     {
         $demande = DemandeAbsence::with(

@@ -22,7 +22,7 @@
     {{-- Colonne gauche : infos personnelles --}}
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
-            <div class="card-header card-header-anptic">
+            <div class="card-header text-center card-header-anptic">
                 <i class="bi bi-person me-2"></i> Informations personnelles
             </div>
             <div class="card-body p-0">
@@ -93,7 +93,7 @@
 
         {{-- Soldes --}}
         <div class="card shadow-sm mb-3">
-            <div class="card-header card-header-anptic">
+            <div class="card-header text-center card-header-anptic">
                 <i class="bi bi-calendar-check me-2"></i> Soldes
             </div>
             <div class="card-body p-0">
@@ -116,7 +116,7 @@
 
         {{-- Statistiques demandes --}}
         <div class="card shadow-sm mb-3">
-            <div class="card-header card-header-anptic">
+            <div class="card-header text-center card-header-anptic">
                 <i class="bi bi-bar-chart me-2"></i> Statistiques des demandes
             </div>
             <div class="card-body p-0">

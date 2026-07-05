@@ -28,7 +28,7 @@
 
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
-            <div class="card-header card-header-anptic">
+            <div class="card-header text-center  card-header-anptic">
                 <i class="bi bi-file-text me-2"></i> Informations de la demande
             </div>
             <div class="card-body p-0">
@@ -70,7 +70,7 @@
     <div class="col-md-6">
 
         <div class="card shadow-sm mb-3">
-            <div class="card-header card-header-anptic">
+            <div class="card-header text-center card-header-anptic">
                 <i class="bi bi-diagram-3 me-2"></i> Suivi
             </div>
             <div class="card-body">
@@ -105,7 +105,7 @@
         {{-- Bouton compiler : seulement visible pour l'agent RH, si pas déjà compilée --}}
         @if($peutCompiler)
         <div class="card shadow-sm border-primary mb-3">
-            <div class="card-header card-header-anptic">
+            <div class="card-header text-center card-header-anptic">
                 <i class="bi bi-pencil-square me-2"></i> Compiler la demande
             </div>
             <div class="card-body">
@@ -113,22 +113,23 @@
                     @csrf
                     <input type="hidden" name="demande_conge_id" value="{{ $demande->id }}">
                     <div class="mb-3">
-                        <label class="form-label fw-bold">
+                        <label class="form-label fw-bold"> text-center
                             Commentaire <span class="text-muted fw-normal">(optionnel)</span>
                         </label>
                         <textarea name="commentaire" class="form-control" rows="3"
                                   placeholder="Remarques..."></textarea>
                     </div>
+                    <div class="text-center">
                     <button type="submit" class="btn btn-primary px-4">
                         <i class="bi bi-check-circle me-1"></i> Marquer comme compilée
                     </button>
+                    </div>      
                 </form>
             </div>
         </div>
         @endif
-
-        {{-- AJOUT : bouton abandonner visible par l'auteur si pas encore compilée --}}
-        @if(isset($peutAbandonner) && $peutAbandonner)
+        {{--Ajout bouton abandonner visible par l'auteur si pas encore compilée--}}
+        {{-- @if(isset($peutAbandonner) && $peutAbandonner)
         <div class="d-grid">
             <form action="{{ route('demande_conges.abandonner', $demande->id) }}" method="POST">
                 @csrf
@@ -138,7 +139,7 @@
                 </button>
             </form>
         </div>
-        @endif
+        @endif --}}
 
     </div>
 </div>

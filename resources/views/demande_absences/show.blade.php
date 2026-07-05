@@ -4,6 +4,8 @@
 
 @section('content')
 
+
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="fw-bold mb-0">Détail / Suivi de la demande</h5>
     <a href="{{ route('demande_absences.index') }}" class="btn btn-sm btn-secondary">
@@ -39,7 +41,7 @@
 
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
-            <div class="card-header card-header-anptic">
+            <div class="card-header text-center card-header-anptic">
                 <i class="bi bi-file-text me-2"></i> Informations de la demande
             </div>
             <div class="card-body p-0">
@@ -130,7 +132,7 @@
     <div class="col-md-6">
 
         <div class="card shadow-sm mb-3">
-            <div class="card-header card-header-anptic">
+            <div class="card-header text-center card-header-anptic">
                 <i class="bi bi-diagram-3 me-2"></i> Suivi du circuit
             </div>
             <div class="card-body">
@@ -204,19 +206,6 @@
         </div>
         @endif
 
-        {{-- Bouton abandonner --}}
-        {{-- @if(isset($peutAbandonner) && $peutAbandonner)
-        <div class="d-grid">
-            <form action="{{ route('demande_absences.abandonner', $demande->id) }}"
-                  method="POST">
-                @csrf
-                <button type="submit" class="btn btn-warning w-100"
-                        onclick="return confirm('Abandonner cette demande ?')">
-                    <i class="bi bi-x-octagon me-2"></i> Abandonner la demande
-                </button>
-            </form>
-        </div>
-        @endif --}}
 
     </div>
 </div>
