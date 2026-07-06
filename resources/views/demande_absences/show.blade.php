@@ -73,7 +73,7 @@
                     <tr>
                         <th class="ps-3">Durée</th>
                         <td>
-                            {{ \Carbon\Carbon::parse($demande->date_debut)->diffInDays($demande->date_fin) }} jour(s)
+                           {{ \Carbon\Carbon::parse($demande->date_debut)->diffInDays($demande->date_fin) + 1 }} jour(s)
                         </td>
                     </tr>
                     <tr>
@@ -84,7 +84,7 @@
                                     'evenement_familliaux'                 => 'Évènements familiaux (décès)',
                                     'jouissance_de_reliquat_de_congé_paye' => 'Jouissance de reliquats de congés payés',
                                     'convenances_personnelles'             => 'Convenances personnelles',
-                                    'autre'                                => 'Autre',
+                                    'autre'                                => 'Autre'
                                 ];
                             @endphp
                             {{ $motifLabels[$demande->motif] ?? $demande->motif }}
