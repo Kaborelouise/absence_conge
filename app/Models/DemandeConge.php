@@ -11,6 +11,7 @@ class DemandeConge extends Model
             'lieu_jouissance',
             'user_id',
             'abandonnee',
+            'statut',
             ];
 
     protected $casts = [
