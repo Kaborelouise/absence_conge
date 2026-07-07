@@ -131,7 +131,7 @@
 
         <div class="card shadow-sm mb-3">
             <div class="card-header text-center card-header-anptic">
-                <i class="bi bi-diagram-3 me-2"></i> Suivi du circuit
+                <i class="bi bi-diagram-3 me-2"></i> Historique
             </div>
             <div class="card-body">
                 @forelse($demande->avis as $avis)

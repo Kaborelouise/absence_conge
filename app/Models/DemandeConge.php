@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class DemandeConge extends Model
 {
         protected $fillable = [
-        'lieu_jouissance',
-        'user_id',
-        'abandonnee',
-                 ];
+            'num_demande',
+            'lieu_jouissance',
+            'user_id',
+            'abandonnee',
+            ];
 
     protected $casts = [
         'lieu_jouissance' => 'array',
@@ -21,7 +22,7 @@ class DemandeConge extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    // Une demande de congé peut avoir 0 ou 1 avis (compilation RH)
+    // Une demande de congé peut avoir 0 ou 1 avis 
     public function avisConge()
     {
         return $this->hasOne(AvisConge::class);

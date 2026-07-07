@@ -29,7 +29,7 @@
                         <label class="form-label fw-bold">
                             Lieu(x) de jouissance
                             <span class="text-danger">*</span>
-                            {{-- MODIFICATION : sélection multiple --}}
+                            {{--sélection multiple --}}
                         </label>
 
                         @php
@@ -40,7 +40,7 @@
                             $choixActuels = old('lieu_jouissance', $demande->lieu_jouissance ?? []);
                         @endphp
 
-                        {{-- SUPPRESSION : <select> remplacé par des cases à cocher --}}
+                        {{--cases à cocher --}}
                         <div class="row">
                             @foreach($lieux as $lieu)
                             <div class="col-6 col-md-4 mb-2">
@@ -50,7 +50,7 @@
                                            name="lieu_jouissance[]"
                                            value="{{ $lieu }}"
                                            id="lieu_{{ $lieu }}"
-                                           {{-- AJOUT : pré-cocher les lieux déjà sélectionnés --}}
+                                           {{--pré-cocher les lieux déjà sélectionnés --}}
                                            {{ in_array($lieu, $choixActuels) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="lieu_{{ $lieu }}">
                                         {{ $lieu }}

@@ -133,7 +133,7 @@
 
         <div class="card shadow-sm mb-3">
             <div class="card-header text-center card-header-anptic">
-                <i class="bi bi-diagram-3 me-2"></i> Suivi du circuit
+                <i class="bi bi-diagram-3 me-2"></i> Historique
             </div>
             <div class="card-body">
 
@@ -167,7 +167,7 @@
                     </p>
                 @endforelse
 
-                {{-- CORRECTION : prochaine étape = $prochainActeur (qui doit agir ensuite) --}}
+                {{-- Correction prochaine étape = $prochainActeur (qui doit agir ensuite) --}}
                 @if(!in_array($demande->statut, ['validee', 'rejetee']) && $prochainActeur)
                     <div class="alert alert-info mb-0 mt-2 py-2" style="font-size:12px;">
                         <i class="bi bi-arrow-right-circle me-1"></i>
@@ -179,7 +179,7 @@
             </div>
         </div>
 
-        {{-- Bouton télécharger si validée et auteur --}}
+        {{-- Bouton télécharger si la demande est acceptée--}}
         @if($demande->statut === 'validee' && $demande->user_id === auth()->id())
         <div class="d-grid mb-3">
             <a href="{{ route('demande_absences.telecharger', $demande->id) }}"
@@ -198,15 +198,13 @@
                     data-bs-target="#modalAvis">
                 <i class="bi bi-pencil-square me-2"></i>
                 @if(in_array(auth()->user()->role->libelle, ['sg','dg','pca']))
-                    Valider ou rejeter la demande
+                   Valider ou rejeter la demande
                 @else
                     Donner mon avis
                 @endif
             </button>
         </div>
         @endif
-
-
     </div>
 </div>
 
@@ -269,7 +267,6 @@
                         </select>
                     </div>
                     @endif
-
                     <div class="mb-3">
                         <label class="form-label fw-bold">
                             @if(in_array(auth()->user()->role->libelle, ['sg','dg','pca']))
@@ -299,7 +296,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label fw-bold" id="labelCommentaire">
                             Commentaire
@@ -310,9 +306,7 @@
                                   class="form-control" rows="3"
                                   placeholder="Remarques éventuelles..."></textarea>
                     </div>
-
                 </div>
-
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         Annuler
@@ -321,7 +315,6 @@
                         <i class="bi bi-send me-1"></i> Soumettre
                     </button>
                 </div>
-
             </form>
         </div>
     </div>

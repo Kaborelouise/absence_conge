@@ -8,8 +8,7 @@
 
 @section('content')
 
-{{-- Message de bienvenue
- --}}
+{{--Message de bienvenue--}}
 
  <style>
     .custom-btn {

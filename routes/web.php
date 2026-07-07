@@ -51,6 +51,16 @@ Route::middleware('auth')->group(function () {
        
     Route::resource('avis_absences', AvisAbsenceController::class)
         ->only(['create', 'store', 'edit', 'update', 'destroy']);
+
+    Route::post('demande_conges/compiler', [DemandeCongeController::class, 'compiler'])
+    ->name('demande_conges.compiler');
+
+    Route::post('demande_conges/decompiler', [DemandeCongeController::class, 'decompiler'])
+        ->name('demande_conges.decompiler');
+
+    Route::get('demande_conges/telecharger-decision', [DemandeCongeController::class, 'telechargerDecision'])
+        ->name('demande_conges.telecharger_decision');
+
     Route::resource('demande_conges', DemandeCongeController::class);
     Route::resource('avis_conges', AvisCongeController::class)
         ->only(['create', 'store', 'edit', 'update', 'destroy']);
@@ -79,4 +89,6 @@ Route::middleware('auth')->group(function () {
 
     Route::post('demande_conges/{id}/abandonner', [DemandeCongeController::class, 'abandonner'])
     ->name('demande_conges.abandonner');
+
+    
 });

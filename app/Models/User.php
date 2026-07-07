@@ -10,7 +10,24 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'matricule', 'nom', 'prenom', 'poste', 'email', 'signature', 'password', 'password', 'est_responsable_departement', 'est_responsable_direction', 'role_id', 'departement_id', 'direction_id'])]
+#[Fillable(['name', 
+            'email', 
+            'password', 
+            'matricule', 
+            'nom', 
+            'prenom', 
+            'poste', 
+            'email',
+             'signature',
+              'password', 
+              'password',
+               'est_responsable_departement',
+                'est_responsable_direction', 
+                'role_id', 
+                'departement_id', 
+                'direction_id',
+                 'date_prise_service', 
+                 'certificat_prise_service'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -24,11 +41,21 @@ class User extends Authenticatable
      * @return array<string, string>
      */
 
-    
-
-
-
-    protected $fillable = ['password', 'matricule', 'nom', 'prenom', 'poste', 'email', 'signature', 'est_responsable_departement', 'est_responsable_direction', 'role_id',  'departement_id',
+    protected $fillable = ['password',
+                           'matricule', 
+                           'nom', 
+                           'prenom',
+                            'poste', 
+                            'email',
+                            'signature', 
+                            'est_responsable_departement',
+                            'est_responsable_direction', 
+                            'role_id',  
+                            'departement_id',
+        // AJOUTÉ : les deux nouveaux champs du cycle congé/jouissance (voir migration
+        // 2026_07_08_000001_add_date_prise_service_to_users_table).
+                           'date_prise_service',
+                           'certificat_prise_service',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -40,6 +67,9 @@ class User extends Authenticatable
             'password' => 'hashed',
             'est_responsable_departement' => 'boolean',
             'est_responsable_direction' => 'boolean',
+            // AJOUTÉ : cast en Carbon pour pouvoir faire des calculs de dates dessus
+            // directement (ex: $user->date_prise_service->addMonths(11)).
+            'date_prise_service' => 'date',
         ];}
 
         
@@ -71,6 +101,98 @@ class User extends Authenticatable
     public function demandeJouissances()
     {
         return $this->hasMany(DemandeJouissance::class, 'user_id');
+    }
+
+    /**
+     * NOUVEAU : calcule la "période ouvrant droit au congé" du cycle EN COURS,
+     * c'est-à-dire les 11 mois de travail effectif exigés avant de pouvoir
+     * prétendre au congé administratif.
+     *
+     * Le cycle se répète chaque année à l'anniversaire de date_prise_service.
+     * On calcule donc d'abord combien de cycles complets de 12 mois se sont
+     * écoulés depuis date_prise_service, pour trouver le début du cycle actuel,
+     * puis on applique la formule confirmée par le document officiel (décret) :
+     * "+ 11 mois - 1 jour" pour la fin de la période ouvrant droit.
+     *
+     * Exemple (cas réel du décret) : date_prise_service = 21/12/2025
+     * → période ouvrant droit = 21/12/2025 → 20/11/2026 (11 mois pile,
+     *   bornes incluses).
+     *
+     * Retourne un tableau ['debut' => Carbon, 'fin' => Carbon].
+     */
+    public function periodeOuvrantDroit(): ?array
+    {
+        if ($this->date_prise_service === null) {
+            return null;
+        }
+
+        $debutCycleActuel = $this->debutCycleActuel();
+
+        return [
+            'debut' => $debutCycleActuel->copy(),
+            'fin'   => $debutCycleActuel->copy()->addMonths(11)->subDay(),
+        ];
+    }
+
+    /**
+     * NOUVEAU : calcule la "période de jouissance" du cycle EN COURS (le 12e
+     * mois), pendant laquelle l'agent peut effectivement poser ses jours de
+     * congé. Commence le lendemain de la fin de la période ouvrant droit.
+     *
+     * Exemple (cas réel du décret) : date_prise_service = 21/12/2025
+     * → période de jouissance = 21/11/2026 → 20/12/2026.
+     */
+    public function periodeJouissance(): ?array
+    {
+        if ($this->date_prise_service === null) {
+            return null;
+        }
+
+        $debutCycleActuel = $this->debutCycleActuel();
+
+        return [
+            'debut' => $debutCycleActuel->copy()->addMonths(11),
+            'fin'   => $debutCycleActuel->copy()->addMonths(12)->subDay(),
+        ];
+    }
+
+    /**
+     * NOUVEAU (privé/interne) : détermine la date de début du cycle de 12 mois
+     * dans lequel on se trouve actuellement, à partir de date_prise_service.
+     *
+     * On calcule le nombre de cycles de 12 mois complets déjà écoulés depuis
+     * date_prise_service jusqu'à aujourd'hui, ce qui donne directement le début
+     * du cycle courant. Ex: prise de service il y a 26 mois → 2 cycles complets
+     * écoulés (24 mois) → le cycle actuel a démarré il y a 24 mois.
+     */
+    private function debutCycleActuel(): \Carbon\Carbon
+    {
+        $debut = $this->date_prise_service->copy();
+        $cyclesEcoules = $debut->diffInMonths(\Carbon\Carbon::today()->startOfDay(), false);
+        $cyclesEcoules = intdiv(max(0, $cyclesEcoules), 12);
+
+        return $debut->copy()->addMonths($cyclesEcoules * 12);
+    }
+
+    /**
+     * NOUVEAU : l'agent est-il éligible au congé administratif AUJOURD'HUI,
+     * c'est-à-dire a-t-il dépassé la fin de sa période ouvrant droit du cycle
+     * en cours (donc entré dans sa période de jouissance) ?
+     * Utilisé pour bloquer la création d'une DemandeConge (voir
+     * DemandeCongeController::store())
+     */
+    public function estEligibleAuConge(): bool
+    {
+        $periode = $this->periodeOuvrantDroit();
+
+        if ($periode === null) {
+            // Pas de date_prise_service renseignée : on considère l'agent comme
+            // non éligible par sécurité (empêche de créer une demande de congé
+            // tant que sa fiche n'est pas complète).
+            return false;
+        }
+
+        return \Carbon\Carbon::today()->gt($periode['fin']);
     }
 
 }

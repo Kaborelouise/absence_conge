@@ -24,7 +24,7 @@
                     <div class="alert alert-danger">{{ session('error') }}</div>
                 @endif
 
-                {{-- AJOUT : alerte solde insuffisant ou faible --}}
+                {{-- Ajout alerte solde insuffisant ou faible --}}
                 @php $solde = $soldeRestant ?? auth()->user()->solde_absence; @endphp
                 @if($solde <= 0)
                     <div class="alert alert-danger">
@@ -42,7 +42,7 @@
                       enctype="multipart/form-data">
                     @csrf
 
-                    {{-- Ligne 1 : dates --}}
+                    {{-- Ligne 1 dates --}}
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Date de début</label>
@@ -64,7 +64,7 @@
                         </div>
                     </div>
 
-                    {{-- Ligne 2 : durée + motif --}}
+                    {{-- Ligne 2 durée et motif --}}
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Durée (calculée automatiquement)</label>
@@ -89,7 +89,7 @@
                                     {{ old('motif') === 'convenances_personnelles' ? 'selected' : '' }}>
                                     Convenances personnelles
                                 </option>
-                                {{-- MODIFICATION : "Autre" devient "Autre (à préciser)" --}}
+                                {{--"Autre (à préciser)" --}}
                                 <option value="autre"
                                     {{ old('motif') === 'autre' ? 'selected' : '' }}>
                                     Autre (à préciser)
@@ -101,7 +101,7 @@
                         </div>
                     </div>
 
-                    {{-- AJOUT : champ texte pour préciser le motif "Autre" --}}
+                    {{-- ajout du champ texte pour préciser le motif "Autre" --}}
                     <div class="mb-3" id="bloc_autre_motif"
                          style="{{ old('motif') === 'autre' ? '' : 'display:none;' }}">
                         <label class="form-label">Précisez le motif <span class="text-danger">*</span></label>
@@ -117,7 +117,7 @@
                         @enderror
                     </div>
 
-                    {{-- Ligne 3 : intérimaire + solde --}}
+                    {{-- ligne 3 intérimaire et solde --}}
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Intérimaire désigné</label>
@@ -133,7 +133,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Solde disponible</label>
-                            {{-- Modificationaffiche le solde calculé dynamiquement (Option A) --}}
+                            {{-- Modification affiche le solde calculé dynamiquement--}}
                             <input type="text" class="form-control text-center fw-bold"
                                    readonly
                                    value="{{ $solde }} jours restants">

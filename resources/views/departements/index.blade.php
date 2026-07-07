@@ -5,7 +5,7 @@
 
 @section('content')
 
-{{-- En-tête de page: titre et bouton de création, le bouton renvoie vers la route 'departements.create', générée automatiquement par Route::resource--}}
+{{-- En-tête de page titre et bouton de création, le bouton renvoie vers la route 'departements.create', générée automatiquement par Route::resource--}}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="mb-0 fw-bold">Liste des départements</h5>
 

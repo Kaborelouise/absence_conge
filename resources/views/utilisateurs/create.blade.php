@@ -127,9 +127,6 @@
                                     class="form-select @error('role_id') is-invalid @enderror"
                                     required>
                                 <option value="">-- Choisir un rôle --</option>
-                                {{-- On boucle sur $roles envoyé par le controller
-                                     $role->id c'est la valeur qu'on envoieau serveur
-                                     $role->libelle s'est le texte visible par l'utilisateur --}}
                                 @foreach($roles as $role)
                                     <option value="{{ $role->id }}"
                                         {{ old('role_id') == $role->id ? 'selected' : '' }}>
@@ -172,7 +169,7 @@
                                    name="solde_conge"
                                    class="form-control"
                                    value="{{ old('solde_conge', 30) }}">
-                            {{-- 30 : valeur par défaut --}}
+                            {{--valeur par défaut --}}
                         </div>
 
                         {{-- Solde absence --}}
@@ -182,7 +179,7 @@
                                    name="solde_absence"
                                    class="form-control"
                                    value="{{ old('solde_absence', 10) }}">
-                            {{-- 10 : valeur par défaut --}}
+                            {{--valeur par défaut --}}
                         </div>
 
                         {{-- Responsabilités --}}

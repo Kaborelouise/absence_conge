@@ -44,7 +44,7 @@
                     <tr>
                         <th class="ps-3">Lieu(x) de jouissance</th>
                         <td>
-                            {{-- MODIFICATION : affiche chaque lieu comme un badge --}}
+                            {{--affiche chaque lieu comme un badge --}}
                             @foreach($demande->lieu_jouissance ?? [] as $lieu)
                                 <span class="badge-statut badge-en_cours me-1">{{ $lieu }}</span>
                             @endforeach
@@ -71,7 +71,7 @@
 
         <div class="card shadow-sm mb-3">
             <div class="card-header text-center card-header-anptic">
-                <i class="bi bi-diagram-3 me-2"></i> Suivi
+                <i class="bi bi-diagram-3 me-2"></i> Historique
             </div>
             <div class="card-body">
                 @if($demande->avisConge)
@@ -96,13 +96,13 @@
                 @else
                     <p class="text-muted text-center mb-0">
                         <i class="bi bi-hourglass me-1"></i>
-                        En attente de compilation du DRH
+                        En attente de compilation par l'agent RH
                     </p>
                 @endif
             </div>
         </div>
 
-        {{-- Bouton compiler : seulement visible pour l'agent RH, si pas déjà compilée --}}
+        {{-- Bouton compiler seulement visible pour l'agent RH, si pas déjà compilée --}}
         @if($peutCompiler)
         <div class="card shadow-sm border-primary mb-3">
             <div class="card-header text-center card-header-anptic">
@@ -112,13 +112,13 @@
                 <form action="{{ route('avis_conges.store') }}" method="POST">
                     @csrf
                     <input type="hidden" name="demande_conge_id" value="{{ $demande->id }}">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold"> text-center
+                    {{-- <div class="mb-3">
+                        <label class="form-label fw-bold"> 
                             Commentaire <span class="text-muted fw-normal">(optionnel)</span>
                         </label>
                         <textarea name="commentaire" class="form-control" rows="3"
                                   placeholder="Remarques..."></textarea>
-                    </div>
+                    </div> --}}
                     <div class="text-center">
                     <button type="submit" class="btn btn-primary px-4">
                         <i class="bi bi-check-circle me-1"></i> Marquer comme compilée
@@ -128,19 +128,6 @@
             </div>
         </div>
         @endif
-        {{--Ajout bouton abandonner visible par l'auteur si pas encore compilée--}}
-        {{-- @if(isset($peutAbandonner) && $peutAbandonner)
-        <div class="d-grid">
-            <form action="{{ route('demande_conges.abandonner', $demande->id) }}" method="POST">
-                @csrf
-                <button type="submit" class="btn btn-warning w-100"
-                        onclick="return confirm('Abandonner cette demande ?')">
-                    <i class="bi bi-x-octagon me-2"></i> Abandonner la demande
-                </button>
-            </form>
-        </div>
-        @endif --}}
-
     </div>
 </div>
 @endsection

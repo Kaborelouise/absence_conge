@@ -29,8 +29,7 @@
                     </div>
                 </div>
             </div>
-        </div>
-
+        </div> 
         <div class="card shadow-sm">
             <div class="card-header bg-dark text-white">
                 <h5 class="mb-0">

@@ -48,8 +48,6 @@
                     <td>
                         {{-- badge bg-secondary : pastille grise pour le code court --}}
                         <span class="badge bg-secondary">
-                            {{-- {{ }} : affiche la valeur ET échappe le HTML
-                                 Empêche les attaques XSS --}}
                             {{ $direction->libelle_court }}
                         </span>
                     </td>

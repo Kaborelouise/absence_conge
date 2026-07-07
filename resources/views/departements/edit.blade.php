@@ -28,14 +28,6 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Libellé court</label>
-                            {{-- 
-                                old('libelle_court', $departement->libelle_court) :
-                                deuxième argument = valeur par défaut SI
-                                old() ne contient rien (donc au premier
-                                chargement de la page, avant toute erreur
-                                de validation). C'est ça qui pré-remplit
-                                le formulaire avec les données existantes.
-                            --}}
                             <input type="text" name="libelle_court"
                                    class="form-control @error('libelle_court') is-invalid @enderror"
                                    value="{{ old('libelle_court', $departement->libelle_court) }}"
@@ -62,12 +54,6 @@
                                 class="form-select @error('direction_id') is-invalid @enderror"
                                 required>
                             @foreach($directions as $direction)
-                                {{-- 
-                                    Ici on compare avec $departement->direction_id
-                                    (la direction ACTUELLE du département) pour
-                                    présélectionner la bonne option dans le menu
-                                    déroulant.
-                                --}}
                                 <option value="{{ $direction->id }}"
                                     {{ old('direction_id', $departement->direction_id) == $direction->id ? 'selected' : '' }}>
                                     {{ $direction->libelle_court }} — {{ $direction->libelle_long }}
@@ -78,15 +64,6 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
-
-                    {{-- 
-                        Avertissement : si on change la direction d'un
-                        département qui contient déjà des utilisateurs,
-                        ces utilisateurs "suivent" automatiquement le
-                        département dans sa nouvelle direction. Ça peut
-                        casser la logique de peutDonnerAvis() pour
-                        responsable_direction si mal anticipé.
-                    --}}
                     @if($departement->user()->count() > 0)
                         <div class="alert alert-warning py-2" style="font-size:12px;">
                             <i class="bi bi-exclamation-triangle me-1"></i>

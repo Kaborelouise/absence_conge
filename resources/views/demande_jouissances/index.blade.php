@@ -28,7 +28,7 @@
 
         <div class="table-responsive">
         <table class="table table-hover" id="tableJouissances">
-            {{-- CORRECTION : table-anptic-dark pour cohérence avec les autres pages --}}
+            {{--table-anptic-dark pour cohérence avec les autres pages --}}
             <thead class="table-anptic-dark">
                 <tr>
                     <th>N° Demande</th>
@@ -47,7 +47,7 @@
                 @php
                     $peutAgirIci = $demande->peutDonnerAvis(auth()->user());
                     $estAuteur   = $demande->user_id === auth()->id();
-                    // Modifiable : auteur, en attente, et pas encore abandonnée
+                    // Modifiable auteur, en attente, et pas encore abandonnée
                     $modifiable  = $estAuteur && $demande->statut === 'en_attente' && !$demande->abandonnee;
                 @endphp
 
@@ -59,7 +59,7 @@
                     <td>{{ \Carbon\Carbon::parse($demande->date_fin)->format('d/m/Y') }}</td>
                     <td>{{ $demande->nombre_jour }}</td>
                     <td>
-                        {{-- CORRECTION : cas abandonnée affiché en priorité --}}
+                        {{--cas abandonnée affiché en priorité --}}
                         @if($demande->abandonnee)
                             <span class="badge-statut badge-rejetee">Abandonnée</span>
                         @elseif($peutAgirIci)
@@ -73,7 +73,7 @@
                         @endif
                     </td>
                     <td>
-                        {{-- Bouton Voir : visible par tous --}}
+                        {{-- Bouton Voir visible par tous --}}
                         <a href="{{ route('demande_jouissances.show', $demande->id) }}"
                            class="btn btn-sm btn-outline-primary btn-action">Voir
                         </a>
@@ -93,7 +93,7 @@
                                 Supprimer
                             </button>
                         </form>
-                        {{-- AJOUT : bouton Abandonner --}}
+                        {{--Bouton Abandonner --}}
                         <form action="{{ route('demande_jouissances.abandonner', $demande->id) }}"
                               method="POST" class="d-inline">
                             @csrf

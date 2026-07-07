@@ -27,9 +27,6 @@
         <div class="mb-3">
             <input type="text" id="recherche" class="form-control w-25" placeholder="Rechercher...">
         </div>
-
-
-
     <div class="table-responsive">
       {{-- {{ auth()->user()->role->libelle ?? 'pas de role' }} --}}
         <table class="table table-hover" id="tableUsers">
@@ -59,16 +56,13 @@
                     {{-- <td>{{ $user->departement->libelle_court ?? '—' }}</td> --}}
                     <td>{{ $user->departement->direction->libelle_court ?? '—' }}</td>
                     <td>
-
                         <a href="{{ route('utilisateurs.show', $user->id) }}"
                            class="btn btn-sm btn-outline-primary btn-action">Voir
                         </a>
-
                         <a href="{{ route('utilisateurs.edit', $user->id) }}"
                             class="btn btn-sm btn-warning btn-action">
                             Modifier
                         </a>
-
                         <form action="{{ route('utilisateurs.destroy', $user->id) }}"
                               method="POST" class="d-inline">
                             @csrf
@@ -85,14 +79,12 @@
                     <td colspan="9" class="text-center">Aucun utilisateur trouvé</td>
                 </tr>
                 @endforelse
-
             </tbody>
         </table>
         </div>
     </div>
 </div>
 @endsection
-
 @section('scripts')
 <script>
 document.getElementById('recherche').addEventListener('input', function () {
