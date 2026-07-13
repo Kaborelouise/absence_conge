@@ -23,8 +23,16 @@
                     </div>
                 @endif
 
+                {{--
+                    Modifié ajout de enctype="multipart/form-data", indispensable
+                    pour que le champ de type "file" (certificat_prise_service) soit
+                    effectivement envoyé au serveur. Sans cet attribut, le formulaire
+                    soumettrait uniquement le nom du fichier (une chaîne de texte),
+                    jamais son contenu — $request->file(...) serait toujours null
+                    côté contrôleur.
+                --}}
                 <form action="{{ route('utilisateurs.store') }}"
-                      method="POST" id="formUser">
+                      method="POST" id="formUser" enctype="multipart/form-data">
                     @csrf
 
                     <div class="row g-3">
@@ -158,6 +166,49 @@
                                 @endforeach
                             </select>
                             @error('departement_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        {{--
+                            Ajout de Date de prise de service. C'est à partir de cette
+                            date que sont calculées automatiquement la période ouvrant
+                            droit au congé (11 mois) et la période de jouissance (12e
+                            mois) — voir User::periodeOuvrantDroit() et
+                            User::periodeJouissance(). Obligatoire, ne peut pas être
+                            dans le futur (voir validation côté contrôleur).
+                        --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Date de prise de service <span class="text-danger">*</span>
+                            </label>
+                            <input type="date"
+                                   name="date_prise_service"
+                                   class="form-control @error('date_prise_service') is-invalid @enderror"
+                                   value="{{ old('date_prise_service') }}"
+                                   required>
+                            @error('date_prise_service')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        {{--
+                            Ajout Certificat / arrêté de prise de service, preuve
+                            justificative de la date déclarée ci-dessus. Obligatoire à
+                            la création (voir validation 'required|file' côté
+                            contrôleur), formats acceptés : PDF, JPG, PNG (5 Mo max).
+                        --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Certificat / arrêté de prise de service <span class="text-danger">*</span>
+                            </label>
+                            <input type="file"
+                                   name="certificat_prise_service"
+                                   class="form-control @error('certificat_prise_service') is-invalid @enderror"
+                                   accept=".pdf,.jpg,.jpeg,.png"
+                                   required>
+                            <small class="text-muted">Formats acceptés : PDF, JPG, PNG (5 Mo max)</small>
+                            @error('certificat_prise_service')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>

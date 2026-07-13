@@ -6,22 +6,24 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('sessions', function (Blueprint $table) {
+        Schema::create('sessions_demandes', function (Blueprint $table) {
             $table->id();
+            $table->string('libelle');
+            $table->integer('annee');
+            $table->date('date_debut');
+            $table->date('date_fin');
+            $table->boolean('active_absence')->default(true);
+            $table->boolean('active_conge')->default(true);
+            $table->boolean('active_jouissance')->default(true);
+            $table->foreignId('created_by')->constrained('users');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('sessions');
+        Schema::dropIfExists('sessions_demandes');
     }
 };

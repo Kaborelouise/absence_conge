@@ -13,10 +13,10 @@ class AdminMiddleware
             return redirect()->route('login');
         }
 
-        if (auth()->user()->role_id !== 8) {
-            return redirect()->route('accueil')
-                ->with('error', 'Accès réservé aux administrateurs.');
-        }
+        if (auth()->user()->role->libelle !== 'Administrateur') {
+        return redirect()->route('accueil')
+            ->with('error', 'Accès réservé aux administrateurs.');
+    }
 
         return $next($request);
     }

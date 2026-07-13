@@ -2,16 +2,30 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\User;
+use App\Models\Role;
+use App\Models\Departement;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        //
+        $role = Role::first();
+        $departement = Departement::first();
+
+        User::updateOrCreate(
+            ['email' => 'admin@anptic.bf'],
+            [
+                'matricule' => 1000,
+                'nom' => 'Administrateur',
+                'prenom' => 'Système',
+                'poste' => 'Administrateur',
+                'password' => Hash::make('admin123'),
+                'role_id' => $role->id,
+                'departement_id' => $departement->id,
+            ]
+        );
     }
 }
