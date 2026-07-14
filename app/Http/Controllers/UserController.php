@@ -28,18 +28,7 @@ class UserController extends Controller
         return view('utilisateurs.create', compact('roles', 'departements'));
     }
 
-    /**
-     * MODIFIÉ : ajout de la gestion des deux nouveaux champs du cycle
-     * congé/jouissance :
-     * - date_prise_service : obligatoire à la création (contrairement à la
-     *   colonne en base qui est nullable, pour ne pas casser les agents déjà
-     *   existants — voir la migration). Sans cette date, on ne peut pas
-     *   calculer l'éligibilité au congé de l'agent (User::estEligibleAuConge()).
-     * - certificat_prise_service ou arrêté d'intégration : fichier justificatif (PDF/image), stocké
-     *   sur le disque "public" dans le dossier certificats_prise_service. On
-     *   enregistre uniquement le chemin du fichier en base (pas le fichier
-     *   lui-même), c'est Storage qui gère l'écriture physique sur disque.
-     */
+
     public function store(Request $request)
     {
         $request->validate([
@@ -55,11 +44,10 @@ class UserController extends Controller
             'est_responsable_direction'   => 'boolean',
             'solde_conge'    => 'nullable|integer',
             'solde_absence'  => 'nullable|integer',
-            // Ajout date_prise_service obligatoire, ne peut pas être dans
+            // On ajoute date_prise_service obligatoire, ne peut pas être dans
             // le futur (une prise de service ne peut pas être "à venir" au
             // moment de la création du compte, sinon l'agent n'a pas encore
             // commencé). certificat_prise_service : fichier obligatoire,
-            // formats acceptés PDF/JPG/PNG, 5 Mo max.
             'date_prise_service'       => 'required|date|before_or_equal:today',
             'certificat_prise_service' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ], [
@@ -77,7 +65,7 @@ class UserController extends Controller
         // récupérer le chemin du fichier stocké et l'inclure dans le create().
         // Storage::putFile() génère un nom de fichier unique automatiquement
         // (évite les collisions si deux agents uploadent un fichier du même
-        // nom), et retourne le chemin relatif stocké.
+        // nom), et retourne le chemin relatif stocké
         $cheminCertificat = Storage::disk('public')->putFile(
             'certificats_prise_service',
             $request->file('certificat_prise_service')
@@ -109,12 +97,7 @@ class UserController extends Controller
         return view('utilisateurs.edit', compact('user', 'roles', 'departements'));
     }
 
-    /**
-     * MODIFIÉ : le certificat n'est PAS obligatoire à la modification (un
-     * admin qui corrige juste le nom de l'agent ne doit pas être forcé de
-     * re-uploader le certificat à chaque fois). S'il uploade un nouveau
-     * fichier, on remplace l'ancien ; sinon on garde le chemin existant.
-     */
+    //  pour modifier un utilisateur on a pas besoin de reaploader le certificat 
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -131,9 +114,9 @@ class UserController extends Controller
             'solde_conge'    => 'nullable|integer',
             'solde_absence'  => 'nullable|integer',
             'date_prise_service'       => 'required|date|before_or_equal:today',
-            // Ajouté : "nullable" ici (pas "required" comme au store), et
+            // AJOUTÉ : "nullable" ici (pas "required" comme au store), et
             // "sometimes" pour ne valider le format que si un fichier est
-            // effectivement envoyé.
+            // envoyé.
             'certificat_prise_service' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ], [
             'password.min' => 'Le mot de passe doit contenir au moins 8 caractères.',
@@ -158,9 +141,9 @@ class UserController extends Controller
             $data['password'] = $request->password;
         }
 
-        // Remplacement  du certificat uniquement si un nouveau fichier est
-        // envoyé. On supprime l'ancien fichier du disque pour ne pas laisser
-        // de fichiers orphelins s'accumuler dans le stockage.
+        // Remplacement du certificat uniquement si un nouveau fichier est
+        // envoyé. On supprime l'ancien fichier du disque 
+
         if ($request->hasFile('certificat_prise_service')) {
             if ($user->certificat_prise_service) {
                 Storage::disk('public')->delete($user->certificat_prise_service);
