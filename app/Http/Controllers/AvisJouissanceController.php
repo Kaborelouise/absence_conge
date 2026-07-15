@@ -56,7 +56,13 @@ class AvisJouissanceController extends Controller
             'commentaire'           => $request->commentaire,
         ]);
 
-
+        /**
+         * MODIFIÉ : le solde a déjà été réservé (décrémenté) à la CRÉATION de la
+         * demande (voir DemandeJouissanceController::store). Si l'avis est
+         * défavorable, la demande n'aboutira jamais : il faut donc RESTITUER les
+         * jours réservés, sinon l'agent perdrait définitivement des jours de congé
+         * pour une demande refusée — même règle que pour DemandeAbsence.
+         */
         if ($request->avis === 'defavorable') {
             $demande->update(['statut' => 'rejetee']);
 
@@ -71,6 +77,14 @@ class AvisJouissanceController extends Controller
         // le prochain acteur avec les nouvelles données
         $demande->load('avis');
         $prochainActeur = $demande->prochainActeur();
+
+        /**
+         * MODIFIÉ : avant, ce bloc décrémentait le solde_conge ICI, à la validation
+         * finale, avec un "max(0, ...)" qui camouflait un éventuel dépassement du
+         * plafond de 30 jours au lieu de le bloquer. Le solde ayant désormais déjà
+         * été décrémenté dès la création (réservation immédiate), il n'y a plus
+         * rien à faire sur le solde à ce stade : on se contente de valider.
+         */
         if ($prochainActeur === null) {
             $demande->update(['statut' => 'validee']);
 

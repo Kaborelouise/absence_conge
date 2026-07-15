@@ -10,24 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 
-            'email', 
-            'password', 
-            'matricule', 
-            'nom', 
-            'prenom', 
-            'poste', 
-            'email',
-             'signature',
-              'password', 
-              'password',
-               'est_responsable_departement',
-                'est_responsable_direction', 
-                'role_id', 
-                'departement_id', 
-                'direction_id',
-                 'date_prise_service', 
-                 'certificat_prise_service'])]
+#[Fillable(['name', 'email', 'password', 'matricule', 'nom', 'prenom', 'poste', 'email', 'signature', 'password', 'password', 'est_responsable_departement', 'est_responsable_direction', 'role_id', 'departement_id', 'direction_id', 'date_prise_service', 'certificat_prise_service'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -41,21 +24,15 @@ class User extends Authenticatable
      * @return array<string, string>
      */
 
-    protected $fillable = ['password',
-                           'matricule', 
-                           'nom', 
-                           'prenom',
-                            'poste', 
-                            'email',
-                            'signature', 
-                            'est_responsable_departement',
-                            'est_responsable_direction', 
-                            'role_id',  
-                            'departement_id',
+    
+
+
+
+    protected $fillable = ['password', 'matricule', 'nom', 'prenom', 'poste', 'email', 'signature', 'est_responsable_departement', 'est_responsable_direction', 'role_id',  'departement_id',
         // AJOUTÉ : les deux nouveaux champs du cycle congé/jouissance (voir migration
         // 2026_07_08_000001_add_date_prise_service_to_users_table).
-                           'date_prise_service',
-                           'certificat_prise_service',
+        'date_prise_service',
+        'certificat_prise_service',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -179,7 +156,7 @@ class User extends Authenticatable
      * c'est-à-dire a-t-il dépassé la fin de sa période ouvrant droit du cycle
      * en cours (donc entré dans sa période de jouissance) ?
      * Utilisé pour bloquer la création d'une DemandeConge (voir
-     * DemandeCongeController::store())
+     * DemandeCongeController::store()).
      */
     public function estEligibleAuConge(): bool
     {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DemandeAbsence;
+use App\Models\SessionAdministrative;
 use Illuminate\Http\Request;
 
 class DemandeAbsenceController extends Controller
@@ -43,6 +44,26 @@ class DemandeAbsenceController extends Controller
             ->where('id', '!=', $user->id)->get();
         return view('demande_absences.create', compact('user', 'agentsMemeDepartement'));
     }
+
+    /**
+     * MODIFIÉ : logique de "réservation" du solde.
+     *
+     * Principe retenu (au lieu de ne décompter le solde qu'à la validation finale) :
+     * dès la création de la demande, on vérifie que le solde est suffisant, puis on
+     * décrémente IMMÉDIATEMENT le solde de l'agent (on "réserve" les jours).
+     *
+     * Pourquoi ce choix plutôt que "seul le validé décompte" ?
+     * Parce que si on ne décomptait qu'à la validation finale, deux demandes créées
+     * en parallèle (ex: 6 jours + 5 jours, alors qu'il reste 10 jours) seraient
+     * TOUTES LES DEUX acceptées à la création (6 <= 10 et 5 <= 10 pris séparément),
+     * puis validées l'une après l'autre sans qu'aucune vérification n'empêche le
+     * dépassement du plafond (6 + 5 = 11 > 10). Avec la réservation immédiate, la
+     * 2e demande est bloquée dès sa création car il ne resterait que 4 jours (10 - 6).
+     *
+     * Contrepartie : si la demande est ensuite refusée, abandonnée ou supprimée,
+     * il faut penser à RESTITUER les jours réservés (voir plus bas dans ce fichier,
+     * et dans AvisAbsenceController pour le cas du refus).
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -54,6 +75,20 @@ class DemandeAbsenceController extends Controller
 
         $user = auth()->user();
 
+        /**
+         * AJOUTÉ : rattachement à la session administrative en cours.
+         * Règle validée : les 3 types de demandes (absence/congé/jouissance)
+         * sont bloqués si aucune session ne couvre la date du jour, OU si le
+         * flag correspondant (ici active_absence) est à false.
+         */
+        $session = SessionAdministrative::courante();
+
+        if ($session === null || !$session->estOuvertePour('absence')) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Aucune session n\'est actuellement ouverte pour les demandes d\'absence. Contactez l\'administration.');
+        }
+
         // Nombre de jours demandés, bornes incluses (ex: 1er au 6 janvier = 6 jours).
         // On ne peut pas encore utiliser $demande->nombreJours() ici car l'objet
         // DemandeAbsence n'existe pas encore : on calcule donc directement à partir
@@ -62,7 +97,8 @@ class DemandeAbsenceController extends Controller
             ->diffInDays(\Carbon\Carbon::parse($request->date_fin)) + 1;
 
         // Vérification du solde AVANT toute création : on bloque la demande si
-        // l'agent n'a pas assez de jours restants. 
+        // l'agent n'a pas assez de jours restants. C'est le premier rempart contre
+        // le dépassement du plafond de 10 jours/an.
         if ($jours > $user->solde_absence) {
             return redirect()->back()
                 ->withInput()
@@ -77,6 +113,8 @@ class DemandeAbsenceController extends Controller
             'interimaire' => $request->interimaire,
             'user_id'     => $user->id,
             'statut'      => 'en_attente',
+            // AJOUTÉ : rattachement à la session courante
+            'session_administrative_id' => $session->id,
         ]);
 
         // Réservation immédiate des jours : le solde baisse dès la création, avant
@@ -119,6 +157,17 @@ class DemandeAbsenceController extends Controller
         return view('demande_absences.edit', compact('demande'));
     }
 
+    /**
+     * MODIFIÉ : la demande a déjà réservé X jours à sa création. Si l'agent change
+     * les dates, il faut ajuster la réservation :
+     * 1. On calcule le solde qu'aurait l'agent si on annulait l'ancienne réservation
+     *    (solde_absence + ancienJours).
+     * 2. On vérifie que ce solde disponible couvre le NOUVEAU nombre de jours.
+     * 3. On enregistre le nouveau solde = solde disponible - nouveaux jours.
+     *
+     * Ça évite d'avoir à faire deux opérations séparées (restituer puis redécompter)
+     * qui pourraient laisser le solde dans un état incohérent en cas d'erreur au milieu.
+     */
     public function update(Request $request, $id)
     {
         $demande = DemandeAbsence::findOrFail($id);
@@ -160,7 +209,11 @@ class DemandeAbsenceController extends Controller
             ->with('success', 'Demande modifiée avec succès.');
     }
 
- 
+    /**
+     * MODIFIÉ : la suppression n'est possible que si la demande est encore
+     * "en_attente" (donc jamais validée). Les jours réservés à la création doivent
+     * être restitués à l'agent puisque la demande n'ira jamais au bout.
+     */
     public function destroy($id)
     {
         $demande = DemandeAbsence::findOrFail($id);
@@ -177,7 +230,10 @@ class DemandeAbsenceController extends Controller
             ->with('success', 'Demande supprimée.');
     }
 
-
+    /**
+     * MODIFIÉ : même logique que destroy() — l'abandon annule la demande avant
+     * qu'elle soit validée, donc on restitue les jours réservés.
+     */
     public function abandonner($id)
     {
         $demande = DemandeAbsence::findOrFail($id);
@@ -194,9 +250,10 @@ class DemandeAbsenceController extends Controller
             ->with('success', 'Demande abandonnée.');
     }
 
-
-    //  Télécharger la demande d'absence validée au format PDF.
-    //   Visible uniquement par l'auteur quand la demande est validée.
+    /**
+     * Télécharger la demande d'absence validée au format PDF.
+     * Visible uniquement par l'auteur quand la demande est validée.
+     */
     public function telecharger($id)
     {
         $demande = DemandeAbsence::with(

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DemandeConge;
 use App\Models\CompilationConge;
+use App\Models\SessionAdministrative;
 use Illuminate\Http\Request;
 
 class DemandeCongeController extends Controller
@@ -20,18 +21,23 @@ class DemandeCongeController extends Controller
             ->latest()
             ->get();
 
-        // AJOUT : vérifie si une compilation est active pour l'année en cours
-        $annee            = now()->year;
-        $compilationActive = CompilationConge::activeParAnnee($annee);
-
-        // AJOUT : indique si le RH peut compiler (role agent_rh uniquement)
+        /**
+         * MODIFIÉ : la compilation active se détermine désormais via la
+         * SESSION courante (par date), plus fiable que whereYear('created_at')
+         * qui mélangeait "année de création" et "campagne administrative" —
+         * deux notions différentes (une demande créée fin décembre pourrait
+         * appartenir à la session de l'année suivante si l'admin ouvre les
+         * sessions à cheval sur le calendrier).
+         */
+        $session = SessionAdministrative::courante();
+        $compilationActive = $session ? CompilationConge::activeParSession($session->id) : null;
         $peutCompiler = $role === 'agent_rh';
 
         return view('demande_conges.index', compact(
             'demandes',
-            'compilationActive', // null si pas compilé, objet si compilé
+            'compilationActive',
             'peutCompiler',
-            'annee'
+            'session'
         ));
     }
 
@@ -41,6 +47,14 @@ class DemandeCongeController extends Controller
         return view('demande_conges.create', compact('user'));
     }
 
+    /**
+     * MODIFIÉ : ajout du blocage à DEUX conditions cumulatives (règle validée) :
+     * 1. Une session administrative doit couvrir la date du jour ET avoir son
+     *    flag active_conge à true (contrôle du RH/admin).
+     * 2. L'agent doit avoir atteint ses 11 mois de travail effectif depuis sa
+     *    date_prise_service (User::estEligibleAuConge()) — sinon on affiche la
+     *    date à laquelle il deviendra éligible.
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -52,10 +66,33 @@ class DemandeCongeController extends Controller
             'lieu_jouissance.*.in'     => 'Lieu de jouissance invalide.',
         ]);
 
+        $user = auth()->user();
+
+        // Condition 1 : session active pour le congé
+        $session = SessionAdministrative::courante();
+
+        if ($session === null || !$session->estOuvertePour('conge')) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Aucune session n\'est actuellement ouverte pour les demandes de congé. Contactez l\'administration.');
+        }
+
+        // Condition 2 : éligibilité de l'agent (11 mois de travail effectif)
+        if (!$user->estEligibleAuConge()) {
+            $periode = $user->periodeOuvrantDroit();
+            $dateEligibilite = $periode ? $periode['fin']->copy()->addDay()->format('d/m/Y') : 'inconnue (date de prise de service non renseignée)';
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', "Vous n'êtes pas encore éligible au congé administratif. Vous le serez à partir du {$dateEligibilite}.");
+        }
+
         DemandeConge::create([
-            'num_demande'    => time(),
+            'num_demande'     => time(),
             'lieu_jouissance' => $request->lieu_jouissance,
-            'user_id'         => auth()->id(),
+            'user_id'         => $user->id,
+            // AJOUTÉ : rattachement à la session courante
+            'session_administrative_id' => $session->id,
         ]);
 
         return redirect()
@@ -150,55 +187,86 @@ class DemandeCongeController extends Controller
             ->with('success', 'Demande abandonnée.');
     }
 
-    // ================================================================
-    // AJOUT : compiler toutes les demandes en_attente de l'année en cours
-    // Accessible uniquement par l'agent RH
-    // ================================================================
+    /**
+     * MODIFIÉ EN PROFONDEUR par rapport à la version précédente :
+     *
+     * 1. On travaille sur la SESSION courante (pas whereYear('created_at')) :
+     *    on ne compile que les demandes RATTACHÉES à cette session
+     *    (session_administrative_id), ce qui est plus juste qu'un simple
+     *    filtre par année civile de création.
+     * 2. Coexistence CompilationConge + AvisConge (règle confirmée) : en plus
+     *    de créer la ligne globale dans compilations_conges, on crée aussi un
+     *    AvisConge individuel pour CHAQUE demande compilée, pour garder une
+     *    trace par demande (comme avant), en plus de la trace globale.
+     * 3. On bascule active_conge à false sur la session : ça ferme les
+     *    nouvelles soumissions de congé pour tout le monde (vu dans
+     *    DemandeCongeController::store(), qui vérifie estOuvertePour('conge')).
+     */
     public function compiler()
     {
-        // Sécurité : seul le RH peut compiler
         if (auth()->user()->role->libelle !== 'agent_rh') {
             return redirect()->route('demande_conges.index')
                 ->with('error', 'Action non autorisée.');
         }
 
-        $annee = now()->year;
+        $session = SessionAdministrative::courante();
 
-        // Vérifie qu'il n'y a pas déjà une compilation active pour cette année
-        if (CompilationConge::activeParAnnee($annee)) {
+        if ($session === null) {
             return redirect()->route('demande_conges.index')
-                ->with('error', "Les demandes de {$annee} sont déjà compilées.");
+                ->with('error', 'Aucune session administrative n\'est actuellement ouverte.');
         }
 
-        // Récupère toutes les demandes en_attente de l'année en cours
-        $demandes = DemandeConge::where('statut', 'en_attente')
-            ->whereYear('created_at', $annee)
+        if (CompilationConge::activeParSession($session->id)) {
+            return redirect()->route('demande_conges.index')
+                ->with('error', "Les demandes de la session « {$session->libelle} » sont déjà compilées.");
+        }
+
+        $demandes = DemandeConge::where('session_administrative_id', $session->id)
+            ->where('statut', 'en_attente')
+            ->where('abandonnee', false)
             ->get();
 
         if ($demandes->isEmpty()) {
             return redirect()->route('demande_conges.index')
-                ->with('error', "Aucune demande en attente pour {$annee}.");
+                ->with('error', "Aucune demande en attente pour la session « {$session->libelle} ».");
         }
 
-        // Passe toutes les demandes à "compilee"
-        DemandeConge::where('statut', 'en_attente')
-            ->whereYear('created_at', $annee)
-            ->update(['statut' => 'compilee']);
-
-        // Enregistre la compilation
+        // Création de la trace globale de compilation
         CompilationConge::create([
-            'annee'       => $annee,
-            'compiled_by' => auth()->id(),
-            'compiled_at' => now(),
+            'annee'                      => $session->annee,
+            'session_administrative_id'  => $session->id,
+            'compiled_by'                => auth()->id(),
+            'compiled_at'                => now(),
         ]);
+
+        // Création de l'avis individuel + passage au statut "compilee" pour
+        // chaque demande de la session
+        foreach ($demandes as $demande) {
+            \App\Models\AvisConge::create([
+                'demande_conge_id' => $demande->id,
+                'avis'             => 'favorable',
+                'type'             => 'agent_rh',
+            ]);
+
+            $demande->update(['statut' => 'compilee']);
+        }
+
+        // Fermeture des nouvelles soumissions de congé pour cette session
+        $session->update(['active_conge' => false]);
+
+        // AJOUTÉ : on repart sur un état "compilé, pas encore téléchargé"
+        session()->forget('decision_telechargee');
 
         return redirect()->route('demande_conges.index')
             ->with('success', "{$demandes->count()} demande(s) compilée(s) avec succès.");
     }
 
-    // ================================================================
-    // AJOUT : décompiler — remet les demandes en en_attente
-    // ================================================================
+    /**
+     * MODIFIÉ : suppression des AvisConge créés lors de la compilation (pour
+     * que DemandeConge::estCompilee() redevienne false, cohérent avec le
+     * retour du statut à "en_attente"), et réouverture d'active_conge pour
+     * laisser les retardataires soumettre leur demande (règle confirmée).
+     */
     public function decompiler()
     {
         if (auth()->user()->role->libelle !== 'agent_rh') {
@@ -206,30 +274,46 @@ class DemandeCongeController extends Controller
                 ->with('error', 'Action non autorisée.');
         }
 
-        $annee      = now()->year;
-        $compilation = CompilationConge::activeParAnnee($annee);
+        $session = SessionAdministrative::courante();
+
+        if ($session === null) {
+            return redirect()->route('demande_conges.index')
+                ->with('error', 'Aucune session administrative n\'est actuellement ouverte.');
+        }
+
+        $compilation = CompilationConge::activeParSession($session->id);
 
         if (!$compilation) {
             return redirect()->route('demande_conges.index')
-                ->with('error', "Aucune compilation active pour {$annee}.");
+                ->with('error', "Aucune compilation active pour la session « {$session->libelle} ».");
         }
 
-        // Remet les demandes compilées de cette année en en_attente
-        DemandeConge::where('statut', 'compilee')
-            ->whereYear('created_at', $annee)
-            ->update(['statut' => 'en_attente']);
+        $demandes = DemandeConge::where('session_administrative_id', $session->id)
+            ->where('statut', 'compilee')
+            ->get();
 
-        // Marque la compilation comme décompilée
+        foreach ($demandes as $demande) {
+            // On supprime l'avis créé à la compilation, pour que estCompilee()
+            // (qui se base sur l'existence de cette relation) redevienne false.
+            $demande->avisConge()->delete();
+            $demande->update(['statut' => 'en_attente']);
+        }
+
         $compilation->update(['decompilee_at' => now()]);
 
+        // AJOUTÉ : on efface le flag, on repart de zéro pour le prochain cycle
+        session()->forget('decision_telechargee');
+
+        // Réouverture des soumissions de congé pour les retardataires
+        $session->update(['active_conge' => true]);
+
         return redirect()->route('demande_conges.index')
-            ->with('success', "Compilation annulée. Les demandes sont de nouveau en attente.");
+            ->with('success', "Compilation annulée. {$demandes->count()} demande(s) repassée(s) en attente.");
     }
 
-    // ================================================================
-    // AJOUT : télécharger la décision au format PDF
-    // Génère le document officiel ANPTIC avec tous les agents compilés
-    // ================================================================
+    /**
+     * MODIFIÉ : filtrage par session plutôt que par année civile.
+     */
     public function telechargerDecision()
     {
         if (auth()->user()->role->libelle !== 'agent_rh') {
@@ -237,25 +321,38 @@ class DemandeCongeController extends Controller
                 ->with('error', 'Action non autorisée.');
         }
 
-        $annee      = now()->year;
-        $compilation = CompilationConge::activeParAnnee($annee);
+        $session = SessionAdministrative::courante();
+
+        if ($session === null) {
+            return redirect()->route('demande_conges.index')
+                ->with('error', 'Aucune session administrative n\'est actuellement ouverte.');
+        }
+
+        $compilation = CompilationConge::activeParSession($session->id);
 
         if (!$compilation) {
             return redirect()->route('demande_conges.index')
-                ->with('error', "Aucune compilation active pour {$annee}.");
+                ->with('error', "Aucune compilation active pour la session « {$session->libelle} ».");
         }
 
-        // Récupère toutes les demandes compilées de l'année avec les infos agents
         $demandes = DemandeConge::with('user.departement.direction')
+            ->where('session_administrative_id', $session->id)
             ->where('statut', 'compilee')
-            ->whereYear('created_at', $annee)
             ->get();
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
             'pdf.decision_conge',
-            compact('demandes', 'annee', 'compilation')
+            compact('demandes', 'session', 'compilation')
         )->setPaper('A4', 'portrait');
 
-        return $pdf->download("decision_conge_{$annee}.pdf");
+        // AJOUTÉ : marque le passage à l'état "décision téléchargée" pour que
+        // la vue index.blade.php n'affiche plus que "Décompiler" ensuite (voir
+        // règle confirmée). session()->save() force l'écriture immédiate car
+        // cette réponse est un téléchargement de fichier, pas une redirection
+        // classique (qui aurait persisté la session automatiquement).
+        session(['decision_telechargee' => true]);
+        session()->save();
+
+        return $pdf->download("decision_conge_{$session->annee}.pdf");
     }
 }

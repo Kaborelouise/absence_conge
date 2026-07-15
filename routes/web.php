@@ -37,6 +37,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('directions', DirectionController::class);
     Route::resource('departements', DepartementController::class);
     Route::resource('utilisateurs', UserController::class);
+    Route::resource('sessions_administratives', \App\Http\Controllers\SessionAdministrativeController::class)
+    ->only(['index', 'create', 'store', 'show']);
 
     // DEMANDES
     Route::resource('demande_absences', DemandeAbsenceController::class);
@@ -70,6 +72,8 @@ Route::middleware('auth')->group(function () {
     Route::post('demande_jouissances/{id}/abandonner', [DemandeJouissanceController::class, 'abandonner'])
         ->name('demande_jouissances.abandonner');
  
+    Route::resource('sessions_administratives', \App\Http\Controllers\SessionAdministrativeController::class)
+        ->only(['index', 'create', 'store', 'show']);
 
     // Ajout routes pour la clôture de demande jouissance
     Route::post('demande_jouissances/{id}/upload-cessation', [DemandeJouissanceController::class, 'uploadCessation'])

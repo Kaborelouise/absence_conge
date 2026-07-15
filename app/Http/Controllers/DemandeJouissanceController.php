@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DemandeJouissance;
+use App\Models\SessionAdministrative;
 use Illuminate\Http\Request;
 
 class DemandeJouissanceController extends Controller
@@ -42,6 +43,22 @@ class DemandeJouissanceController extends Controller
         return view('demande_jouissances.create', compact('user'));
     }
 
+    /**
+     * MODIFIÉ : même principe de "réservation" du solde que DemandeAbsenceController.
+     *
+     * Deux corrections par rapport à la version précédente :
+     *
+     * 1. On ne fait plus confiance à $request->nombre_jour (un simple champ texte
+     *    rempli par l'utilisateur). On le RECALCULE côté serveur à partir des
+     *    dates, exactement comme le fait DemandeJouissance::nombreJours(). Sans ça,
+     *    un agent pourrait saisir des dates couvrant 20 jours tout en indiquant
+     *    manuellement "nombre_jour = 1", ce qui contournerait complètement la
+     *    vérification du plafond de 30 jours ci-dessous.
+     *
+     * 2. Vérification du plafond de 30 jours (solde_conge) AVANT création, puis
+     *    réservation immédiate (décrémentation) du solde — pas de notion de durée
+     *    ici (contrairement à DemandeAbsence), juste un plafond simple à respecter.
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -50,6 +67,38 @@ class DemandeJouissanceController extends Controller
         ]);
 
         $user = auth()->user();
+
+        /**
+         * AJOUTÉ : deux conditions cumulatives avant de pouvoir créer une
+         * demande de jouissance :
+         * 1. Session active pour la jouissance (comme pour absence/congé).
+         * 2. Une DemandeConge COMPILÉE doit exister pour cet agent sur cette
+         *    même session (règle validée : "on ne peut pas faire de
+         *    jouissance si on n'a pas de demande de congé [compilée]").
+         *    On vérifie directement via le statut de DemandeConge plutôt que
+         *    via CompilationConge, car c'est le statut par AGENT qui compte
+         *    ici (une compilation peut être active pour l'année sans que CET
+         *    agent particulier ait sa demande dedans, si elle a été créée
+         *    après coup ou hors circuit).
+         */
+        $session = SessionAdministrative::courante();
+
+        if ($session === null || !$session->estOuvertePour('jouissance')) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Aucune session n\'est actuellement ouverte pour les demandes de jouissance. Contactez l\'administration.');
+        }
+
+        $congeCompile = $user->demandeConges()
+            ->where('session_administrative_id', $session->id)
+            ->where('statut', 'compilee')
+            ->exists();
+
+        if (!$congeCompile) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Vous devez avoir une demande de congé compilée par le service RH avant de pouvoir soumettre une demande de jouissance.');
+        }
 
         // Calcul serveur du nombre de jours, bornes incluses. On ignore
         // volontairement $request->nombre_jour : voir le commentaire ci-dessus.
@@ -69,6 +118,8 @@ class DemandeJouissanceController extends Controller
             'nombre_jour' => $jours,
             'user_id'     => $user->id,
             'statut'      => 'en_attente',
+            // AJOUTÉ : rattachement à la session courante
+            'session_administrative_id' => $session->id,
         ]);
 
         // Réservation immédiate des jours sur le solde congé
@@ -114,6 +165,13 @@ class DemandeJouissanceController extends Controller
 
         return view('demande_jouissances.edit', compact('demande'));
     }
+
+    /**
+     * MODIFIÉ : même ajustement de réservation que DemandeAbsenceController::update.
+     * On calcule le solde "disponible" en restituant virtuellement l'ancienne
+     * réservation, on vérifie que les nouveaux jours (calculés depuis les nouvelles
+     * dates, pas depuis un champ formulaire) rentrent dedans, puis on applique.
+     */
     public function update(Request $request, $id)
     {
         $demande = DemandeJouissance::findOrFail($id);
@@ -224,7 +282,7 @@ class DemandeJouissanceController extends Controller
         return $pdf->download("cessation_service_{$demande->num_demande}.pdf");
     }
 
-    // Télécharger le certificat de prise de service Disponible 2 jours avant la date de fin.
+    // Télécharger le certificat de prise de service. Disponible 2 jours avant la date de fin.
 
     public function telechargerReprise($id)
     {

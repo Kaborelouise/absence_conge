@@ -286,6 +286,12 @@
                 <i class="bi bi-diagram-3"></i>
                 <span>Départements</span>
             </a>
+
+            <a href="{{ route('sessions_administratives.index') }}"
+                class="sidebar-link {{ request()->routeIs('sessions_administratives.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-event"></i>
+                <span>Sessions administratives</span>
+            </a>
            
 
         </div>

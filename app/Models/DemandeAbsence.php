@@ -16,6 +16,8 @@ class DemandeAbsence extends Model
         'statut',
         'user_id',
         'abandonnee',
+        // AJOUTÉ : rattachement à la campagne annuelle (voir SessionAdministrative).
+        'session_administrative_id',
         ];
 
         protected $cast =[
@@ -29,6 +31,12 @@ class DemandeAbsence extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+
+    public function sessionAdministrative()
+    {
+        return $this->belongsTo(SessionAdministrative::class, 'session_administrative_id');
+    }
+
     public function justificatifAbsence()
     {
         return $this->hasOne(JustificatifAbsence::class);
@@ -38,6 +46,8 @@ class DemandeAbsence extends Model
     {
         return $this->hasMany(AvisAbsence::class);
     }
+
+
     public function nombreJours(): int
     {
         return \Carbon\Carbon::parse($this->date_debut)
@@ -50,11 +60,19 @@ class DemandeAbsence extends Model
         $role  = $user->role->libelle;
         $jours = $this->nombreJours();
 
-        
+        // Cas du sg le DG valide toujours peu importe la durée
+        // (règle spécifique confirmée : le SG ne peut pas s'auto-valider, donc même
+        // une demande d'1 jour passe systématiquement par le DG. Pas de branchement
+        // par durée pour ce cas, contrairement au circuit général ci-dessous.)
         if ($role === 'sg') {
             return ['agent_rh', 'dg'];
         }
 
+        // Cas de l'agent RH : il occupe normalement l'étape "agent_rh" (vérification)
+        // du circuit des autres demandeurs, mais il ne peut pas vérifier sa propre
+        // demande. Sa demande saute donc directement à l'avis du SG, sans notion de
+        // durée (contrairement aux rôles ci-dessous où une courte absence de 1-2
+        // jours ne nécessite aucune validation SG/DG).
         if ($role === 'agent_rh') {
             return ['sg'];
         }
@@ -64,7 +82,7 @@ class DemandeAbsence extends Model
             return ['agent_rh', 'pca'];
         }
 
-      
+
         if ($jours <= 2) {
             $etapesFinales = [];
         } elseif ($jours < 5) {
@@ -72,8 +90,6 @@ class DemandeAbsence extends Model
         } else {
             $etapesFinales = ['dg'];
         }
-
-
 
         // Cas du Responsable de direction 
         if ($role === 'responsable_direction') {

@@ -25,7 +25,7 @@
                 <form action="{{ route('utilisateurs.update', $user->id) }}" method="POST">
                     @csrf
                     @method('PUT')
-
+                    
                     <div class="row g-3 mb-3">
                         <div class="col-md-4">
                             <label class="form-label">Matricule</label>
