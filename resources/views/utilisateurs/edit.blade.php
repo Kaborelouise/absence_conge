@@ -22,10 +22,15 @@
                     </div>
                 @endif
 
-                <form action="{{ route('utilisateurs.update', $user->id) }}" method="POST">
+                {{--Modifié ajout de enctype="multipart/form-data", nécessaire pour
+                    permettre le remplacement optionnel du certificat de prise de
+                    service (voir champ plus bas). Sans ça, un nouveau fichier
+                    sélectionné ne serait jamais envoyé au serveur.
+                --}}
+                <form action="{{ route('utilisateurs.update', $user->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
-                    
+
                     <div class="row g-3 mb-3">
                         <div class="col-md-4">
                             <label class="form-label">Matricule</label>
@@ -125,6 +130,41 @@
                                 @endforeach
                             </select>
                             @error('departement_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Date de prise de service</label>
+                            <input type="date" name="date_prise_service"
+                                   class="form-control @error('date_prise_service') is-invalid @enderror"
+                                   value="{{ old('date_prise_service', $user->date_prise_service?->format('Y-m-d')) }}"
+                                   required>
+                            @error('date_prise_service')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Certificat / arrêté de prise de service</label>
+                            @if($user->certificat_prise_service)
+                                <div class="mb-2">
+                                    <a href="{{ Storage::url($user->certificat_prise_service) }}"
+                                       target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-file-earmark-pdf me-1"></i> Voir le certificat actuel
+                                    </a>
+                                </div>
+                            @else
+                                <div class="mb-2 text-muted" style="font-size: 13px;">
+                                    Aucun certificat renseigné pour le moment.
+                                </div>
+                            @endif
+                            <input type="file" name="certificat_prise_service"
+                                   class="form-control @error('certificat_prise_service') is-invalid @enderror"
+                                   accept=".pdf,.jpg,.jpeg,.png">
+                            <small class="text-muted">Laisser vide pour conserver le certificat actuel. Formats acceptés : PDF, JPG, PNG (5 Mo max)</small>
+                            @error('certificat_prise_service')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>

@@ -1,12 +1,12 @@
 @extends('layouts.app')
 @section('title', 'Nouvelle demande de congé')
-@section('page-title', 'Demande de congé administratif')
+@section('page-title', 'Demande de congé')
 
 @section('content')
 <div class="row justify-content-center">
-    <div class="col-md-6">
+    <div class="col-md-7">
         <div class="card shadow-sm">
-            <div class="card-header card-header-anptic text-center" style="padding: 20px;">
+            <div class="card-header text-white text-center" style="background-color:#1B384F; padding: 20px;">
                 <h5 class="mb-0">Nouvelle demande de congé</h5>
             </div>
             <div class="card-body p-4">
@@ -20,46 +20,61 @@
                         </ul>
                     </div>
                 @endif
+                @if(session('error'))
+                    <div class="alert alert-danger">{{ session('error') }}</div>
+                @endif
+
+                {{--
+                    AJOUTÉ : période de jouissance calculée à partir de la date de
+                    prise de service de l'agent connecté (User::periodeJouissance()).
+                    Affichée en gris, non modifiable : c'est une information calculée
+                    automatiquement, pas un champ que l'agent saisit. Elle permet à
+                    l'agent de savoir, avant même de soumettre sa demande, à quelle
+                    période il pourra effectivement jouir de son congé une fois
+                    celui-ci compilé par le RH.
+                --}}
+                @php
+                    $periode = $user->periodeJouissance();
+                @endphp
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Période de jouissance</label>
+                    <input type="text" class="form-control bg-light text-muted" readonly
+                           value="@if($periode){{ $periode['debut']->format('d/m/Y') }} → {{ $periode['fin']->format('d/m/Y') }}@else Non calculable (date de prise de service non renseignée) @endif">
+                    <small class="text-muted">Calculée automatiquement à partir de votre date de prise de service.</small>
+                </div>
 
                 <form action="{{ route('demande_conges.store') }}" method="POST">
                     @csrf
 
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label class="form-label fw-bold">
-                            Lieu(x) de jouissance
-                            <span class="text-danger">*</span>
-
+                            Lieu(x) de jouissance <span class="text-danger">*</span>
                         </label>
-
-                        @php
-                            
-                            $lieux = ['Afrique', 'Burkina', 'Canada', 'Europe', 'Asie', 'USA'];
-                          
-                            $anciensChoix = old('lieu_jouissance', []);
-                        @endphp
                         <div class="row">
+                            @php
+                                $lieux = ['Afrique', 'Burkina', 'Canada', 'Europe', 'Asie', 'USA'];
+                            @endphp
                             @foreach($lieux as $lieu)
-                            <div class="col-6 col-md-4 mb-2">
-                                <div class="form-check">
-                                    <input class="form-check-input"
-                                           type="checkbox"
-                                           name="lieu_jouissance[]"
-                                           value="{{ $lieu }}"
-                                           id="lieu_{{ $lieu }}"
-                                           {{ in_array($lieu, $anciensChoix) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="lieu_{{ $lieu }}">
-                                        {{ $lieu }}
-                                    </label>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="lieu_jouissance[]"
+                                               value="{{ $lieu }}"
+                                               class="form-check-input"
+                                               id="lieu_{{ $lieu }}"
+                                               {{ in_array($lieu, old('lieu_jouissance', [])) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="lieu_{{ $lieu }}">
+                                            {{ $lieu }}
+                                        </label>
+                                    </div>
                                 </div>
-                            </div>
                             @endforeach
                         </div>
                         @error('lieu_jouissance')
-                            <div class="text-danger mt-1" style="font-size:12px;">{{ $message }}</div>
+                            <div class="text-danger" style="font-size: 13px;">{{ $message }}</div>
                         @enderror
                     </div>
 
-                    <div class="alert alert-info" style="font-size:13px;">
+                    <div class="alert alert-info" style="font-size: 13px;">
                         <i class="bi bi-info-circle me-1"></i>
                         Cette demande sera compilée par le service RH.
                     </div>
@@ -72,7 +87,6 @@
                             Annuler
                         </a>
                     </div>
-
                 </form>
             </div>
         </div>
