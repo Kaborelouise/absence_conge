@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DemandeJouissance;
-use App\Models\SessionAdministrateuristrative;
+use App\Models\SessionAdministrative;
 use Illuminate\Http\Request;
 
 class DemandeJouissanceController extends Controller
@@ -43,22 +43,7 @@ class DemandeJouissanceController extends Controller
         return view('demande_jouissances.create', compact('user'));
     }
 
-    /**
-     * MODIFIÉ : même principe de "réservation" du solde que DemandeAbsenceController.
-     *
-     * Deux corrections par rapport à la version précédente :
-     *
-     * 1. On ne fait plus confiance à $request->nombre_jour (un simple champ texte
-     *    rempli par l'utilisateur). On le RECALCULE côté serveur à partir des
-     *    dates, exactement comme le fait DemandeJouissance::nombreJours(). Sans ça,
-     *    un Agent pourrait saisir des dates couvrant 20 jours tout en indiquant
-     *    manuellement "nombre_jour = 1", ce qui contournerait complètement la
-     *    vérification du plafond de 30 jours ci-dessous.
-     *
-     * 2. Vérification du plafond de 30 jours (solde_conge) AVANT création, puis
-     *    réservation immédiate (décrémentation) du solde — pas de notion de durée
-     *    ici (contrairement à DemandeAbsence), juste un plafond simple à respecter.
-     */
+
     public function store(Request $request)
     {
         $request->validate([
@@ -68,20 +53,8 @@ class DemandeJouissanceController extends Controller
 
         $user = auth()->user();
 
-        /**
-         * AJOUTÉ : deux conditions cumulatives avant de pouvoir créer une
-         * demande de jouissance :
-         * 1. Session active pour la jouissance (comme pour absence/congé).
-         * 2. Une DemandeConge COMPILÉE doit exister pour cet Agent sur cette
-         *    même session (règle validée : "on ne peut pas faire de
-         *    jouissance si on n'a pas de demande de congé [compilée]").
-         *    On vérifie directement via le statut de DemandeConge plutôt que
-         *    via CompilationConge, car c'est le statut par Agent qui compte
-         *    ici (une compilation peut être active pour l'année sans que CET
-         *    Agent particulier ait sa demande dedans, si elle a été créée
-         *    après coup ou hors circuit).
-         */
-        $session = SessionAdministrateuristrative::courante();
+
+        $session = SessionAdministrative::courante();
 
         if ($session === null || !$session->estOuvertePour('jouissance')) {
             return redirect()->back()
@@ -166,12 +139,7 @@ class DemandeJouissanceController extends Controller
         return view('demande_jouissances.edit', compact('demande'));
     }
 
-    /**
-     * MODIFIÉ : même ajustement de réservation que DemandeAbsenceController::update.
-     * On calcule le solde "disponible" en restituant virtuellement l'ancienne
-     * réservation, on vérifie que les nouveaux jours (calculés depuis les nouvelles
-     * dates, pas depuis un champ formulaire) rentrent dedans, puis on applique.
-     */
+   
     public function update(Request $request, $id)
     {
         $demande = DemandeJouissance::findOrFail($id);
@@ -215,10 +183,6 @@ class DemandeJouissanceController extends Controller
             ->with('success', 'Demande modifiée avec succès.');
     }
 
-    /**
-     * MODIFIÉ : restitution des jours réservés puisque la demande est supprimée
-     * avant validation.
-     */
     public function destroy($id)
     {
         $demande = DemandeJouissance::findOrFail($id);
@@ -237,10 +201,8 @@ class DemandeJouissanceController extends Controller
             ->route('demande_jouissances.index')
             ->with('success', 'Demande supprimée.');
     }
-
-    /**
-     * MODIFIÉ : même logique, restitution des jours réservés.
-     */
+    //  Modifié, restitution des jours réservés.
+  
     public function abandonner($id)
     {
         $demande = DemandeJouissance::findOrFail($id);

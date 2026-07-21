@@ -4,13 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class SessionAdministrateuristrative extends Model
+class SessionAdministrative extends Model
+
 {
-    // Le nom de table par défaut qu'Eloquent devinerait à partir du nom du
-    // modèle ("session_Administrateuristratives") ne correspond pas au nom réel de la
-    // table, qui est "sessions_demandes" (voir la migration
-    // create_sessions_demandes_table — le nom du FICHIER de migration a pu
-    // changer, mais c'est le Schema::create() à l'intérieur qui fait foi).
+
     protected $table = 'sessions_demandes';
 
     protected $fillable = [
@@ -44,17 +41,17 @@ class SessionAdministrateuristrative extends Model
      */
     public function demandeAbsences()
     {
-        return $this->hasMany(DemandeAbsence::class, 'session_Administrateuristrative_id');
+        return $this->hasMany(DemandeAbsence::class, 'session_Administrative_id');
     }
 
     public function demandeConges()
     {
-        return $this->hasMany(DemandeConge::class, 'session_Administrateuristrative_id');
+        return $this->hasMany(DemandeConge::class, 'session_Administrative_id');
     }
 
     public function demandeJouissances()
     {
-        return $this->hasMany(DemandeJouissance::class, 'session_Administrateuristrative_id');
+        return $this->hasMany(DemandeJouissance::class, 'session_Administrative_id');
     }
 
 

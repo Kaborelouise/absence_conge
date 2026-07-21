@@ -1,13 +1,13 @@
 @extends('layouts.app')
 @section('title', 'Nouvelle session')
-@section('page-title', 'Sessions Administrateuristratives')
+@section('page-title', 'Sessions Administratives')
 
 @section('content')
 <div class="row justify-content-center">
     <div class="col-md-7">
         <div class="card shadow-sm">
             <div class="card-header text-white text-center" style="background-color:#1B384F; padding: 20px;">
-                <h5 class="mb-0">Ouvrir une nouvelle session Administrateuristrative</h5>
+                <h5 class="mb-0">Ouvrir une nouvelle session Administratives</h5>
             </div>
             <div class="card-body p-4">
 
@@ -30,7 +30,7 @@
                     (10 jours d'absence, 30 jours de congé). La période ne doit pas chevaucher une session existante.
                 </div> 
 
-                <form action="{{ route('sessions_Administrateuristratives.store') }}" method="POST">
+                <form action="{{ route('sessions_Administratives.store') }}" method="POST">
                     @csrf
 
                     <div class="mb-3">
@@ -76,7 +76,7 @@
 
                     <div class="d-flex justify-content-center gap-3">
                         <button type="submit" class="btn btn-primary px-4">Ouvrir la session</button>
-                        <a href="{{ route('sessions_Administrateuristratives.index') }}" class="btn btn-secondary px-4">Annuler</a>
+                        <a href="{{ route('sessions_Administratives.index') }}" class="btn btn-secondary px-4">Annuler</a>
                     </div>
                 </form>
             </div>

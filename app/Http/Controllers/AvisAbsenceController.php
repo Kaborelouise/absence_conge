@@ -34,7 +34,7 @@ class AvisAbsenceController extends Controller
         $role === 'Chef de Département' || $user->est_responsable_departement
             => 'Chef de Département',
 
-        $role === 'Responsable Direction' || $user->est_Responsable Direction
+        $role === 'Responsable Direction' || $user->est_Responsable_direction
             => 'Responsable Direction',
 
         $role === 'Agent RH'

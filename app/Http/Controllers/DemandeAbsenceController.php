@@ -32,7 +32,7 @@ class DemandeAbsenceController extends Controller
 
                 // Responsable de direction
                 ->when(
-                    $role === 'Responsable Direction' || $user->est_Responsable Direction,
+                    $role === 'Responsable Direction' || $user->est_Responsable_direction,
                     function ($q) use ($user) {
 
                         $directionId = $user->departement->direction_id;
@@ -155,19 +155,15 @@ class DemandeAbsenceController extends Controller
 
     }
 
-  
+    //  Modifié : la demande a déjà réservé X jours à sa création. Si l'Agent change
+    //  * les dates, il faut ajuster la réservation :
+    //  * 1. On calcule le solde qu'aurait l'Agent si on annulait l'ancienne réservation
+    // (solde_absence + ancienJours).
+    // 2. On vérifie que ce solde disponible couvre le NOUVEAU nombre de jours.
+    //3. On enregistre le nouveau solde = solde disponible - nouveaux jours.
+    // Ça évite d'avoir à faire deux opérations séparées (restituer puis redécompter)
+    // qui pourraient laisser le solde dans un état incohérent en cas d'erreur au milieu.
 
-    /**
-     * MODIFIÉ : la demande a déjà réservé X jours à sa création. Si l'Agent change
-     * les dates, il faut ajuster la réservation :
-     * 1. On calcule le solde qu'aurait l'Agent si on annulait l'ancienne réservation
-     *    (solde_absence + ancienJours).
-     * 2. On vérifie que ce solde disponible couvre le NOUVEAU nombre de jours.
-     * 3. On enregistre le nouveau solde = solde disponible - nouveaux jours.
-     *
-     * Ça évite d'avoir à faire deux opérations séparées (restituer puis redécompter)
-     * qui pourraient laisser le solde dans un état incohérent en cas d'erreur au milieu.
-     */
     public function update(Request $request, $id)
     {
         $demande = DemandeAbsence::findOrFail($id);
@@ -248,10 +244,7 @@ class DemandeAbsenceController extends Controller
         return redirect()->route('demande_absences.index')
             ->with('success', 'Demande supprimée.');
     }
-    /**
-     * MODIFIÉ : même logique que destroy() — l'abandon annule la demande avant
-     * qu'elle soit validée, donc on restitue les jours réservés.
-     */
+  
     public function abandonner($id)
     {
         $demande = DemandeAbsence::findOrFail($id);

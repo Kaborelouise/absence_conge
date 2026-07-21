@@ -12,7 +12,7 @@ class UserController extends Controller
     // protection Administrateur sur toutes les méthodes
     public function __construct()
     {
-        $this->middleware('Administrateuristrateur');
+        $this->middleware('Administrateur');
     }
 
     public function index()

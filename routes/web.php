@@ -13,7 +13,7 @@ use App\Http\Controllers\DemandeCongeController;
 use App\Http\Controllers\AvisCongeController;
 use App\Http\Controllers\DemandeJouissanceController;
 use App\Http\Controllers\AvisJouissanceController;
-use App\Http\Controllers\SessionAdministrateuristrativeController;
+use App\Http\Controllers\SessionAdministrativeController;
 
 
 // Auth routes générées par Breeze
@@ -38,7 +38,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('directions', DirectionController::class);
     Route::resource('departements', DepartementController::class);
     Route::resource('utilisateurs', UserController::class);
-    Route::resource('sessions_Administrateuristratives', \App\Http\Controllers\SessionAdministrateuristrativeController::class)
+    Route::resource('sessions_Administratives', \App\Http\Controllers\SessionAdministrativeController::class)
     ->only(['index', 'create', 'store', 'show']);
 
     // DEMANDES
@@ -73,20 +73,20 @@ Route::middleware('auth')->group(function () {
     Route::post('demande_jouissances/{id}/abandonner', [DemandeJouissanceController::class, 'abandonner'])
         ->name('demande_jouissances.abandonner');
  
-    Route::resource('sessions_Administrateuristratives', \App\Http\Controllers\SessionAdministrateuristrativeController::class)
+    Route::resource('sessions_administratives', \App\Http\Controllers\SessionAdministrativeController::class)
         ->only(['index', 'create', 'store', 'show']);
 
-    Route::post('sessions_Administrateuristratives/{id}/toggle-absence', 
-        [SessionAdministrateuristrativeController::class, 'toggleAbsence'])
-        ->name('sessions_Administrateuristratives.toggle_absence');
+    Route::post('sessions_Administratives/{id}/toggle-absence', 
+        [SessionAdministrativeController::class, 'toggleAbsence'])
+        ->name('sessions_Administratives.toggle_absence');
 
-    Route::post('sessions_Administrateuristratives/{id}/toggle-conge',
-        [SessionAdministrateuristrativeController::class, 'toggleConge'])
-        ->name('sessions_Administrateuristratives.toggle_conge');
+    Route::post('sessions_Administratives/{id}/toggle-conge',
+        [SessionAdministrativeController::class, 'toggleConge'])
+        ->name('sessions_Administratives.toggle_conge');
 
-    Route::post('sessions_Administrateuristratives/{id}/toggle-jouissance',
-        [SessionAdministrateuristrativeController::class, 'toggleJouissance'])
-        ->name('sessions_Administrateuristratives.toggle_jouissance');
+    Route::post('sessions_Administratives/{id}/toggle-jouissance',
+        [SessionAdministrativeController::class, 'toggleJouissance'])
+        ->name('sessions_Administratives.toggle_jouissance');
 
 
 

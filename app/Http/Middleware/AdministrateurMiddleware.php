@@ -5,7 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 
-class AdminMiddleware
+class AdministrateurMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
@@ -15,7 +15,7 @@ class AdminMiddleware
 
         if (auth()->user()->role->libelle !== 'Administrateur') {
         return redirect()->route('accueil')
-            ->with('error', 'Accès réservé aux administrateurs.');
+            ->with('error', 'Accès réservé aux Administrateurs.');
     }
 
         return $next($request);

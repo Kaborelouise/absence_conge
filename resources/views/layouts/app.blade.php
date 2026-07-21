@@ -261,7 +261,7 @@
                 <span>Demande de jouissance</span>
             </a>
 
-            <div class="sidebar-section-title">Administrateuristration</div>
+            <div class="sidebar-section-title">Administration</div>
 
             <a href="{{ route('utilisateurs.index') }}"
                class="sidebar-link {{ request()->routeIs('utilisateurs.*') ? 'active' : '' }}">
@@ -287,10 +287,10 @@
                 <span>Départements</span>
             </a>
 
-            <a href="{{ route('sessions_Administrateuristratives.index') }}"
-                class="sidebar-link {{ request()->routeIs('sessions_Administrateuristratives.*') ? 'active' : '' }}">
+            <a href="{{ route('sessions_Administratives.index') }}"
+                class="sidebar-link {{ request()->routeIs('sessions_Administratives.*') ? 'active' : '' }}">
                 <i class="bi bi-calendar-event"></i>
-                <span>Sessions Administrateuristratives</span>
+                <span>Sessions Administratives</span>
             </a>
            
 

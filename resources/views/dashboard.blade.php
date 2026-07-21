@@ -8,9 +8,7 @@
 
 @section('content')
 
-{{-- ================================================================
-     TABLEAU DE BORD Agent
-     ================================================================ --}}
+<!--TABLEAU DE BORD Agent-->
 @if($role === 'Agent')
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -21,7 +19,7 @@
     <span class="baDGe bg-secondary">Agent</span>
 </div>
 
-{{-- Soldes --}}
+<!-- Soldes -->
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="card h-100 border-0 shadow-sm">
@@ -91,7 +89,7 @@
 </div>
 
 <div class="row g-3 mb-4">
-    {{-- Stats congés --}}
+    <!-- Stats congés -->
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
             <div class="card-header card-header-anptic">
@@ -120,7 +118,7 @@
         </div>
     </div>
 
-    {{-- Stats absences --}}
+    <!-- Stats absences -->
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
             <div class="card-header card-header-anptic">
@@ -151,7 +149,7 @@
 </div>
 
 <div class="row g-3">
-    {{-- Graphique évolution --}}
+    <!-- Graphique évolution -->
     <div class="col-md-7">
         <div class="card shadow-sm">
             <div class="card-header card-header-anptic">
@@ -163,7 +161,7 @@
         </div>
     </div>
 
-    {{-- Dernières demandes --}}
+    <!-- Dernières demandes -->
     <div class="col-md-5">
         <div class="card shadow-sm">
             <div class="card-header card-header-anptic">
@@ -199,9 +197,8 @@
     </div>
 </div>
 
-{{-- ================================================================
-     TABLEAU DE BORD CHEF DE DÉPARTEMENT / RESPONSABLE DIRECTION
-     ================================================================ --}}
+<!--TABLEAU DE BORD CHEF DE DÉPARTEMENT / RESPONSABLE DIRECTION-->
+
 @elseif(in_array($role, ['Chef de Département', 'Responsable Direction']) || $user->est_responsable_departement)
 
 @php
@@ -324,9 +321,7 @@
     </div>
 </div>
 
-{{-- ================================================================
-     TABLEAU DE BORD RH / SG / DG / PCA
-     ================================================================ --}}
+<!--Tableau de bord RH / SG / DG / PCA -->
 @elseif(in_array($role, ['Agent RH', 'SG', 'DG', 'PCA']))
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -434,7 +429,7 @@
     </div>
 </div>
 
-{{-- Agents en congé + dernières demandes --}}
+{{-- Agents en congé plus dernières demandes --}}
 <div class="row g-3">
     <div class="col-md-5">
         <div class="card shadow-sm">
@@ -507,13 +502,11 @@
     </div>
 </div>
 
-{{-- ================================================================
-     TABLEAU DE BORD AdministrateurISTRATEUR
-     ================================================================ --}}
+<!--Tableau de bord administrateur -->
 @elseif($role === 'Administrateur')
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h5 class="fw-bold mb-0">Tableau de bord Administrateuristrateur</h5>
+    <h5 class="fw-bold mb-0">Tableau de bord Administrateur</h5>
 </div>
 
 <div class="row g-3 mb-4">
@@ -542,7 +535,7 @@
         <div class="card shadow-sm text-center p-3">
             <i class="bi bi-shield-check fs-3 text-warning mb-1"></i>
             <div class="fw-bold fs-3">{{ $totalAdministrateurs }}</div>
-            <div style="font-size:12px;">Administrateuristrateurs</div>
+            <div style="font-size:12px;">Administrateurs</div>
         </div>
     </div>
 </div>

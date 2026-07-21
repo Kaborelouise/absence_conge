@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Sessions Administrateuristratives')
-@section('page-title', 'Sessions Administrateuristratives')
+@section('title', 'Sessions Administratives')
+@section('page-title', 'Sessions Administratives')
 
 @section('content')
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h5 class="mb-0 fw-bold">Sessions Administrateuristratives</h5>
-    <a href="{{ route('sessions_Administrateuristratives.create') }}" class="btn btn-primary btn-sm">
+    <h5 class="mb-0 fw-bold">Sessions Administratives</h5>
+    <a href="{{ route('sessions_Administratives.create') }}" class="btn btn-primary btn-sm">
         <i class="bi bi-plus-lg me-1"></i> Nouvelle session
     </a>
 </div>
@@ -122,7 +122,7 @@
                         </td>
 
                         <td>
-                            <a href="{{ route('sessions_Administrateuristratives.show', $session->id) }}"
+                            <a href="{{ route('sessions_Administratives.show', $session->id) }}"
                                class="btn btn-sm btn-outline-primary">
                                 Voir
                             </a>

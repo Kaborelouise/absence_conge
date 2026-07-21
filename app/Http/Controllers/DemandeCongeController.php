@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DemandeConge;
 use App\Models\CompilationConge;
-use App\Models\SessionAdministrateuristrative;
+use App\Models\SessionAdministrative;
 use Illuminate\Http\Request;
 
 class DemandeCongeController extends Controller
@@ -24,12 +24,12 @@ class DemandeCongeController extends Controller
         /**
          * MODIFIÉ : la compilation active se détermine désormais via la
          * SESSION courante (par date), plus fiable que whereYear('created_at')
-         * qui mélangeait "année de création" et "campagne Administrateuristrative" —
+         * qui mélangeait "année de création" et "campagne Administrative" —
          * deux notions différentes (une demande créée fin décembre pourrait
          * appartenir à la session de l'année suivante si l'Administrateur ouvre les
          * sessions à cheval sur le calendrier).
          */
-        $session = SessionAdministrateuristrative::courante();
+        $session = SessionAdministrative::courante();
         $compilationActive = $session ? CompilationConge::activeParSession($session->id) : null;
         $peutCompiler = $role === 'Agent RH';
 
