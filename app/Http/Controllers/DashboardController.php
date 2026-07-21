@@ -150,6 +150,15 @@ class DashboardController extends Controller
                 $q->where('direction_id', $directionId)
             )->where('statut', 'en_cours')->count();
 
+            // Agents en absence dans la direction
+            $AgentsEnAbsence = DemandeAbsence::whereHas('user.departement', fn($q) =>
+                $q->where('direction_id', $directionId)
+            )->where('statut', 'validee')
+            ->where('date_debut', '<=', now())
+            ->where('date_fin', '>=', now())
+            ->with('user.departement')
+            ->get();
+
             // Agents en congé dans la direction
             $AgentsEnConge = DemandeJouissance::whereHas('user.departement', fn($q) =>
                 $q->where('direction_id', $directionId)
@@ -166,11 +175,12 @@ class DashboardController extends Controller
             $evolutionMois = $this->evolutionMoisDirection($directionId);
 
             return view('dashboard', compact(
-                'role', 'user',
-                'nbAgents', 'congesDir', 'absencesDir',
-                'alertesConge', 'alertesAbsence',
-                'AgentsEnConge', 'repartitionDepts', 'evolutionMois'
-            ));
+            'role', 'user',
+            'nbAgents', 'congesDir', 'absencesDir',
+            'alertesConge', 'alertesAbsence',
+            'AgentsEnConge', 'AgentsEnAbsence', // AJOUT
+            'repartitionDepts', 'evolutionMois'
+        ));
         }
 
         // ============================================================

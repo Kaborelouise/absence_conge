@@ -16,7 +16,7 @@
         <h5 class="fw-bold mb-0">Bonjour, {{ $user->prenom }} {{ $user->nom }}</h5>
         <small class="text-muted">{{ $user->poste }} — {{ $user->departement->libelle_court ?? '' }}</small>
     </div>
-    <span class="baDGe bg-secondary">Agent</span>
+    <!-- <span class="baDGe bg-secondary">Agent</span> -->
 </div>
 
 <!-- Soldes -->
@@ -235,7 +235,7 @@
     </div>
     <div class="col-md-3">
         <div class="card shadow-sm text-center p-3">
-            <div class="fw-bold fs-2 text-info">{{ $AgentsEnAbsence->count() ?? 0 }}</div>
+            <div class="fw-bold fs-2 text-info">{{ isset($AgentsEnAbsence) ? $AgentsEnAbsence->count() : 0 }}</div>
             <div style="font-size:12px;color:#666;">En absence actuellement</div>
         </div>
     </div>
