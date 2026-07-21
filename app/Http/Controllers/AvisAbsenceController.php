@@ -30,19 +30,29 @@ class AvisAbsenceController extends Controller
 
         $role = $user->role->libelle;
 
-        $typeAvis = match(true) {
-            $role === 'chef_departement' || $user->est_responsable_departement => 'chef_departement',
-            $role === 'responsable_direction'                                   => 'responsable_direction',
-            $role === 'agent_rh'                                                => 'agent_rh',
-            $role === 'sg'                                                      => 'sg',
-            $role === 'dg'                                                      => 'dg',
-            $role === 'pca'                                                     => 'pca',
-            default     
-            
-                => $role,
-        };
+     $typeAvis = match (true) {
+        $role === 'Chef de Département' || $user->est_responsable_departement
+            => 'Chef de Département',
 
-        if ($role === 'agent_rh') {
+        $role === 'Responsable Direction' || $user->est_Responsable Direction
+            => 'Responsable Direction',
+
+        $role === 'Agent RH'
+            => 'Agent RH',
+
+        $role === 'SG'
+            => 'SG',
+
+        $role === 'DG'
+            => 'DG',
+
+        $role === 'PCA'
+            => 'PCA',
+
+        default => null,
+    };
+
+        if ($role === 'Agent RH') {
             $demande->update([
                 'retenue_salaire' => $request->boolean('retenue_salaire'),
             ]);
@@ -60,7 +70,7 @@ class AvisAbsenceController extends Controller
          * MODIFIÉ : le solde a été réservé (décrémenté) dès la CRÉATION de la demande
          * (voir DemandeAbsenceController::store). Si un avis défavorable est donné,
          * la demande n'aboutira jamais : il faut donc RESTITUER les jours réservés,
-         * sinon l'agent perdrait définitivement des jours pour une demande refusée —
+         * sinon l'Agent perdrait définitivement des jours pour une demande refusée —
          * ce qui contredit la règle métier ("si une demande est refusée, pourquoi
          * extraire ça du solde ?").
          */

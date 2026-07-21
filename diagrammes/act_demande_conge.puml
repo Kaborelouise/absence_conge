@@ -1,9 +1,9 @@
 @startuml Activity_Demande_Conge
-title Diagramme d'Activité : Demande de Congé Administratif
+title Diagramme d'Activité : Demande de Congé Administrateuristratif
 
 start
 :Authentifier l'utilisateur;
-:Accéder au menu "Demande de congé administratif";
+:Accéder au menu "Demande de congé Administrateuristratif";
 :Remplir le formulaire;
 note right
   - Lieu de jouissance

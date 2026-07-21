@@ -27,19 +27,19 @@
 @if($demande->abandonnee ?? false)
     <div class="alert alert-warning">
         <i class="bi bi-exclamation-triangle me-2"></i>
-        Cette demande a été <strong>abandonnée</strong> par l'agent.
+        Cette demande a été <strong>abandonnée</strong> par l'Agent.
         Elle ne peut plus être traitée.
     </div>
 @endif
 
 @php
     $etapeLabels = [
-        'chef_departement'      => 'Avis Chef de département',
-        'agent_rh'              => 'Avis Agent RH',
-        'responsable_direction' => 'Décision Responsable de direction',
-        'sg'                    => 'Décision Secrétaire Général',
-        'dg'                    => 'Décision Directeur Général',
-        'pca'                   => 'Décision PCA',
+        'Chef de Département'      => 'Avis Chef de département',
+        'Agent RH'              => 'Avis Agent RH',
+        'Responsable Direction' => 'Décision Responsable de direction',
+        'SG'                    => 'Décision Secrétaire Général',
+        'DG'                    => 'Décision Directeur Général',
+        'PCA'                   => 'Décision PCA',
     ];
 
     // Calculs de dates pour les conditions de téléchargement
@@ -105,19 +105,19 @@
                         <th class="ps-3">Étape actuelle</th>
                         <td>
                             @if($demande->abandonnee ?? false)
-                                <span class="badge bg-warning text-dark">Abandonnée</span>
+                                <span class="baDGe bg-warning text-dark">Abandonnée</span>
                             @elseif($demande->estCloturee())
-                                <span class="badge-statut badge-validee">Clôturée</span>
+                                <span class="baDGe-statut baDGe-validee">Clôturée</span>
                             @elseif($demande->statut === 'validee')
-                                <span class="badge-statut badge-validee">Validée</span>
+                                <span class="baDGe-statut baDGe-validee">Validée</span>
                             @elseif($demande->statut === 'rejetee')
-                                <span class="badge-statut badge-rejetee">Rejetée</span>
+                                <span class="baDGe-statut baDGe-rejetee">Rejetée</span>
                             @elseif($derniereEtape)
-                                <span class="badge-statut badge-en_cours">
+                                <span class="baDGe-statut baDGe-en_cours">
                                     {{ $etapeLabels[$derniereEtape] ?? $derniereEtape }}
                                 </span>
                             @else
-                                <span class="badge-statut badge-en_attente">Initiation</span>
+                                <span class="baDGe-statut baDGe-en_attente">Initiation</span>
                             @endif
                         </td>
                     </tr>
@@ -144,7 +144,7 @@
                         <div class="fw-bold" style="font-size:13px;">
                             {{ $etapeLabels[$avis->type] ?? ucfirst(str_replace('_', ' ', $avis->type)) }}
                         </div>
-                        <span class="badge-statut badge-{{ $avis->avis === 'favorable' ? 'validee' : 'rejetee' }}">
+                        <span class="baDGe-statut baDGe-{{ $avis->avis === 'favorable' ? 'validee' : 'rejetee' }}">
                             {{ ucfirst($avis->avis) }}
                         </span>
                         @if($avis->commentaire)
@@ -177,7 +177,7 @@
             <button type="button" class="btn btn-primary"
                     data-bs-toggle="modal" data-bs-target="#modalAvisJouissance">
                 <i class="bi bi-pencil-square me-2"></i>
-                @if(in_array(auth()->user()->role->libelle, ['responsable_direction','sg','dg','pca']))
+                @if(in_array(auth()->user()->role->libelle, ['Responsable Direction','SG','DG','PCA']))
                     Prendre ma décision
                 @else
                     Donner mon avis
@@ -224,7 +224,7 @@
                     {{-- étape 1, Certificat de cessation disponible dès que la demande est validée--}}
                     <div class="mb-3">
                         <h6 class="fw-bold">
-                            <span class="badge bg-primary me-2">1</span>
+                            <span class="baDGe bg-primary me-2">1</span>
                             Certificat de cessation de service
                         </h6>
                         <p class="text-muted" style="font-size:12px;">
@@ -244,7 +244,7 @@
                     {{-- Étape 2 Certificat prise de service disponible 2jours avant la fin du congé --}}
                     <div class="mb-3">
                         <h6 class="fw-bold">
-                            <span class="badge {{ $peutTelechargerReprise ? 'bg-primary' : 'bg-secondary' }} me-2">2</span>
+                            <span class="baDGe {{ $peutTelechargerReprise ? 'bg-primary' : 'bg-secondary' }} me-2">2</span>
                             Certificat de prise de service
                         </h6>
                         @if($peutTelechargerReprise)
@@ -275,7 +275,7 @@
                     {{-- Étape 3 Clôturer disponible après la date de fin --}}
                     <div>
                         <h6 class="fw-bold">
-                            <span class="badge {{ $peutCloturer ? 'bg-success' : 'bg-secondary' }} me-2">3</span>
+                            <span class="baDGe {{ $peutCloturer ? 'bg-success' : 'bg-secondary' }} me-2">3</span>
                             Clôturer la demande
                         </h6>
                         @if($peutCloturer)
@@ -317,7 +317,7 @@
             <div class="modal-header card-header-anptic">
                 <h5 class="modal-title">
                     <i class="bi bi-pencil-square me-2"></i>
-                    @if(in_array(auth()->user()->role->libelle, ['responsable_direction','sg','dg','pca']))
+                    @if(in_array(auth()->user()->role->libelle, ['Responsable Direction','SG','DG','PCA']))
                         Prendre ma décision
                     @else
                         Donner mon avis
@@ -330,7 +330,7 @@
                 <input type="hidden" name="demande_jouissance_id" value="{{ $demande->id }}">
                 <div class="modal-body">
 
-                    @if(auth()->user()->role->libelle === 'agent_rh')
+                    @if(auth()->user()->role->libelle === 'Agent RH')
                     <div class="alert alert-info py-2 mb-3" style="font-size:13px;">
                         <i class="bi bi-info-circle me-1"></i>
                         Solde congé restant : <strong>{{ $demande->user->solde_conge }} jours</strong><br>
@@ -340,7 +340,7 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">
-                            @if(in_array(auth()->user()->role->libelle, ['responsable_direction','sg','dg','pca']))
+                            @if(in_array(auth()->user()->role->libelle, ['Responsable Direction','SG','DG','PCA']))
                                 Décision
                             @else
                                 Avis

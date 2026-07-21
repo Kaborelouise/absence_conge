@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DemandeJouissance;
-use App\Models\SessionAdministrative;
+use App\Models\SessionAdministrateuristrative;
 use Illuminate\Http\Request;
 
 class DemandeJouissanceController extends Controller
@@ -14,21 +14,21 @@ class DemandeJouissanceController extends Controller
         $role = $user->role->libelle;
 
         $demandes = DemandeJouissance::with('user.departement.direction', 'avis')
-            ->when($role === 'agent', function ($q) use ($user) {
+            ->when($role === 'Agent', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             })
-            ->when($role === 'chef_departement' || $user->est_responsable_departement, function ($q) use ($user) {
+            ->when($role === 'Chef de Département' || $user->est_responsable_departement, function ($q) use ($user) {
                 $q->whereHas('user', function ($q2) use ($user) {
                     $q2->where('departement_id', $user->departement_id);
                 });
             })
-            ->when($role === 'responsable_direction', function ($q) use ($user) {
+            ->when($role === 'Responsable Direction', function ($q) use ($user) {
                 $directionId = $user->departement->direction_id;
                 $q->whereHas('user.departement', function ($q2) use ($directionId) {
                     $q2->where('direction_id', $directionId);
                 });
             })
-            ->when(in_array($role, ['agent_rh', 'sg', 'dg', 'pca', 'admin']), function ($q) {
+            ->when(in_array($role, ['Agent RH', 'SG', 'DG', 'PCA', 'Administrateur']), function ($q) {
                 // Ces rôles voient toutes les demandes 
             })
             ->latest()
@@ -51,7 +51,7 @@ class DemandeJouissanceController extends Controller
      * 1. On ne fait plus confiance à $request->nombre_jour (un simple champ texte
      *    rempli par l'utilisateur). On le RECALCULE côté serveur à partir des
      *    dates, exactement comme le fait DemandeJouissance::nombreJours(). Sans ça,
-     *    un agent pourrait saisir des dates couvrant 20 jours tout en indiquant
+     *    un Agent pourrait saisir des dates couvrant 20 jours tout en indiquant
      *    manuellement "nombre_jour = 1", ce qui contournerait complètement la
      *    vérification du plafond de 30 jours ci-dessous.
      *
@@ -72,25 +72,25 @@ class DemandeJouissanceController extends Controller
          * AJOUTÉ : deux conditions cumulatives avant de pouvoir créer une
          * demande de jouissance :
          * 1. Session active pour la jouissance (comme pour absence/congé).
-         * 2. Une DemandeConge COMPILÉE doit exister pour cet agent sur cette
+         * 2. Une DemandeConge COMPILÉE doit exister pour cet Agent sur cette
          *    même session (règle validée : "on ne peut pas faire de
          *    jouissance si on n'a pas de demande de congé [compilée]").
          *    On vérifie directement via le statut de DemandeConge plutôt que
-         *    via CompilationConge, car c'est le statut par AGENT qui compte
+         *    via CompilationConge, car c'est le statut par Agent qui compte
          *    ici (une compilation peut être active pour l'année sans que CET
-         *    agent particulier ait sa demande dedans, si elle a été créée
+         *    Agent particulier ait sa demande dedans, si elle a été créée
          *    après coup ou hors circuit).
          */
-        $session = SessionAdministrative::courante();
+        $session = SessionAdministrateuristrative::courante();
 
         if ($session === null || !$session->estOuvertePour('jouissance')) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Aucune session n\'est actuellement ouverte pour les demandes de jouissance. Contactez l\'administration.');
+                ->with('error', 'Aucune session n\'est actuellement ouverte pour les demandes de jouissance. Contactez l\'Administrateuristration.');
         }
 
         $congeCompile = $user->demandeConges()
-            ->where('session_administrative_id', $session->id)
+            ->where('session_Administrateuristrative_id', $session->id)
             ->where('statut', 'compilee')
             ->exists();
 
@@ -119,7 +119,7 @@ class DemandeJouissanceController extends Controller
             'user_id'     => $user->id,
             'statut'      => 'en_attente',
             // AJOUTÉ : rattachement à la session courante
-            'session_administrative_id' => $session->id,
+            'session_Administrateuristrative_id' => $session->id,
         ]);
 
         // Réservation immédiate des jours sur le solde congé
@@ -143,13 +143,13 @@ class DemandeJouissanceController extends Controller
         $derniereEtape  = $demande->avis->last()?->type;
         $peutAbandonner = $demande->peutEtreAbandonneePar($user);
 
-        $agentsMemeDepartement = \App\Models\User::where('departement_id', $demande->user->departement_id)
+        $AgentsMemeDepartement = \App\Models\User::where('departement_id', $demande->user->departement_id)
             ->where('id', '!=', $demande->user_id)
             ->get();
 
         return view('demande_jouissances.show', compact(
             'demande', 'peutAgir', 'prochainActeur',
-            'derniereEtape', 'peutAbandonner', 'agentsMemeDepartement'
+            'derniereEtape', 'peutAbandonner', 'AgentsMemeDepartement'
         ));
     }
 
@@ -310,7 +310,7 @@ class DemandeJouissanceController extends Controller
         return $pdf->download("reprise_service_{$demande->num_demande}.pdf");
     }
 
-    // Clôturer la demande après le retour de l'agent Disponible uniquement après la date de fin.
+    // Clôturer la demande après le retour de l'Agent Disponible uniquement après la date de fin.
     
      
     public function cloturer($id)

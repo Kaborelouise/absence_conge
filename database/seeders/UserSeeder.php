@@ -16,13 +16,13 @@ class UserSeeder extends Seeder
         $departement = Departement::first();
 
         User::updateOrCreate(
-            ['email' => 'admin@anptic.bf'],
+            ['email' => 'Administrateur@anptic.bf'],
             [
                 'matricule' => 1000,
-                'nom' => 'Administrateur',
+                'nom' => 'Administrateuristrateur',
                 'prenom' => 'Système',
-                'poste' => 'Administrateur',
-                'password' => Hash::make('admin123'),
+                'poste' => 'Administrateuristrateur',
+                'password' => Hash::make('Administrateur123'),
                 'role_id' => $role->id,
                 'departement_id' => $departement->id,
             ]

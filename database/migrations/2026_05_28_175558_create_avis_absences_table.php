@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->enum('avis', ['favorable', 'defavorable', 'en_attente'])->default('en_attente');
             // enum : on doit choisir une valeur 
-            $table->enum('type', ['chef_departement', 'responsable_direction', 'agent_rh', 'sg', 'dg', 'pca']);
+            $table->enum('type', ['Chef de Département', 'Responsable Direction', 'Agent RH', 'SG', 'DG', 'PCA']);
           // type, qui donne l'avis ? Car une demande reçoit plusieurs avis
             $table->text('commentaire')->nullable();
             

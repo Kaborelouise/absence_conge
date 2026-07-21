@@ -110,10 +110,10 @@
         'autre'                                => 'Autre',
     ];
     $avisParType   = $demande->avisAbsence->keyBy('type');
-    $avisChef      = $avisParType['chef_departement']      ?? null;
-    $avisDirection = $avisParType['responsable_direction'] ?? null;
-    $avisRH        = $avisParType['agent_rh']              ?? null;
-    $avisFinale    = $avisParType['sg'] ?? $avisParType['dg'] ?? $avisParType['pca'] ?? null;
+    $avisChef      = $avisParType['Chef de Département']      ?? null;
+    $avisDirection = $avisParType['Responsable Direction'] ?? null;
+    $avisRH        = $avisParType['Agent RH']              ?? null;
+    $avisFinale    = $avisParType['SG'] ?? $avisParType['DG'] ?? $avisParType['PCA'] ?? null;
     $nbJours = \Carbon\Carbon::parse($demande->date_debut)
         ->diffInDays(\Carbon\Carbon::parse($demande->date_fin)->addDay());
 @endphp
@@ -186,10 +186,10 @@
     <tr>
         <td>
             <strong>Nombre de jours d'absence cumulés dans l'année :</strong><br>
-            <em>(à renseigner par l'agent)</em> : _______ jours
+            <em>(à renseigner par l'Agent)</em> : _______ jours
         </td>
         <td>
-            <strong>Date et Signature de l'agent :</strong><br><br><br>
+            <strong>Date et Signature de l'Agent :</strong><br><br><br>
         </td>
     </tr>
 </table>

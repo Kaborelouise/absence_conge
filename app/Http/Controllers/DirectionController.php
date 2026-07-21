@@ -7,10 +7,10 @@ use Illuminate\Http\Request;
 
 class DirectionController extends Controller
 {
-    // AJOUT : protection admin sur toutes les méthodes
+    // AJOUT : protection Administrateur sur toutes les méthodes
     public function __construct()
     {
-        $this->middleware('admin');
+        $this->middleware('Administrateur');
     }
 
     public function index()

@@ -13,6 +13,7 @@ use App\Http\Controllers\DemandeCongeController;
 use App\Http\Controllers\AvisCongeController;
 use App\Http\Controllers\DemandeJouissanceController;
 use App\Http\Controllers\AvisJouissanceController;
+use App\Http\Controllers\SessionAdministrateuristrativeController;
 
 
 // Auth routes générées par Breeze
@@ -32,12 +33,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
 
-    // ADMINISTRATION
+    // AdministrateurISTRATION
     Route::resource('roles', RoleController::class);
     Route::resource('directions', DirectionController::class);
     Route::resource('departements', DepartementController::class);
     Route::resource('utilisateurs', UserController::class);
-    Route::resource('sessions_administratives', \App\Http\Controllers\SessionAdministrativeController::class)
+    Route::resource('sessions_Administrateuristratives', \App\Http\Controllers\SessionAdministrateuristrativeController::class)
     ->only(['index', 'create', 'store', 'show']);
 
     // DEMANDES
@@ -72,8 +73,25 @@ Route::middleware('auth')->group(function () {
     Route::post('demande_jouissances/{id}/abandonner', [DemandeJouissanceController::class, 'abandonner'])
         ->name('demande_jouissances.abandonner');
  
-    Route::resource('sessions_administratives', \App\Http\Controllers\SessionAdministrativeController::class)
+    Route::resource('sessions_Administrateuristratives', \App\Http\Controllers\SessionAdministrateuristrativeController::class)
         ->only(['index', 'create', 'store', 'show']);
+
+    Route::post('sessions_Administrateuristratives/{id}/toggle-absence', 
+        [SessionAdministrateuristrativeController::class, 'toggleAbsence'])
+        ->name('sessions_Administrateuristratives.toggle_absence');
+
+    Route::post('sessions_Administrateuristratives/{id}/toggle-conge',
+        [SessionAdministrateuristrativeController::class, 'toggleConge'])
+        ->name('sessions_Administrateuristratives.toggle_conge');
+
+    Route::post('sessions_Administrateuristratives/{id}/toggle-jouissance',
+        [SessionAdministrateuristrativeController::class, 'toggleJouissance'])
+        ->name('sessions_Administrateuristratives.toggle_jouissance');
+
+
+
+
+
 
     // Ajout routes pour la clôture de demande jouissance
     Route::post('demande_jouissances/{id}/upload-cessation', [DemandeJouissanceController::class, 'uploadCessation'])

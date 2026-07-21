@@ -50,7 +50,7 @@
         <div class="card h-100 text-center p-4">
             <i class="bi bi-calendar2-check mb-3"
                style="font-size:2.5rem"></i>
-            <h5 class="fw-bold mb-2">Demande de congé administratif</h5>
+            <h5 class="fw-bold mb-2">Demande de congé Administrateuristratif</h5>
             <p class="text-muted small mb-4">
                 Planifiez votre congé annuel et
                 soumettez votre demande directement

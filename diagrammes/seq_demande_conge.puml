@@ -1,5 +1,5 @@
 @startuml Sequence_Demande_Conge
-title Diagramme de Séquence : Demande de Congé Administratif
+title Diagramme de Séquence : Demande de Congé Administrateuristratif
 
 actor Agent
 participant "Application Web" as App
@@ -21,7 +21,7 @@ App --> RH: Affiche demandes en attente
 
 RH -> App: Ouvre une demande
 RH -> App: Soumet avis de compilation (simple)
-App -> DB: Crée AvisConge\n(type = "agent_rh")
+App -> DB: Crée AvisConge\n(type = "Agent RH")
 DB --> App: OK
 App --> Agent: Demande compilée par RH
 
@@ -41,7 +41,7 @@ opt Agent modifie avant compilation
 end
 
 == Suppression optionnelle ==
-opt RH supprime la demande (administration)
+opt RH supprime la demande (Administrateuristration)
     RH -> App: Clique "Supprimer"
     App -> DB: DELETE DemandeConge
     DB --> App: OK

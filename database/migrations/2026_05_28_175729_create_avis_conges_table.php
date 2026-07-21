@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->enum('avis', ['favorable', 'defavorable', 'en_attente']);
             $table->text('commentaire')->nullable();
-            $table->enum('type', ['agent_rh']);
+            $table->enum('type', ['Agent RH']);
             
             $table->foreignId('demande_conge_id')
                   ->constrained()

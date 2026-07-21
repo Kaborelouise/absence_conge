@@ -183,7 +183,7 @@
                 font-weight: 600;
             }
 
-            .badge-statut {
+            .baDGe-statut {
                 padding: 4px 10px;
                 border-radius: 20px;
                 font-size: 11px;
@@ -191,11 +191,11 @@
                 display: inline-block;
             }
 
-            .badge-en_attente  { background-color: #fff3cd; color: #856404; }
-            .badge-en_cours    { background-color: #cfe2ff; color: #084298; }
-            .badge-validee     { background-color: #d1e7dd; color: #0a3622; }
-            .badge-rejetee     { background-color: #f8d7da; color: #842029; }
-            .badge-compilee    { background-color: #e2d9f3; color: #6f42c1; }
+            .baDGe-en_attente  { background-color: #fff3cd; color: #856404; }
+            .baDGe-en_cours    { background-color: #cfe2ff; color: #084298; }
+            .baDGe-validee     { background-color: #d1e7dd; color: #0a3622; }
+            .baDGe-rejetee     { background-color: #f8d7da; color: #842029; }
+            .baDGe-compilee    { background-color: #e2d9f3; color: #6f42c1; }
 
             .btn-action {
                 padding: 4px 10px;
@@ -261,7 +261,7 @@
                 <span>Demande de jouissance</span>
             </a>
 
-            <div class="sidebar-section-title">Administration</div>
+            <div class="sidebar-section-title">Administrateuristration</div>
 
             <a href="{{ route('utilisateurs.index') }}"
                class="sidebar-link {{ request()->routeIs('utilisateurs.*') ? 'active' : '' }}">
@@ -271,7 +271,7 @@
 
             <a href="{{ route('roles.index') }}"
                class="sidebar-link {{ request()->routeIs('roles.*') ? 'active' : '' }}">
-                <i class="bi bi-person-badge"></i>
+                <i class="bi bi-person-baDGe"></i>
                 <span>Rôles</span>
             </a>
 
@@ -287,10 +287,10 @@
                 <span>Départements</span>
             </a>
 
-            <a href="{{ route('sessions_administratives.index') }}"
-                class="sidebar-link {{ request()->routeIs('sessions_administratives.*') ? 'active' : '' }}">
+            <a href="{{ route('sessions_Administrateuristratives.index') }}"
+                class="sidebar-link {{ request()->routeIs('sessions_Administrateuristratives.*') ? 'active' : '' }}">
                 <i class="bi bi-calendar-event"></i>
-                <span>Sessions administratives</span>
+                <span>Sessions Administrateuristratives</span>
             </a>
            
 

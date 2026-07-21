@@ -46,8 +46,8 @@
                @forelse($directions as $direction)
                 <tr>
                     <td>
-                        {{-- badge bg-secondary : pastille grise pour le code court --}}
-                        <span class="badge bg-secondary">
+                        {{-- baDGe bg-secondary : pastille grise pour le code court --}}
+                        <span class="baDGe bg-secondary">
                             {{ $direction->libelle_court }}
                         </span>
                     </td>
@@ -58,7 +58,7 @@
                         {{-- $direction->departements vient de with('departements')
                              .count() : compte le nombre de départements
                              C'est plus efficace que de faire une requête séparée --}}
-                        <span class="badge bg-info text-dark">
+                        <span class="baDGe bg-info text-dark">
                             {{ $direction->departements->count() }} département(s)
                         </span>
                     </td>

@@ -7,10 +7,10 @@ use Illuminate\Http\Request;
 
 class RoleController extends Controller
 {
-    // protection admin sur toutes les méthodes
+    // protection Administrateur sur toutes les méthodes
     public function __construct()
     {
-        $this->middleware('admin');
+        $this->middleware('Administrateur');
     }
 
     public function index()

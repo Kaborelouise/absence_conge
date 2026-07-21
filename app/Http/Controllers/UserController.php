@@ -9,10 +9,10 @@ use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
-    // protection admin sur toutes les méthodes
+    // protection Administrateur sur toutes les méthodes
     public function __construct()
     {
-        $this->middleware('admin');
+        $this->middleware('Administrateuristrateur');
     }
 
     public function index()
@@ -41,12 +41,12 @@ class UserController extends Controller
             'role_id'        => 'required|exists:roles,id',
             'departement_id' => 'required|exists:departements,id',
             'est_responsable_departement' => 'boolean',
-            'est_responsable_direction'   => 'boolean',
+            'est_Responsable Direction'   => 'boolean',
             'solde_conge'    => 'nullable|integer',
             'solde_absence'  => 'nullable|integer',
             // On ajoute date_prise_service obligatoire, ne peut pas être dans
             // le futur (une prise de service ne peut pas être "à venir" au
-            // moment de la création du compte, sinon l'agent n'a pas encore
+            // moment de la création du compte, sinon l'Agent n'a pas encore
             // commencé). certificat_prise_service : fichier obligatoire,
             'date_prise_service'       => 'required|date|before_or_equal:today',
             'certificat_prise_service' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
@@ -64,7 +64,7 @@ class UserController extends Controller
         // Upload du certificat avant la création de l'utilisateur, pour
         // récupérer le chemin du fichier stocké et l'inclure dans le create().
         // Storage::putFile() génère un nom de fichier unique automatiquement
-        // (évite les collisions si deux agents uploadent un fichier du même
+        // (évite les collisions si deux Agents uploadent un fichier du même
         // nom), et retourne le chemin relatif stocké
         $cheminCertificat = Storage::disk('public')->putFile(
             'certificats_prise_service',
@@ -76,13 +76,18 @@ class UserController extends Controller
                 'matricule', 'nom', 'prenom', 'poste',
                 'email', 'password', 'signature',
                 'est_responsable_departement',
-                'est_responsable_direction',
+                'est_Responsable Direction',
                 'solde_conge', 'solde_absence',
                 'role_id', 'departement_id',
+                'date_prise_service',
                 'date_prise_service',
             ]),
             'certificat_prise_service' => $cheminCertificat,
         ]);
+
+        $rolesAdditionnels = collect($request->input('roles_additionnels', []))
+            ->reject(fn ($id) => (int) $id === (int) $request->role_id);
+        $user->rolesAdditionnels()->sync($rolesAdditionnels);
 
         return redirect()
             ->route('utilisateurs.index')
@@ -110,11 +115,11 @@ class UserController extends Controller
             'role_id'        => 'required|exists:roles,id',
             'departement_id' => 'required|exists:departements,id',
             'est_responsable_departement' => 'boolean',
-            'est_responsable_direction'   => 'boolean',
+            'est_Responsable Direction'   => 'boolean',
             'solde_conge'    => 'nullable|integer',
             'solde_absence'  => 'nullable|integer',
             'date_prise_service'       => 'required|date|before_or_equal:today',
-            // AJOUTÉ : "nullable" ici (pas "required" comme au store), et
+            // Ajouté "nullable" ici (pas "required" comme au store), et
             // "sometimes" pour ne valider le format que si un fichier est
             // envoyé.
             'certificat_prise_service' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
@@ -131,7 +136,7 @@ class UserController extends Controller
             'matricule', 'nom', 'prenom', 'poste',
             'email', 'signature',
             'est_responsable_departement',
-            'est_responsable_direction',
+            'est_Responsable Direction',
             'solde_conge', 'solde_absence',
             'role_id', 'departement_id',
             'date_prise_service',
@@ -156,6 +161,13 @@ class UserController extends Controller
         }
 
         $user->update($data);
+
+        //ajoute la synchronisation des rôles additionnels (multi-roles)
+        $rolesAdditionnels = collect($request->input('roles_additionnels', []))
+        ->reject(fn ($id) => (int) $id === (int) $request->role_id);
+        $user->rolesAdditionnels()->sync($rolesAdditionnels);
+
+
 
         return redirect()
             ->route('utilisateurs.index')

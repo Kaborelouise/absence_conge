@@ -82,28 +82,28 @@
                                 class="form-select @error('type') is-invalid @enderror"
                                 required>
                             <option value="">-- Choisir --</option>
-                            <option value="chef_departement"
-                                {{ old('type') == 'chef_departement' ? 'selected' : '' }}>
+                            <option value="Chef de Département"
+                                {{ old('type') == 'Chef de Département' ? 'selected' : '' }}>
                                 Chef de département
                             </option>
-                            <option value="responsable_direction"
-                                {{ old('type') == 'responsable_direction' ? 'selected' : '' }}>
+                            <option value="Responsable Direction"
+                                {{ old('type') == 'Responsable Direction' ? 'selected' : '' }}>
                                 Responsable de direction
                             </option>
-                            <option value="agent_rh"
-                                {{ old('type') == 'agent_rh' ? 'selected' : '' }}>
+                            <option value="Agent RH"
+                                {{ old('type') == 'Agent RH' ? 'selected' : '' }}>
                                 Agent RH
                             </option>
-                            <option value="sg"
-                                {{ old('type') == 'sg' ? 'selected' : '' }}>
+                            <option value="SG"
+                                {{ old('type') == 'SG' ? 'selected' : '' }}>
                                 Secrétaire Général (SG)
                             </option>
-                            <option value="dg"
-                                {{ old('type') == 'dg' ? 'selected' : '' }}>
+                            <option value="DG"
+                                {{ old('type') == 'DG' ? 'selected' : '' }}>
                                 Directeur Général (DG)
                             </option>
-                            <option value="pca"
-                                {{ old('type') == 'pca' ? 'selected' : '' }}>
+                            <option value="PCA"
+                                {{ old('type') == 'PCA' ? 'selected' : '' }}>
                                 PCA
                             </option>
                         </select>

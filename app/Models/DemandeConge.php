@@ -15,14 +15,14 @@ class DemandeConge extends Model
         'user_id',
         'abandonnee',
         // AJOUTÉ : rattachement à la campagne annuelle.
-        'session_administrative_id',
+        'session_Administrateuristrative_id',
         // AJOUTÉ (bug critique repéré à la relecture) : sans ce champ dans le
         // fillable, DemandeCongeController::compiler()/decompiler() faisaient
         // $demande->update(['statut' => 'compilee']) qui échouait
         // SILENCIEUSEMENT (aucune erreur visible, mais le champ n'était
         // jamais réellement modifié en base). estCompilee() se base sur
         // avisConge (pas sur 'statut'), donc le bug ne se serait vu qu'à
-        // l'usage du champ statut ailleurs (ex: dans l'affichage du badge).
+        // l'usage du champ statut ailleurs (ex: dans l'affichage du baDGe).
         'statut',
                  ];
 
@@ -36,14 +36,14 @@ class DemandeConge extends Model
     }
 
     /**
-     * NOUVEAU : session administrative (campagne annuelle) de cette demande.
+     * NOUVEAU : session Administrateuristrative (campagne annuelle) de cette demande.
      * Pour DemandeConge, cette relation est STRUCTURANTE (pas juste
      * informative) : la création est bloquée si aucune session n'est active
      * pour le congé (voir DemandeCongeController::store()).
      */
-    public function sessionAdministrative()
+    public function sessionAdministrateuristrative()
     {
-        return $this->belongsTo(SessionAdministrative::class, 'session_administrative_id');
+        return $this->belongsTo(SessionAdministrateuristrative::class, 'session_Administrateuristrative_id');
     }
 
     // Une demande de congé peut avoir 0 ou 1 avis (compilation RH)
@@ -62,10 +62,10 @@ class DemandeConge extends Model
             return false;
         }
 
-        return $user->role->libelle === 'agent_rh';
+        return $user->role->libelle === 'Agent RH';
     }
 
-    //un agent peut abandonner sa demande si elle n'est pas encore compilée
+    //un Agent peut abandonner sa demande si elle n'est pas encore compilée
     public function peutEtreAbandonneePar(User $user): bool
 
     {

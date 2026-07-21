@@ -39,14 +39,26 @@ class AvisJouissanceController extends Controller
         // Le type d'avis est déduit du rôle connecté — jamais du formulaire
         // pour éviter qu'un utilisateur se fasse passer pour un autre acteur
         $typeAvis = match(true) {
-            $role === 'chef_departement' || $user->est_responsable_departement => 'chef_departement',
-            $role === 'agent_rh'                                                => 'agent_rh',
-            $role === 'responsable_direction'                                   => 'responsable_direction',
-            $role === 'sg'                                                      => 'sg',
-            $role === 'dg'                                                      => 'dg',
-            $role === 'pca'                                                     => 'pca',
-            default                                                             => $role,
-        };
+        $role === 'Chef de Département' || $user->est_responsable_departement 
+            => 'Chef de Département',
+
+        $role === 'Agent RH'
+            => 'Agent RH',
+
+        $role === 'Responsable Direction'
+            => 'Responsable Direction',
+
+        $role === 'SG'
+            => 'SG',
+
+        $role === 'DG'
+            => 'DG',
+
+        $role === 'PCA'
+            => 'PCA',
+
+        default => strtolower($role),
+    };
 
         // Enregistrement de l'avis
         AvisJouissance::create([
@@ -60,7 +72,7 @@ class AvisJouissanceController extends Controller
          * MODIFIÉ : le solde a déjà été réservé (décrémenté) à la CRÉATION de la
          * demande (voir DemandeJouissanceController::store). Si l'avis est
          * défavorable, la demande n'aboutira jamais : il faut donc RESTITUER les
-         * jours réservés, sinon l'agent perdrait définitivement des jours de congé
+         * jours réservés, sinon l'Agent perdrait définitivement des jours de congé
          * pour une demande refusée — même règle que pour DemandeAbsence.
          */
         if ($request->avis === 'defavorable') {
@@ -101,7 +113,7 @@ class AvisJouissanceController extends Controller
             ->with('success', 'Avis favorable enregistré. Circuit en cours.');
     }
 
-    // suppression et modification réservé a l'admin
+    // suppression et modification réservé a l'Administrateur
 
     public function update(Request $request, $id)
     {

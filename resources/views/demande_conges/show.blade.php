@@ -3,131 +3,98 @@
 @section('page-title', 'Demande de congé')
 
 @section('content')
-
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h5 class="fw-bold mb-0">Détail de la demande de congé</h5>
-    <a href="{{ route('demande_conges.index') }}" class="btn btn-sm btn-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Retour
-    </a>
-</div>
-
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show">
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
-@if(session('error'))
-    <div class="alert alert-danger alert-dismissible fade show">
-        {{ session('error') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
-
-<div class="row g-3">
-
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header text-center  card-header-anptic">
-                <i class="bi bi-file-text me-2"></i> Informations de la demande
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header text-white text-center" style="background-color:#1B384F; padding: 20px;">
+                <h5 class="mb-0">Détail de la demande de congé</h5>
             </div>
-            <div class="card-body p-0">
-                <table class="table table-sm mb-0">
+            <div class="card-body p-4">
+
+                @if(session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+                @if(session('error'))
+                    <div class="alert alert-danger">{{ session('error') }}</div>
+                @endif
+
+                {{--
+                    RETIRÉ : bouton "Compiler" (déplacé vers l'index, action
+                    globale sur toute la liste — plus de sens d'avoir un bouton
+                    de compilation individuelle par demande) et section
+                    "historique" (les avis de compilation sont désormais
+                    consultables globalement, pas nécessaire de dupliquer un
+                    historique détaillé sur chaque demande individuelle).
+                --}}
+
+                <table class="table table-borderless">
                     <tr>
-                        <th class="ps-3" style="width:40%">Agent</th>
+                        <th style="width: 220px;">Numéro</th>
+                        <td>{{ $demande->num_demande }}</td>
+                    </tr>
+                    <tr>
+                        <th>Agent</th>
                         <td>{{ $demande->user->nom }} {{ $demande->user->prenom }}</td>
                     </tr>
                     <tr>
-                        <th class="ps-3">Département</th>
+                        <th>Département</th>
                         <td>{{ $demande->user->departement->libelle_court ?? '—' }}</td>
                     </tr>
                     <tr>
-                        <th class="ps-3">Lieu(x) de jouissance</th>
-                        <td>
-                            {{--affiche chaque lieu comme un badge --}}
-                            @foreach($demande->lieu_jouissance ?? [] as $lieu)
-                                <span class="badge-statut badge-en_cours me-1">{{ $lieu }}</span>
-                            @endforeach
-                        </td>
+                        <th>Direction</th>
+                        <td>{{ $demande->user->departement->direction->libelle_court ?? '—' }}</td>
                     </tr>
                     <tr>
-                        <th class="ps-3">Statut</th>
+                        <th>Lieu(x) de jouissance</th>
+                        <td>{{ implode(', ', $demande->lieu_jouissance ?? []) }}</td>
+                    </tr>
+                    <tr>
+                        <th>Statut</th>
                         <td>
                             @if($demande->abandonnee)
-                                <span class="badge-statut badge-rejetee">Abandonnée</span>
+                                <span class="baDGe-statut baDGe-rejetee">Abandonnée</span>
                             @elseif($demande->estCompilee())
-                                <span class="badge-statut badge-validee">Compilée</span>
+                                <span class="baDGe-statut baDGe-validee">Compilée</span>
                             @else
-                                <span class="badge-statut badge-en_attente">En attente</span>
+                                <span class="baDGe-statut baDGe-en_attente">En attente</span>
+                            @endif
+                        </td>
+                    </tr>
+
+                    {{--
+                        AJOUTÉ : période de jouissance calculée à partir de la
+                        date de prise de service de l'Agent (voir
+                        User::periodeJouissance()). Affichée en gris et non
+                        modifiable : c'est une information calculée, pas un
+                        champ saisi par l'Agent.
+                    --}}
+                    @php
+                        $periode = $demande->user->periodeJouissance();
+                    @endphp
+                    <tr>
+                        <th>Période de jouissance</th>
+                        <td>
+                            @if($periode)
+                                <span class="text-muted">
+                                    {{ $periode['debut']->format('d/m/Y') }} → {{ $periode['fin']->format('d/m/Y') }}
+                                </span>
+                            @else
+                                <span class="text-muted fst-italic">
+                                    Non calculable (date de prise de service non renseignée)
+                                </span>
                             @endif
                         </td>
                     </tr>
                 </table>
+
+                <div class="d-flex justify-content-center gap-3 mt-4">
+                    <a href="{{ route('demande_conges.index') }}" class="btn btn-secondary px-4">
+                        Retour à la liste
+                    </a>
+                </div>
+
             </div>
         </div>
-    </div>
-
-    <div class="col-md-6">
-
-        <div class="card shadow-sm mb-3">
-            <div class="card-header text-center card-header-anptic">
-                <i class="bi bi-diagram-3 me-2"></i> Historique
-            </div>
-            <div class="card-body">
-                @if($demande->avisConge)
-                    <div class="d-flex align-items-start gap-3">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                             style="width:38px;height:38px;background:#1B384F;color:white;font-size:11px;">
-                            RH
-                        </div>
-                        <div>
-                            <div class="fw-bold" style="font-size:13px;">Agent RH</div>
-                            <span class="badge-statut badge-validee">Compilée</span>
-                            @if($demande->avisConge->commentaire)
-                                <div class="text-muted mt-1" style="font-size:12px;">
-                                    {{ $demande->avisConge->commentaire }}
-                                </div>
-                            @endif
-                            <div class="text-muted" style="font-size:11px;">
-                                {{ $demande->avisConge->created_at->format('d/m/Y H:i') }}
-                            </div>
-                        </div>
-                    </div>
-                @else
-                    <p class="text-muted text-center mb-0">
-                        <i class="bi bi-hourglass me-1"></i>
-                        En attente de compilation par l'agent RH
-                    </p>
-                @endif
-            </div>
-        </div>
-
-        {{-- Bouton compiler seulement visible pour l'agent RH, si pas déjà compilée --}}
-        @if($peutCompiler)
-        <div class="card shadow-sm border-primary mb-3">
-            <div class="card-header text-center card-header-anptic">
-                <i class="bi bi-pencil-square me-2"></i> Compiler la demande
-            </div>
-            <div class="card-body">
-                <form action="{{ route('avis_conges.store') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="demande_conge_id" value="{{ $demande->id }}">
-                    {{-- <div class="mb-3">
-                        <label class="form-label fw-bold"> 
-                            Commentaire <span class="text-muted fw-normal">(optionnel)</span>
-                        </label>
-                        <textarea name="commentaire" class="form-control" rows="3"
-                                  placeholder="Remarques..."></textarea>
-                    </div> --}}
-                    <div class="text-center">
-                    <button type="submit" class="btn btn-primary px-4">
-                        <i class="bi bi-check-circle me-1"></i> Marquer comme compilée
-                    </button>
-                    </div>      
-                </form>
-            </div>
-        </div>
-        @endif
     </div>
 </div>
 @endsection

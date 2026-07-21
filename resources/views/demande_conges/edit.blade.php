@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Modifier la demande de congé')
-@section('page-title', 'Demande de congé administratif')
+@section('page-title', 'Demande de congé Administrateuristratif')
 
 @section('content')
 <div class="row justify-content-center">

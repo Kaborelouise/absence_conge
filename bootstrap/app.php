@@ -12,9 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // AJOUT : enregistrement du middleware admin
+        // AJOUT : enregistrement du middleware Administrateur
         $middleware->alias([
-            'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'Administrateur' => \App\Http\Middleware\AdministrateurMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

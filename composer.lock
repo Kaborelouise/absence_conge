@@ -1637,7 +1637,7 @@
                 "resend/resend-php": "^1.0",
                 "symfony/cache": "^7.4.0 || ^8.0.0",
                 "symfony/http-client": "^7.4.0 || ^8.0.0",
-                "symfony/psr-http-message-bridge": "^7.4.0 || ^8.0.0",
+                "symfony/psr-http-message-briDGe": "^7.4.0 || ^8.0.0",
                 "symfony/translation": "^7.4.0 || ^8.0.0"
             },
             "suggest": {
@@ -1663,19 +1663,19 @@
                 "league/flysystem-sftp-v3": "Required to use the Flysystem SFTP driver (^3.25.1).",
                 "mockery/mockery": "Required to use mocking (^1.6).",
                 "pda/pheanstalk": "Required to use the beanstalk queue driver (^7.0 || ^8.0).",
-                "php-http/discovery": "Required to use PSR-7 bridging features (^1.15).",
+                "php-http/discovery": "Required to use PSR-7 briDGing features (^1.15).",
                 "phpunit/phpunit": "Required to use assertions and run tests (^11.5.50 || ^12.5.8 || ^13.0.3).",
                 "predis/predis": "Required to use the predis connector (^2.3 || ^3.0).",
                 "psr/http-message": "Required to allow Storage::put to accept a StreamInterface (^1.0).",
                 "pusher/pusher-php-server": "Required to use the Pusher broadcast driver (^6.0 || ^7.0).",
                 "resend/resend-php": "Required to enable support for the Resend mail transport (^0.10.0 || ^1.0).",
                 "spatie/fork": "Required to use the 'fork' concurrency driver (^1.2).",
-                "symfony/cache": "Required to PSR-6 cache bridge (^7.4 || ^8.0).",
+                "symfony/cache": "Required to PSR-6 cache briDGe (^7.4 || ^8.0).",
                 "symfony/filesystem": "Required to enable support for relative symbolic links (^7.4 || ^8.0).",
                 "symfony/http-client": "Required to enable support for the Symfony API mail transports (^7.4 || ^8.0).",
                 "symfony/mailgun-mailer": "Required to enable support for the Mailgun mail transport (^7.4 || ^8.0).",
                 "symfony/postmark-mailer": "Required to enable support for the Postmark mail transport (^7.4 || ^8.0).",
-                "symfony/psr-http-message-bridge": "Required to use PSR-7 bridging features (^7.4 || ^8.0)."
+                "symfony/psr-http-message-briDGe": "Required to use PSR-7 briDGing features (^7.4 || ^8.0)."
             },
             "type": "library",
             "extra": {
@@ -2657,7 +2657,7 @@
                 "doctrine/couchdb": "Allow sending log messages to a CouchDB server",
                 "elasticsearch/elasticsearch": "Allow sending log messages to an Elasticsearch server via official client",
                 "ext-amqp": "Allow sending log messages to an AMQP server (1.0+ required)",
-                "ext-curl": "Required to send log messages using the IFTTTHandler, the LogglyHandler, the SendGridHandler, the SlackWebhookHandler or the TelegramBotHandler",
+                "ext-curl": "Required to send log messages using the IFTTTHandler, the LogglyHandler, the SenDGridHandler, the SlackWebhookHandler or the TelegramBotHandler",
                 "ext-mbstring": "Allow to work properly with unicode symbols",
                 "ext-mongodb": "Allow sending log messages to a MongoDB server (via driver)",
                 "ext-openssl": "Required to send log messages using SSL",
@@ -2866,7 +2866,7 @@
             "authors": [
                 {
                     "name": "David Grudl",
-                    "homepage": "https://davidgrudl.com"
+                    "homepage": "https://daviDGrudl.com"
                 },
                 {
                     "name": "Nette Community",
@@ -2945,7 +2945,7 @@
             "authors": [
                 {
                     "name": "David Grudl",
-                    "homepage": "https://davidgrudl.com"
+                    "homepage": "https://daviDGrudl.com"
                 },
                 {
                     "name": "Nette Community",
@@ -5232,7 +5232,7 @@
                 "symfony/config": "<6.4",
                 "symfony/console": "<6.4",
                 "symfony/dependency-injection": "<6.4",
-                "symfony/doctrine-bridge": "<6.4",
+                "symfony/doctrine-briDGe": "<6.4",
                 "symfony/flex": "<2.10",
                 "symfony/form": "<6.4",
                 "symfony/http-client": "<6.4",
@@ -5241,7 +5241,7 @@
                 "symfony/messenger": "<6.4",
                 "symfony/translation": "<6.4",
                 "symfony/translation-contracts": "<2.5",
-                "symfony/twig-bridge": "<6.4",
+                "symfony/twig-briDGe": "<6.4",
                 "symfony/validator": "<6.4",
                 "symfony/var-dumper": "<6.4",
                 "twig/twig": "<3.12"
@@ -5350,13 +5350,13 @@
                 "symfony/http-kernel": "<6.4",
                 "symfony/messenger": "<6.4",
                 "symfony/mime": "<6.4",
-                "symfony/twig-bridge": "<6.4"
+                "symfony/twig-briDGe": "<6.4"
             },
             "require-dev": {
                 "symfony/console": "^6.4|^7.0|^8.0",
                 "symfony/http-client": "^6.4|^7.0|^8.0",
                 "symfony/messenger": "^6.4|^7.0|^8.0",
-                "symfony/twig-bridge": "^6.4|^7.0|^8.0"
+                "symfony/twig-briDGe": "^6.4|^7.0|^8.0"
             },
             "type": "library",
             "autoload": {
@@ -7506,7 +7506,7 @@
                     "generated/mysqli.php",
                     "generated/network.php",
                     "generated/oci8.php",
-                    "generated/opcache.php",
+                    "generated/oPCAche.php",
                     "generated/openssl.php",
                     "generated/outcontrol.php",
                     "generated/pcntl.php",
@@ -8283,7 +8283,7 @@
                 "doctrine/persistence": "^1.3 || ^2.0",
                 "ext-intl": "*",
                 "phpunit/phpunit": "^9.5.26",
-                "symfony/phpunit-bridge": "^5.4.16"
+                "symfony/phpunit-briDGe": "^5.4.16"
             },
             "suggest": {
                 "doctrine/orm": "Required to use Faker\\ORM\\Doctrine",
@@ -8563,16 +8563,16 @@
             "time": "2025-03-19T14:43:43+00:00"
         },
         {
-            "name": "laravel/agent-detector",
+            "name": "laravel/Agent-detector",
             "version": "v2.0.2",
             "source": {
                 "type": "git",
-                "url": "https://github.com/laravel/agent-detector.git",
+                "url": "https://github.com/laravel/Agent-detector.git",
                 "reference": "90694b9256099591cf9e55d08c18ba7a00bf099f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/agent-detector/zipball/90694b9256099591cf9e55d08c18ba7a00bf099f",
+                "url": "https://api.github.com/repos/laravel/Agent-detector/zipball/90694b9256099591cf9e55d08c18ba7a00bf099f",
                 "reference": "90694b9256099591cf9e55d08c18ba7a00bf099f",
                 "shasum": ""
             },
@@ -8606,8 +8606,8 @@
                     "email": "taylor@laravel.com"
                 }
             ],
-            "description": "Detect if code is running in an AI agent or automated development environment",
-            "homepage": "https://github.com/laravel/agent-detector",
+            "description": "Detect if code is running in an AI Agent or automated development environment",
+            "homepage": "https://github.com/laravel/Agent-detector",
             "keywords": [
                 "Agent",
                 "ai",
@@ -8619,8 +8619,8 @@
                 "php"
             ],
             "support": {
-                "issues": "https://github.com/laravel/agent-detector/issues",
-                "source": "https://github.com/laravel/agent-detector"
+                "issues": "https://github.com/laravel/Agent-detector/issues",
+                "source": "https://github.com/laravel/Agent-detector"
             },
             "time": "2026-04-29T18:32:34+00:00"
         },
@@ -8780,7 +8780,7 @@
                 "shasum": ""
             },
             "require": {
-                "laravel/agent-detector": "^2.0.0",
+                "laravel/Agent-detector": "^2.0.0",
                 "php": "^8.3"
             },
             "conflict": {
@@ -8878,7 +8878,7 @@
                 "mockery/mockery": "^1.6.12",
                 "nunomaduro/termwind": "^2.4.0",
                 "pestphp/pest": "^3.8.6",
-                "shipfastlabs/agent-detector": "^1.1.3"
+                "shipfastlabs/Agent-detector": "^1.1.3"
             },
             "bin": [
                 "builds/pint"

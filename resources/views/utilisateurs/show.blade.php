@@ -50,7 +50,7 @@
                     <tr>
                         <th class="ps-3">Rôle</th>
                         <td>
-                            <span class="badge-statut badge-en_cours">
+                            <span class="baDGe-statut baDGe-en_cours">
                                 {{ ucfirst(str_replace('_', ' ', $user->role->libelle ?? '—')) }}
                             </span>
                         </td>
@@ -67,19 +67,19 @@
                         <th class="ps-3">Chef de département</th>
                         <td>
                             @if($user->est_responsable_departement)
-                                <span class="badge-statut badge-validee">Oui</span>
+                                <span class="baDGe-statut baDGe-validee">Oui</span>
                             @else
-                                <span class="badge-statut badge-rejetee">Non</span>
+                                <span class="baDGe-statut baDGe-rejetee">Non</span>
                             @endif
                         </td>
                     </tr>
                     <tr>
                         <th class="ps-3">Resp. direction</th>
                         <td>
-                            @if($user->est_responsable_direction)
-                                <span class="badge-statut badge-validee">Oui</span>
+                            @if($user->est_Responsable Direction)
+                                <span class="baDGe-statut baDGe-validee">Oui</span>
                             @else
-                                <span class="badge-statut badge-rejetee">Non</span>
+                                <span class="baDGe-statut baDGe-rejetee">Non</span>
                             @endif
                         </td>
                     </tr>

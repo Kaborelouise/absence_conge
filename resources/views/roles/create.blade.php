@@ -31,15 +31,15 @@
                         <input type="text" name="libelle"
                                class="form-control @error('libelle') is-invalid @enderror"
                                value="{{ old('libelle') }}"
-                               placeholder="ex: chef_departement"
+                               placeholder="ex: Chef de Département"
                                required>
                         @error('libelle')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                         <small class="text-muted">
                             Attention : les rôles utilisés par le circuit de validation
-                            (agent, chef_departement, responsable_direction, agent_rh,
-                            sg, dg, pca) sont reconnus tels quels par le système.
+                            (Agent, Chef de Département, Responsable Direction, Agent RH,
+                            SG, DG, PCA) sont reconnus tels quels par le système.
                         </small>
                     </div>
 

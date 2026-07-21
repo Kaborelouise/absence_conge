@@ -3,67 +3,74 @@
 namespace App\Http\Controllers;
 
 use App\Models\DemandeAbsence;
-use App\Models\SessionAdministrative;
+use App\Models\SessionAdministrateuristrative;
 use Illuminate\Http\Request;
 
 class DemandeAbsenceController extends Controller
 {
     public function index()
-    {
-        $user = auth()->user();
-        $role = $user->role->libelle;
+        {
+            $user = auth()->user();
+            $role = $user->role->libelle;
 
-        $demandes = DemandeAbsence::with('user.departement.direction', 'avisAbsence')
-            ->when($role === 'agent', function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
-            ->when($role === 'chef_departement' || $user->est_responsable_departement, function ($q) use ($user) {
-                $q->whereHas('user', function ($q2) use ($user) {
-                    $q2->where('departement_id', $user->departement_id);
-                });
-            })
-            ->when($role === 'responsable_direction', function ($q) use ($user) {
-                $directionId = $user->departement->direction_id;
-                $q->whereHas('user.departement', function ($q2) use ($directionId) {
-                    $q2->where('direction_id', $directionId);
-                });
-            })
-            ->when(in_array($role, ['agent_rh', 'sg', 'dg', 'pca', 'admin']), function ($q) {
-                // Ces rôles voient toutes les demandes
-            })
-            ->latest()
-            ->get();
+            $demandes = DemandeAbsence::with('user.departement.direction', 'avisAbsence')
 
-        return view('demande_absences.index', compact('demandes'));
-    }
+                // L'Agent voit uniquement ses demandes
+                ->when($role === 'Agent', function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+
+                // Responsable de département
+                ->when(
+                    $role === 'Chef Département' || $user->est_responsable_departement,
+                    function ($q) use ($user) {
+                        $q->whereHas('user', function ($q2) use ($user) {
+                            $q2->where('departement_id', $user->departement_id);
+                        });
+                    }
+                )
+
+                // Responsable de direction
+                ->when(
+                    $role === 'Responsable Direction' || $user->est_Responsable Direction,
+                    function ($q) use ($user) {
+
+                        $directionId = $user->departement->direction_id;
+
+                        $q->whereHas('user.departement', function ($q2) use ($directionId) {
+                            $q2->where('direction_id', $directionId);
+                        });
+                    }
+                )
+
+            ->when(
+            in_array($role, [
+                'Administrateuristrateur',
+                'Agent RH',
+                'SG',
+                'DG',
+                'PCA',
+            ]),
+            function ($q) {
+                // aucune restriction : ils voient toutes les demandes
+            }
+        )
+
+                ->latest()
+                ->get();
+
+            return view('demande_absences.index', compact('demandes'));
+        }
 
     public function create()
     {
         $user = auth()->user();
-        $agentsMemeDepartement = \App\Models\User::where('departement_id', $user->departement_id)
+        $AgentsMemeDepartement = \App\Models\User::where('departement_id', $user->departement_id)
             ->where('id', '!=', $user->id)->get();
-        return view('demande_absences.create', compact('user', 'agentsMemeDepartement'));
+        return view('demande_absences.create', compact('user', 'AgentsMemeDepartement'));
     }
 
-    /**
-     * MODIFIÉ : logique de "réservation" du solde.
-     *
-     * Principe retenu (au lieu de ne décompter le solde qu'à la validation finale) :
-     * dès la création de la demande, on vérifie que le solde est suffisant, puis on
-     * décrémente IMMÉDIATEMENT le solde de l'agent (on "réserve" les jours).
-     *
-     * Pourquoi ce choix plutôt que "seul le validé décompte" ?
-     * Parce que si on ne décomptait qu'à la validation finale, deux demandes créées
-     * en parallèle (ex: 6 jours + 5 jours, alors qu'il reste 10 jours) seraient
-     * TOUTES LES DEUX acceptées à la création (6 <= 10 et 5 <= 10 pris séparément),
-     * puis validées l'une après l'autre sans qu'aucune vérification n'empêche le
-     * dépassement du plafond (6 + 5 = 11 > 10). Avec la réservation immédiate, la
-     * 2e demande est bloquée dès sa création car il ne resterait que 4 jours (10 - 6).
-     *
-     * Contrepartie : si la demande est ensuite refusée, abandonnée ou supprimée,
-     * il faut penser à RESTITUER les jours réservés (voir plus bas dans ce fichier,
-     * et dans AvisAbsenceController pour le cas du refus).
-     */
+   
     public function store(Request $request)
     {
         $request->validate([
@@ -76,17 +83,17 @@ class DemandeAbsenceController extends Controller
         $user = auth()->user();
 
         /**
-         * AJOUTÉ : rattachement à la session administrative en cours.
+         * AJOUTÉ : rattachement à la session Administrateuristrative en cours.
          * Règle validée : les 3 types de demandes (absence/congé/jouissance)
          * sont bloqués si aucune session ne couvre la date du jour, OU si le
          * flag correspondant (ici active_absence) est à false.
          */
-        $session = SessionAdministrative::courante();
+        $session = SessionAdministrateuristrative::courante();
 
         if ($session === null || !$session->estOuvertePour('absence')) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Aucune session n\'est actuellement ouverte pour les demandes d\'absence. Contactez l\'administration.');
+                ->with('error', 'Aucune session n\'est actuellement ouverte pour les demandes d\'absence. Contactez l\'Administrateuristration.');
         }
 
         // Nombre de jours demandés, bornes incluses (ex: 1er au 6 janvier = 6 jours).
@@ -97,7 +104,7 @@ class DemandeAbsenceController extends Controller
             ->diffInDays(\Carbon\Carbon::parse($request->date_fin)) + 1;
 
         // Vérification du solde AVANT toute création : on bloque la demande si
-        // l'agent n'a pas assez de jours restants. C'est le premier rempart contre
+        // l'Agent n'a pas assez de jours restants. C'est le premier rempart contre
         // le dépassement du plafond de 10 jours/an.
         if ($jours > $user->solde_absence) {
             return redirect()->back()
@@ -114,7 +121,7 @@ class DemandeAbsenceController extends Controller
             'user_id'     => $user->id,
             'statut'      => 'en_attente',
             // AJOUTÉ : rattachement à la session courante
-            'session_administrative_id' => $session->id,
+            'session_Administrateuristrative_id' => $session->id,
         ]);
 
         // Réservation immédiate des jours : le solde baisse dès la création, avant
@@ -138,29 +145,22 @@ class DemandeAbsenceController extends Controller
         $derniereEtape  = $demande->avisAbsence->last()?->type;
         $peutAbandonner = $demande->peutEtreAbandonneePar($user);
 
-        $agentsMemeDepartement = \App\Models\User::where('departement_id', $demande->user->departement_id)
+        $AgentsMemeDepartement = \App\Models\User::where('departement_id', $demande->user->departement_id)
             ->where('id', '!=', $demande->user_id)->get();
 
         return view('demande_absences.show', compact(
             'demande', 'peutAgir', 'prochainActeur',
-            'derniereEtape', 'peutAbandonner', 'agentsMemeDepartement'
+            'derniereEtape', 'peutAbandonner', 'AgentsMemeDepartement'
         ));
+
     }
 
-    public function edit($id)
-    {
-        $demande = DemandeAbsence::findOrFail($id);
-        if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
-            return redirect()->route('demande_absences.show', $id)
-                ->with('error', 'Cette demande ne peut plus être modifiée.');
-        }
-        return view('demande_absences.edit', compact('demande'));
-    }
+  
 
     /**
-     * MODIFIÉ : la demande a déjà réservé X jours à sa création. Si l'agent change
+     * MODIFIÉ : la demande a déjà réservé X jours à sa création. Si l'Agent change
      * les dates, il faut ajuster la réservation :
-     * 1. On calcule le solde qu'aurait l'agent si on annulait l'ancienne réservation
+     * 1. On calcule le solde qu'aurait l'Agent si on annulait l'ancienne réservation
      *    (solde_absence + ancienJours).
      * 2. On vérifie que ce solde disponible couvre le NOUVEAU nombre de jours.
      * 3. On enregistre le nouveau solde = solde disponible - nouveaux jours.
@@ -171,10 +171,16 @@ class DemandeAbsenceController extends Controller
     public function update(Request $request, $id)
     {
         $demande = DemandeAbsence::findOrFail($id);
-        if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
+
+        if (
+            $demande->user_id !== auth()->id()
+            || $demande->statut !== 'en_attente'
+            || $demande->avisAbsence()->exists()
+        ) {
             return redirect()->route('demande_absences.show', $id)
                 ->with('error', 'Modification non autorisée.');
         }
+
         $request->validate([
             'date_debut'  => 'required|date',
             'date_fin'    => 'required|date|after_or_equal:date_debut',
@@ -184,14 +190,14 @@ class DemandeAbsenceController extends Controller
 
         $user = $demande->user;
 
-        // Jours actuellement réservés par cette demande (avant modification)
+        // Jours actuellement réservés
         $ancienJours = $demande->nombreJours();
 
-        // Jours que la demande occuperait avec les nouvelles dates
+        // Nouveaux jours demandés
         $nouveauxJours = \Carbon\Carbon::parse($request->date_debut)
             ->diffInDays(\Carbon\Carbon::parse($request->date_fin)) + 1;
 
-        // Solde "virtuellement" disponible si on remettait d'abord l'ancienne réservation
+        // Solde disponible si on annule virtuellement l'ancienne réservation
         $soldeDisponible = $user->solde_absence + $ancienJours;
 
         if ($nouveauxJours > $soldeDisponible) {
@@ -200,10 +206,17 @@ class DemandeAbsenceController extends Controller
                 ->with('error', "Solde insuffisant : vous demandez {$nouveauxJours} jour(s), il ne vous reste que {$soldeDisponible} jour(s) disponible(s).");
         }
 
-        $demande->update($request->only(['date_debut', 'date_fin', 'motif', 'interimaire']));
+        $demande->update($request->only([
+            'date_debut',
+            'date_fin',
+            'motif',
+            'interimaire'
+        ]));
 
-        // On applique la nouvelle réservation en une seule écriture
-        $user->update(['solde_absence' => $soldeDisponible - $nouveauxJours]);
+        // Mise à jour du solde
+        $user->update([
+            'solde_absence' => $soldeDisponible - $nouveauxJours
+        ]);
 
         return redirect()->route('demande_absences.index')
             ->with('success', 'Demande modifiée avec succès.');
@@ -212,24 +225,29 @@ class DemandeAbsenceController extends Controller
     /**
      * MODIFIÉ : la suppression n'est possible que si la demande est encore
      * "en_attente" (donc jamais validée). Les jours réservés à la création doivent
-     * être restitués à l'agent puisque la demande n'ira jamais au bout.
+     * être restitués à l'Agent puisque la demande n'ira jamais au bout.
      */
     public function destroy($id)
+
     {
         $demande = DemandeAbsence::findOrFail($id);
-        if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
+
+        if (
+            $demande->user_id !== auth()->id()
+            || $demande->statut !== 'en_attente'
+            || $demande->avisAbsence()->exists()
+        ) {
             return redirect()->route('demande_absences.index')
                 ->with('error', 'Suppression non autorisée.');
         }
 
-        // Restitution des jours réservés à la création, puisque la demande est annulée
         $demande->user->increment('solde_absence', $demande->nombreJours());
 
         $demande->delete();
+
         return redirect()->route('demande_absences.index')
             ->with('success', 'Demande supprimée.');
     }
-
     /**
      * MODIFIÉ : même logique que destroy() — l'abandon annule la demande avant
      * qu'elle soit validée, donc on restitue les jours réservés.
@@ -245,7 +263,7 @@ class DemandeAbsenceController extends Controller
         // Restitution des jours réservés, la demande n'ira pas au bout du circuit
         $demande->user->increment('solde_absence', $demande->nombreJours());
 
-        $demande->update(['abandonnee' => true]);
+        $demande->update(['statut' => 'abandonnee']);
         return redirect()->route('demande_absences.index')
             ->with('success', 'Demande abandonnée.');
     }

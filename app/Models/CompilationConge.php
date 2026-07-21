@@ -10,7 +10,7 @@ class CompilationConge extends Model
 
     protected $fillable = [
         'annee',
-        'session_administrative_id',
+        'session_Administrateuristrative_id',
         'compiled_by',
         'compiled_at',
         'decompilee_at',
@@ -21,9 +21,9 @@ class CompilationConge extends Model
         'decompilee_at' => 'datetime',
     ];
 
-    public function sessionAdministrative()
+    public function sessionAdministrateuristrative()
     {
-        return $this->belongsTo(SessionAdministrative::class, 'session_administrative_id');
+        return $this->belongsTo(SessionAdministrateuristrative::class, 'session_Administrateuristrative_id');
     }
 
     public function compilePar()
@@ -37,7 +37,7 @@ class CompilationConge extends Model
      */
     public static function activeParSession(int $sessionId): ?self
     {
-        return self::where('session_administrative_id', $sessionId)
+        return self::where('session_Administrateuristrative_id', $sessionId)
             ->whereNotNull('compiled_at')
             ->whereNull('decompilee_at')
             ->first();

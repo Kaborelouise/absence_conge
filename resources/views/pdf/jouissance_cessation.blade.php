@@ -43,7 +43,7 @@
         <strong>{{ strtoupper($demande->user->nom) }} {{ $demande->user->prenom }}</strong>
         matricule <strong>{{ $demande->user->matricule }}</strong>,
         {{ $demande->user->poste }},
-        bénéficiaire d'un congé administratif de {{ date('Y') }}
+        bénéficiaire d'un congé Administrateuristratif de {{ date('Y') }}
         pour la période du
         <strong>{{ \Carbon\Carbon::parse($demande->date_debut)->locale('fr')->isoFormat('dddd D MMMM YYYY') }}</strong>
         au

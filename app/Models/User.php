@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'matricule', 'nom', 'prenom', 'poste', 'email', 'signature', 'password', 'password', 'est_responsable_departement', 'est_responsable_direction', 'role_id', 'departement_id', 'direction_id', 'date_prise_service', 'certificat_prise_service'])]
+#[Fillable(['name', 'email', 'password', 'matricule', 'nom', 'prenom', 'poste', 'email', 'signature', 'password', 'password', 'est_responsable_departement', 'est_Responsable Direction', 'role_id', 'departement_id', 'direction_id', 'date_prise_service', 'certificat_prise_service'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -28,7 +28,7 @@ class User extends Authenticatable
 
 
 
-    protected $fillable = ['password', 'matricule', 'nom', 'prenom', 'poste', 'email', 'signature', 'est_responsable_departement', 'est_responsable_direction', 'role_id',  'departement_id',
+    protected $fillable = ['password', 'matricule', 'nom', 'prenom', 'poste', 'email', 'signature', 'est_responsable_departement', 'est_Responsable Direction', 'role_id',  'departement_id',
         // AJOUTÉ : les deux nouveaux champs du cycle congé/jouissance (voir migration
         // 2026_07_08_000001_add_date_prise_service_to_users_table).
         'date_prise_service',
@@ -43,7 +43,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'est_responsable_departement' => 'boolean',
-            'est_responsable_direction' => 'boolean',
+            'est_Responsable Direction' => 'boolean',
             // AJOUTÉ : cast en Carbon pour pouvoir faire des calculs de dates dessus
             // directement (ex: $user->date_prise_service->addMonths(11)).
             'date_prise_service' => 'date',
@@ -83,7 +83,7 @@ class User extends Authenticatable
     /**
      * NOUVEAU : calcule la "période ouvrant droit au congé" du cycle EN COURS,
      * c'est-à-dire les 11 mois de travail effectif exigés avant de pouvoir
-     * prétendre au congé administratif.
+     * prétendre au congé Administrateuristratif.
      *
      * Le cycle se répète chaque année à l'anniversaire de date_prise_service.
      * On calcule donc d'abord combien de cycles complets de 12 mois se sont
@@ -113,7 +113,7 @@ class User extends Authenticatable
 
     /**
      * NOUVEAU : calcule la "période de jouissance" du cycle EN COURS (le 12e
-     * mois), pendant laquelle l'agent peut effectivement poser ses jours de
+     * mois), pendant laquelle l'Agent peut effectivement poser ses jours de
      * congé. Commence le lendemain de la fin de la période ouvrant droit.
      *
      * Exemple (cas réel du décret) : date_prise_service = 21/12/2025
@@ -133,15 +133,7 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * NOUVEAU (privé/interne) : détermine la date de début du cycle de 12 mois
-     * dans lequel on se trouve actuellement, à partir de date_prise_service.
-     *
-     * On calcule le nombre de cycles de 12 mois complets déjà écoulés depuis
-     * date_prise_service jusqu'à aujourd'hui, ce qui donne directement le début
-     * du cycle courant. Ex: prise de service il y a 26 mois → 2 cycles complets
-     * écoulés (24 mois) → le cycle actuel a démarré il y a 24 mois.
-     */
+   
     private function debutCycleActuel(): \Carbon\Carbon
     {
         $debut = $this->date_prise_service->copy();
@@ -152,7 +144,7 @@ class User extends Authenticatable
     }
 
     /**
-     * NOUVEAU : l'agent est-il éligible au congé administratif AUJOURD'HUI,
+     * NOUVEAU : l'Agent est-il éligible au congé Administrateuristratif AUJOURD'HUI,
      * c'est-à-dire a-t-il dépassé la fin de sa période ouvrant droit du cycle
      * en cours (donc entré dans sa période de jouissance) ?
      * Utilisé pour bloquer la création d'une DemandeConge (voir
@@ -163,7 +155,7 @@ class User extends Authenticatable
         $periode = $this->periodeOuvrantDroit();
 
         if ($periode === null) {
-            // Pas de date_prise_service renseignée : on considère l'agent comme
+            // Pas de date_prise_service renseignée : on considère l'Agent comme
             // non éligible par sécurité (empêche de créer une demande de congé
             // tant que sa fiche n'est pas complète).
             return false;

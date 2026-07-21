@@ -46,9 +46,18 @@
                 @forelse($demandes as $demande)
                 @php
                     $peutAgirIci = $demande->peutDonnerAvis(auth()->user());
-                    $estAuteur   = $demande->user_id === auth()->id();
-                    // $modifiable visible uniquement par l'auteur si la demande est en attente
-                    $modifiable  = $estAuteur && $demande->statut === 'en_attente';
+
+                    $estAuteur = $demande->user_id === auth()->id();
+
+                    $peutSupprimer =
+                        $estAuteur
+                        && $demande->statut === 'en_attente'
+                        && $demande->avisAbsence->isEmpty();
+
+                    $peutAbandonner =
+                        $estAuteur
+                        && $demande->statut === 'en_attente'
+                        && $demande->avisAbsence->isNotEmpty();
                 @endphp
 
                 <tr>
@@ -60,11 +69,11 @@
                     {{-- <td>{{ $demande->motif }}</td> --}}
                     <td>
                         @if($peutAgirIci)
-                            <span class="badge bg-warning text-dark" style="font-size:11px;">
+                            <span class="baDGe bg-warning text-dark" style="font-size:11px;">
                                 <i class="bi bi-clock me-1"></i> À traiter
                             </span>
                         @else
-                            <span class="badge-statut badge-{{ $demande->statut }}">
+                            <span class="baDGe-statut baDGe-{{ $demande->statut }}">
                                 {{ ucfirst(str_replace('_',' ',$demande->statut)) }}
                             </span>
                         @endif
@@ -76,7 +85,7 @@
                         </a>
 
                         {{-- Bouton Modifier : auteur uniquement, demande en attente --}}
-                        @if($modifiable)
+                        @if($peutSupprimer || $peutAbandonner)
                         <a href="{{ route('demande_absences.edit', $demande->id) }}"
                             class="btn btn-sm btn-warning btn-action">
                             Modifier
@@ -84,7 +93,7 @@
                         @endif
 
                         {{-- Bouton Supprimer : auteur uniquement, demande en attente --}}
-                        @if($modifiable)
+                        @if($peutSupprimer)
                         <form action="{{ route('demande_absences.destroy', $demande->id) }}"
                               method="POST" class="d-inline">
                             @csrf
@@ -96,7 +105,7 @@
                         </form>
                         @endif
 
-                        @if($modifiable)
+                        @if($peutAbandonner)
                         <form action="{{ route('demande_absences.abandonner', $demande->id) }}"
                               method="POST" class="d-inline">
                             @csrf

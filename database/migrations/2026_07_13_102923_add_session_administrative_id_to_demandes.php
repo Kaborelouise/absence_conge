@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('demande_absences', function (Blueprint $table) {
-            $table->foreignId('session_administrative_id')
+            $table->foreignId('session_Administrateuristrative_id')
                 ->nullable()
                 ->after('user_id')
                 ->constrained('sessions_demandes')
@@ -17,7 +17,7 @@ return new class extends Migration
         });
 
         Schema::table('demande_conges', function (Blueprint $table) {
-            $table->foreignId('session_administrative_id')
+            $table->foreignId('session_Administrateuristrative_id')
                 ->nullable()
                 ->after('user_id')
                 ->constrained('sessions_demandes')
@@ -25,7 +25,7 @@ return new class extends Migration
         });
 
         Schema::table('demande_jouissances', function (Blueprint $table) {
-            $table->foreignId('session_administrative_id')
+            $table->foreignId('session_Administrateuristrative_id')
                 ->nullable()
                 ->after('user_id')
                 ->constrained('sessions_demandes')
@@ -36,15 +36,15 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('demande_absences', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('session_administrative_id');
+            $table->dropConstrainedForeignId('session_Administrateuristrative_id');
         });
 
         Schema::table('demande_conges', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('session_administrative_id');
+            $table->dropConstrainedForeignId('session_Administrateuristrative_id');
         });
 
         Schema::table('demande_jouissances', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('session_administrative_id');
+            $table->dropConstrainedForeignId('session_Administrateuristrative_id');
         });
     }
 };

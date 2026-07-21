@@ -123,10 +123,10 @@
                             <label class="form-label">Intérimaire désigné</label>
                             <select name="interimaire" class="form-select">
                                 <option value="">Aucun intérimaire</option>
-                                @foreach($agentsMemeDepartement as $agent)
-                                    <option value="{{ $agent->nom }} {{ $agent->prenom }}"
-                                        {{ old('interimaire') === $agent->nom.' '.$agent->prenom ? 'selected' : '' }}>
-                                        {{ $agent->nom }} {{ $agent->prenom }} — {{ $agent->poste }}
+                                @foreach($AgentsMemeDepartement as $Agent)
+                                    <option value="{{ $Agent->nom }} {{ $Agent->prenom }}"
+                                        {{ old('interimaire') === $Agent->nom.' '.$Agent->prenom ? 'selected' : '' }}>
+                                        {{ $Agent->nom }} {{ $Agent->prenom }} — {{ $Agent->poste }}
                                     </option>
                                 @endforeach
                             </select>

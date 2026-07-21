@@ -24,14 +24,14 @@
 
     <div class="titre">
         DÉCISION N° {{ $session->annee }}-{{ str_pad($compilation->id, 5, '0', STR_PAD_LEFT) }}<br>
-        ACCORDANT CONGÉ ADMINISTRATIF
+        ACCORDANT CONGÉ AdministrateurISTRATIF
     </div>
 
     <p>
-        Un congé administratif de trente (30) jours calendaires à solde entière est accordé
+        Un congé Administrateuristratif de trente (30) jours calendaires à solde entière est accordé
         au titre de la session « {{ $session->libelle }} »
         ({{ $session->date_debut->format('d/m/Y') }} au {{ $session->date_fin->format('d/m/Y') }})
-        aux agents dont les noms suivent, conformément au tableau ci-dessous :
+        aux Agents dont les noms suivent, conformément au tableau ci-dessous :
     </p>
 
     <table>
@@ -61,7 +61,7 @@
 
     <p style="margin-top: 15px;">
         <strong>Article 2 :</strong> le fonctionnaire est libre de jouir de son congé dans les
-        localités et pays de son choix. Toutefois, l'Administration peut être amenée à remettre
+        localités et pays de son choix. Toutefois, l'Administrateuristration peut être amenée à remettre
         en cause le choix du fonctionnaire, et dans ce cas, les motifs doivent être dûment
         portés à sa connaissance.
     </p>

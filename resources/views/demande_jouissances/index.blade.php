@@ -61,13 +61,13 @@
                     <td>
                         {{--cas abandonnée affiché en priorité --}}
                         @if($demande->abandonnee)
-                            <span class="badge-statut badge-rejetee">Abandonnée</span>
+                            <span class="baDGe-statut baDGe-rejetee">Abandonnée</span>
                         @elseif($peutAgirIci)
-                            <span class="badge bg-warning text-dark" style="font-size:11px;">
+                            <span class="baDGe bg-warning text-dark" style="font-size:11px;">
                                 <i class="bi bi-clock me-1"></i> À traiter
                             </span>
                         @else
-                            <span class="badge-statut badge-{{ $demande->statut }}">
+                            <span class="baDGe-statut baDGe-{{ $demande->statut }}">
                                 {{ ucfirst(str_replace('_', ' ', $demande->statut)) }}
                             </span>
                         @endif

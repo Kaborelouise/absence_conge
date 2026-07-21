@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 class AvisCongeController extends Controller
 {
-// pas de refus pour une demande de congé juste un accusé de traitement par l'agent RH
+// pas de refus pour une demande de congé juste un accusé de traitement par l'Agent RH
     public function store(Request $request)
     {
         $request->validate([
@@ -28,7 +28,7 @@ class AvisCongeController extends Controller
         AvisConge::create([
             'demande_conge_id' => $demande->id,
             'avis'             => 'favorable', // toujours favorable : juste un accusé de traitement
-            'type'             => 'agent_rh',
+            'type'             => 'Agent RH',
             'commentaire'      => $request->commentaire,
         ]);
 

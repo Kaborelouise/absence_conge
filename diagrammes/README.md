@@ -6,13 +6,13 @@ Ce dossier contient les diagrammes PlantUML complets de l'application ANPTIC.
 
 ### Processus Métier (Demandes)
 - `seq_demande_absence.puml` : Création et validation d'une demande d'absence avec circuit multi-acteurs
-- `seq_demande_conge.puml` : Création et compilation d'une demande de congé administratif par l'Agent RH
+- `seq_demande_conge.puml` : Création et compilation d'une demande de congé Administrateuristratif par l'Agent RH
 - `seq_demande_jouissance.puml` : Demande de jouissance avec validation et upload de certificats
 
-### Gestion Administrative
-- `seq_admin_utilisateurs.puml` : CRUD utilisateurs (création, modification, suppression avec validations)
-- `seq_admin_roles.puml` : CRUD rôles avec vérifications de dépendances
-- `seq_admin_organisations.puml` : CRUD directions et départements avec cascades de dépendances
+### Gestion Administrateuristrative
+- `seq_Administrateur_utilisateurs.puml` : CRUD utilisateurs (création, modification, suppression avec validations)
+- `seq_Administrateur_roles.puml` : CRUD rôles avec vérifications de dépendances
+- `seq_Administrateur_organisations.puml` : CRUD directions et départements avec cascades de dépendances
 
 ## 🔄 Diagrammes d'Activité
 

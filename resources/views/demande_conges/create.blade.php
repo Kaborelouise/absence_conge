@@ -2,6 +2,7 @@
 @section('title', 'Nouvelle demande de congé')
 @section('page-title', 'Demande de congé')
 
+
 @section('content')
 <div class="row justify-content-center">
     <div class="col-md-7">
@@ -26,10 +27,10 @@
 
                 {{--
                     AJOUTÉ : période de jouissance calculée à partir de la date de
-                    prise de service de l'agent connecté (User::periodeJouissance()).
+                    prise de service de l'Agent connecté (User::periodeJouissance()).
                     Affichée en gris, non modifiable : c'est une information calculée
-                    automatiquement, pas un champ que l'agent saisit. Elle permet à
-                    l'agent de savoir, avant même de soumettre sa demande, à quelle
+                    automatiquement, pas un champ que l'Agent saisit. Elle permet à
+                    l'Agent de savoir, avant même de soumettre sa demande, à quelle
                     période il pourra effectivement jouir de son congé une fois
                     celui-ci compilé par le RH.
                 --}}

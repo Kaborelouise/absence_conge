@@ -184,8 +184,8 @@
                         <div class="col-md-6">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox"
-                                       name="est_responsable_direction" value="1" id="est_resp_dir"
-                                       {{ old('est_responsable_direction', $user->est_responsable_direction) ? 'checked' : '' }}>
+                                       name="est_Responsable Direction" value="1" id="est_resp_dir"
+                                       {{ old('est_Responsable Direction', $user->est_Responsable Direction) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="est_resp_dir">
                                     Responsable de direction
                                 </label>

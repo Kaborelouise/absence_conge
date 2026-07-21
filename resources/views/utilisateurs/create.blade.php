@@ -24,10 +24,10 @@
                 @endif
 
                 {{--
-                    Modifié ajout de enctype="multipart/form-data", indispensable
+                    MODIFIÉ : ajout de enctype="multipart/form-data", INDISPENSABLE
                     pour que le champ de type "file" (certificat_prise_service) soit
                     effectivement envoyé au serveur. Sans cet attribut, le formulaire
-                    soumettrait uniquement le nom du fichier (une chaîne de texte),
+                    soumettrait uniquement le NOM du fichier (une chaîne de texte),
                     jamais son contenu — $request->file(...) serait toujours null
                     côté contrôleur.
                 --}}
@@ -126,10 +126,10 @@
                             @enderror
                         </div>
 
-                        {{-- Rôle --}}
+                        {{-- Rôle principal --}}
                         <div class="col-md-6">
                             <label class="form-label fw-bold">
-                                Rôle <span class="text-danger">*</span>
+                                Rôle principal <span class="text-danger">*</span>
                             </label>
                             <select name="role_id"
                                     class="form-select @error('role_id') is-invalid @enderror"
@@ -145,6 +145,34 @@
                             @error('role_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
+                        </div>
+
+                        {{--
+                            AJOUTÉ : rôles additionnels (multi-rôle). Un Agent peut
+                            cumuler plusieurs rôles (ex: "Agent" en principal, et
+                            aussi "Agent RH"). Vérifiés via User::hasRole() dans le
+                            code, en plus du rôle principal ci-dessus qui reste
+                            utilisé par toute la logique de circuit existante.
+                        --}}
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">Rôles additionnels (optionnel)</label>
+                            <div class="row">
+                                @foreach($roles as $role)
+                                    <div class="col-md-3">
+                                        <div class="form-check">
+                                            <input type="checkbox" name="roles_additionnels[]"
+                                                   value="{{ $role->id }}"
+                                                   class="form-check-input"
+                                                   id="role_add_{{ $role->id }}"
+                                                   {{ in_array($role->id, old('roles_additionnels', [])) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="role_add_{{ $role->id }}">
+                                                {{ $role->libelle }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <small class="text-muted">Ne coche pas le même rôle que le rôle principal ci-dessus.</small>
                         </div>
 
                         {{-- Département --}}
@@ -171,7 +199,7 @@
                         </div>
 
                         {{--
-                            Ajout de Date de prise de service. C'est à partir de cette
+                            AJOUTÉ : Date de prise de service. C'est à partir de cette
                             date que sont calculées automatiquement la période ouvrant
                             droit au congé (11 mois) et la période de jouissance (12e
                             mois) — voir User::periodeOuvrantDroit() et
@@ -193,7 +221,7 @@
                         </div>
 
                         {{--
-                            Ajout Certificat / arrêté de prise de service, preuve
+                            AJOUTÉ : Certificat / arrêté de prise de service, preuve
                             justificative de la date déclarée ci-dessus. Obligatoire à
                             la création (voir validation 'required|file' côté
                             contrôleur), formats acceptés : PDF, JPG, PNG (5 Mo max).
@@ -249,11 +277,11 @@
                             </div>
                             <div class="form-check">
                                 <input type="checkbox"
-                                       name="est_responsable_direction"
+                                       name="est_Responsable Direction"
                                        value="1"
                                        class="form-check-input"
                                        id="resp_dir"
-                                       {{ old('est_responsable_direction') ? 'checked' : '' }}>
+                                       {{ old('est_Responsable Direction') ? 'checked' : '' }}>
                                 <label class="form-check-label" for="resp_dir">
                                     Responsable de direction
                                 </label>

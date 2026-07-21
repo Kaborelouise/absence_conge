@@ -52,7 +52,7 @@
                         {{ $departement->direction->libelle_court ?? '—' }}
                     </td>
                     <td>
-                        <span class="badge bg-secondary">{{ $departement->user_count }}</span>
+                        <span class="baDGe bg-secondary">{{ $departement->user_count }}</span>
                     </td>
                     <td>
                         <a href="{{ route('departements.edit', $departement->id) }}"

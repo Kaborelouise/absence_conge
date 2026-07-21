@@ -47,7 +47,7 @@ class RegisteredUserController extends Controller
         'role_id'       => 1,
         'departement_id'=> 1,
         // role_id et departement_id par défaut
-        // l'admin les changera après
+        // l'Administrateur les changera après
     ]);
 
         event(new Registered($user));

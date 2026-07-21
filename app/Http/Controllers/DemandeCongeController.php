@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DemandeConge;
 use App\Models\CompilationConge;
-use App\Models\SessionAdministrative;
+use App\Models\SessionAdministrateuristrative;
 use Illuminate\Http\Request;
 
 class DemandeCongeController extends Controller
@@ -15,7 +15,7 @@ class DemandeCongeController extends Controller
         $role = $user->role->libelle;
 
         $demandes = DemandeConge::with('user.departement.direction', 'avisConge')
-            ->when(!in_array($role, ['agent_rh', 'admin']), function ($q) use ($user) {
+            ->when(!in_array($role, ['Agent RH', 'Administrateur']), function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             })
             ->latest()
@@ -24,14 +24,14 @@ class DemandeCongeController extends Controller
         /**
          * MODIFIÉ : la compilation active se détermine désormais via la
          * SESSION courante (par date), plus fiable que whereYear('created_at')
-         * qui mélangeait "année de création" et "campagne administrative" —
+         * qui mélangeait "année de création" et "campagne Administrateuristrative" —
          * deux notions différentes (une demande créée fin décembre pourrait
-         * appartenir à la session de l'année suivante si l'admin ouvre les
+         * appartenir à la session de l'année suivante si l'Administrateur ouvre les
          * sessions à cheval sur le calendrier).
          */
-        $session = SessionAdministrative::courante();
+        $session = SessionAdministrateuristrative::courante();
         $compilationActive = $session ? CompilationConge::activeParSession($session->id) : null;
-        $peutCompiler = $role === 'agent_rh';
+        $peutCompiler = $role === 'Agent RH';
 
         return view('demande_conges.index', compact(
             'demandes',
@@ -49,9 +49,9 @@ class DemandeCongeController extends Controller
 
     /**
      * MODIFIÉ : ajout du blocage à DEUX conditions cumulatives (règle validée) :
-     * 1. Une session administrative doit couvrir la date du jour ET avoir son
-     *    flag active_conge à true (contrôle du RH/admin).
-     * 2. L'agent doit avoir atteint ses 11 mois de travail effectif depuis sa
+     * 1. Une session Administrateuristrative doit couvrir la date du jour ET avoir son
+     *    flag active_conge à true (contrôle du RH/Administrateur).
+     * 2. L'Agent doit avoir atteint ses 11 mois de travail effectif depuis sa
      *    date_prise_service (User::estEligibleAuConge()) — sinon on affiche la
      *    date à laquelle il deviendra éligible.
      */
@@ -69,22 +69,22 @@ class DemandeCongeController extends Controller
         $user = auth()->user();
 
         // Condition 1 : session active pour le congé
-        $session = SessionAdministrative::courante();
+        $session = SessionAdministrateuristrative::courante();
 
         if ($session === null || !$session->estOuvertePour('conge')) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Aucune session n\'est actuellement ouverte pour les demandes de congé. Contactez l\'administration.');
+                ->with('error', 'Aucune session n\'est actuellement ouverte pour les demandes de congé. Contactez l\'Administrateuristration.');
         }
 
-        // Condition 2 : éligibilité de l'agent (11 mois de travail effectif)
+        // Condition 2 : éligibilité de l'Agent (11 mois de travail effectif)
         if (!$user->estEligibleAuConge()) {
             $periode = $user->periodeOuvrantDroit();
             $dateEligibilite = $periode ? $periode['fin']->copy()->addDay()->format('d/m/Y') : 'inconnue (date de prise de service non renseignée)';
 
             return redirect()->back()
                 ->withInput()
-                ->with('error', "Vous n'êtes pas encore éligible au congé administratif. Vous le serez à partir du {$dateEligibilite}.");
+                ->with('error', "Vous n'êtes pas encore éligible au congé Administrateuristratif. Vous le serez à partir du {$dateEligibilite}.");
         }
 
         DemandeConge::create([
@@ -92,7 +92,7 @@ class DemandeCongeController extends Controller
             'lieu_jouissance' => $request->lieu_jouissance,
             'user_id'         => $user->id,
             // AJOUTÉ : rattachement à la session courante
-            'session_administrative_id' => $session->id,
+            'session_Administrateuristrative_id' => $session->id,
         ]);
 
         return redirect()
@@ -192,7 +192,7 @@ class DemandeCongeController extends Controller
      *
      * 1. On travaille sur la SESSION courante (pas whereYear('created_at')) :
      *    on ne compile que les demandes RATTACHÉES à cette session
-     *    (session_administrative_id), ce qui est plus juste qu'un simple
+     *    (session_Administrateuristrative_id), ce qui est plus juste qu'un simple
      *    filtre par année civile de création.
      * 2. Coexistence CompilationConge + AvisConge (règle confirmée) : en plus
      *    de créer la ligne globale dans compilations_conges, on crée aussi un
@@ -204,16 +204,16 @@ class DemandeCongeController extends Controller
      */
     public function compiler()
     {
-        if (auth()->user()->role->libelle !== 'agent_rh') {
+        if (auth()->user()->role->libelle !== 'Agent RH') {
             return redirect()->route('demande_conges.index')
                 ->with('error', 'Action non autorisée.');
         }
 
-        $session = SessionAdministrative::courante();
+        $session = SessionAdministrateuristrative::courante();
 
         if ($session === null) {
             return redirect()->route('demande_conges.index')
-                ->with('error', 'Aucune session administrative n\'est actuellement ouverte.');
+                ->with('error', 'Aucune session Administrateuristrative n\'est actuellement ouverte.');
         }
 
         if (CompilationConge::activeParSession($session->id)) {
@@ -221,7 +221,7 @@ class DemandeCongeController extends Controller
                 ->with('error', "Les demandes de la session « {$session->libelle} » sont déjà compilées.");
         }
 
-        $demandes = DemandeConge::where('session_administrative_id', $session->id)
+        $demandes = DemandeConge::where('session_Administrateuristrative_id', $session->id)
             ->where('statut', 'en_attente')
             ->where('abandonnee', false)
             ->get();
@@ -234,7 +234,7 @@ class DemandeCongeController extends Controller
         // Création de la trace globale de compilation
         CompilationConge::create([
             'annee'                      => $session->annee,
-            'session_administrative_id'  => $session->id,
+            'session_Administrateuristrative_id'  => $session->id,
             'compiled_by'                => auth()->id(),
             'compiled_at'                => now(),
         ]);
@@ -245,7 +245,7 @@ class DemandeCongeController extends Controller
             \App\Models\AvisConge::create([
                 'demande_conge_id' => $demande->id,
                 'avis'             => 'favorable',
-                'type'             => 'agent_rh',
+                'type'             => 'Agent RH',
             ]);
 
             $demande->update(['statut' => 'compilee']);
@@ -269,16 +269,16 @@ class DemandeCongeController extends Controller
      */
     public function decompiler()
     {
-        if (auth()->user()->role->libelle !== 'agent_rh') {
+        if (auth()->user()->role->libelle !== 'Agent RH') {
             return redirect()->route('demande_conges.index')
                 ->with('error', 'Action non autorisée.');
         }
 
-        $session = SessionAdministrative::courante();
+        $session = SessionAdministrateuristrative::courante();
 
         if ($session === null) {
             return redirect()->route('demande_conges.index')
-                ->with('error', 'Aucune session administrative n\'est actuellement ouverte.');
+                ->with('error', 'Aucune session Administrateuristrative n\'est actuellement ouverte.');
         }
 
         $compilation = CompilationConge::activeParSession($session->id);
@@ -288,7 +288,7 @@ class DemandeCongeController extends Controller
                 ->with('error', "Aucune compilation active pour la session « {$session->libelle} ».");
         }
 
-        $demandes = DemandeConge::where('session_administrative_id', $session->id)
+        $demandes = DemandeConge::where('session_Administrateuristrative_id', $session->id)
             ->where('statut', 'compilee')
             ->get();
 
@@ -316,16 +316,16 @@ class DemandeCongeController extends Controller
      */
     public function telechargerDecision()
     {
-        if (auth()->user()->role->libelle !== 'agent_rh') {
+        if (auth()->user()->role->libelle !== 'Agent RH') {
             return redirect()->route('demande_conges.index')
                 ->with('error', 'Action non autorisée.');
         }
 
-        $session = SessionAdministrative::courante();
+        $session = SessionAdministrateuristrative::courante();
 
         if ($session === null) {
             return redirect()->route('demande_conges.index')
-                ->with('error', 'Aucune session administrative n\'est actuellement ouverte.');
+                ->with('error', 'Aucune session Administrateuristrative n\'est actuellement ouverte.');
         }
 
         $compilation = CompilationConge::activeParSession($session->id);
@@ -336,7 +336,7 @@ class DemandeCongeController extends Controller
         }
 
         $demandes = DemandeConge::with('user.departement.direction')
-            ->where('session_administrative_id', $session->id)
+            ->where('session_Administrateuristrative_id', $session->id)
             ->where('statut', 'compilee')
             ->get();
 

@@ -1,51 +1,51 @@
-@startuml Sequence_Admin_Roles
-title Diagramme de Séquence : Gestion des Rôles (Admin)
+@startuml Sequence_Administrateur_Roles
+title Diagramme de Séquence : Gestion des Rôles (Administrateur)
 
-actor Administrateur
+actor Administrateuristrateur
 participant "Application Web" as App
 database "Base de Données" as DB
 
 == Consultation ==
-Administrateur -> App: Accède menu "Rôles"
+Administrateuristrateur -> App: Accède menu "Rôles"
 App -> DB: Récupère tous les rôles
 DB --> App: Liste rôles
-App --> Administrateur: Affiche tableau des rôles
+App --> Administrateuristrateur: Affiche tableau des rôles
 
 == Création d'un rôle ==
-Administrateur -> App: Clique "Ajouter rôle"
-App --> Administrateur: Affiche formulaire
-Administrateur -> App: Remplit libellé rôle et soumet
+Administrateuristrateur -> App: Clique "Ajouter rôle"
+App --> Administrateuristrateur: Affiche formulaire
+Administrateuristrateur -> App: Remplit libellé rôle et soumet
 App -> DB: Valide unicité libellé
 DB --> App: OK
 App -> DB: INSERT Role
 DB --> App: Rôle créé
-App --> Administrateur: Rôle ajouté
+App --> Administrateuristrateur: Rôle ajouté
 
 == Modification d'un rôle ==
-Administrateur -> App: Clique sur un rôle
+Administrateuristrateur -> App: Clique sur un rôle
 App -> DB: Récupère détails rôle
 DB --> App: Données rôle
-App --> Administrateur: Affiche formulaire édition
+App --> Administrateuristrateur: Affiche formulaire édition
 
-Administrateur -> App: Modifie libellé et valide
+Administrateuristrateur -> App: Modifie libellé et valide
 App -> DB: UPDATE Role
 DB --> App: OK
-App --> Administrateur: Rôle mis à jour
+App --> Administrateuristrateur: Rôle mis à jour
 
 == Suppression d'un rôle ==
-Administrateur -> App: Clique "Supprimer"
-App --> Administrateur: Affiche confirmation
-Administrateur -> App: Confirme
+Administrateuristrateur -> App: Clique "Supprimer"
+App --> Administrateuristrateur: Affiche confirmation
+Administrateuristrateur -> App: Confirme
 
 App -> DB: Vérifie si rôle utilisé par des utilisateurs
 DB --> App: Nombre utilisateurs avec ce rôle
 
 alt Rôle utilisé
-    App --> Administrateur: ⚠️ Impossible - Rôle assigné à des utilisateurs
+    App --> Administrateuristrateur: ⚠️ Impossible - Rôle assigné à des utilisateurs
 else Peut être supprimé
     App -> DB: DELETE Role
     DB --> App: OK
-    App --> Administrateur: Rôle supprimé
+    App --> Administrateuristrateur: Rôle supprimé
 end
 
 @enduml

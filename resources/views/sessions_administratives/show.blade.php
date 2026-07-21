@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Détail session')
-@section('page-title', 'Sessions administratives')
+@section('page-title', 'Sessions Administrateuristratives')
 
 @section('content')
 <div class="row justify-content-center">
@@ -38,7 +38,7 @@
                 </table>
 
                 <div class="d-flex justify-content-center gap-3 mt-4">
-                    <a href="{{ route('sessions_administratives.index') }}" class="btn btn-secondary px-4">
+                    <a href="{{ route('sessions_Administrateuristratives.index') }}" class="btn btn-secondary px-4">
                         Retour à la liste
                     </a>
                 </div>

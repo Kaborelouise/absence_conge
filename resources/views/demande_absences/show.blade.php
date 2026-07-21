@@ -28,12 +28,12 @@
 
 @php
     $etapeLabels = [
-        'chef_departement'      => 'Avis Chef Département',
-        'responsable_direction' => 'Avis Responsable Direction',
-        'agent_rh'              => 'Vérification RH',
-        'sg'                    => 'Validation Secrétaire Général',
-        'dg'                    => 'Validation Directeur Général',
-        'pca'                   => 'Validation PCA',
+        'Chef de Département'      => 'Avis Chef Département',
+        'Responsable Direction' => 'Avis Responsable Direction',
+        'Agent RH'              => 'Vérification RH',
+        'SG'                    => 'Validation Secrétaire Général',
+        'DG'                    => 'Validation Directeur Général',
+        'PCA'                   => 'Validation PCA',
     ];
 @endphp
 
@@ -103,22 +103,22 @@
                         <td>
                             @if($demande->statut === 'validee')
                                 {{-- Demande entièrement validée --}}
-                                <span class="badge-statut badge-validee">Validée</span>
+                                <span class="baDGe-statut baDGe-validee">Validée</span>
 
                             @elseif($demande->statut === 'rejetee')
                                 {{-- Demande rejetée --}}
-                                <span class="badge-statut badge-rejetee">Rejetée</span>
+                                <span class="baDGe-statut baDGe-rejetee">Rejetée</span>
 
                             @elseif($demande->statut === 'en_attente')
                                 {{-- Aucun avis encore donné : initiation --}}
-                                <span class="badge-statut badge-en_attente">
+                                <span class="baDGe-statut baDGe-en_attente">
                                     Initiation 
                                     {{-- — en attente de : --}}
                                     {{-- {{ $etapeLabels[$prochainActeur] ?? $prochainActeur }} --}}
                                 </span>
 
                             @else
-                                <span class="badge-statut badge-en_cours">
+                                <span class="baDGe-statut baDGe-en_cours">
                                     En cours — {{ $etapeLabels[$derniereEtape] ?? $derniereEtape }}
                                 </span>
                             @endif
@@ -147,7 +147,7 @@
                         <div class="fw-bold" style="font-size:13px;">
                             {{ $etapeLabels[$avis->type] ?? ucfirst(str_replace('_', ' ', $avis->type)) }}
                         </div>
-                        <span class="badge-statut badge-{{ $avis->avis === 'favorable' ? 'validee' : 'rejetee' }}">
+                        <span class="baDGe-statut baDGe-{{ $avis->avis === 'favorable' ? 'validee' : 'rejetee' }}">
                             {{ ucfirst($avis->avis) }}
                         </span>
                         @if($avis->commentaire)
@@ -197,7 +197,7 @@
                     data-bs-toggle="modal"
                     data-bs-target="#modalAvis">
                 <i class="bi bi-pencil-square me-2"></i>
-                @if(in_array(auth()->user()->role->libelle, ['sg','dg','pca']))
+                @if(in_array(auth()->user()->role->libelle, ['SG','DG','PCA']))
                    Valider ou rejeter la demande
                 @else
                     Donner mon avis
@@ -217,7 +217,7 @@
             <div class="modal-header card-header-anptic">
                 <h5 class="modal-title" id="modalAvisLabel">
                     <i class="bi bi-pencil-square me-2"></i>
-                    @if(in_array(auth()->user()->role->libelle, ['sg','dg','pca']))
+                    @if(in_array(auth()->user()->role->libelle, ['SG','DG','PCA']))
                         Valider ou rejeter la demande
                     @else
                         Donner mon avis
@@ -232,10 +232,10 @@
 
                 <div class="modal-body">
 
-                    @if(auth()->user()->role->libelle === 'agent_rh')
+                    @if(auth()->user()->role->libelle === 'Agent RH')
                     <div class="alert alert-info py-2 mb-3" style="font-size:13px;">
                         <i class="bi bi-info-circle me-1"></i>
-                        Solde d'absence restant de l'agent :
+                        Solde d'absence restant de l'Agent :
                         <strong>{{ $demande->user->solde_absence }} jours</strong>
                     </div>
                     <div class="mb-3">
@@ -250,7 +250,7 @@
                     </div>
                     @endif
 
-                    @if(in_array(auth()->user()->role->libelle, ['chef_departement', 'responsable_direction']))
+                    @if(in_array(auth()->user()->role->libelle, ['Chef de Département', 'Responsable Direction']))
                     <div class="mb-3">
                         <label class="form-label fw-bold">
                             Intérimaire désigné
@@ -258,10 +258,10 @@
                         </label>
                         <select name="interimaire" class="form-select">
                             <option value="">Choisir un intérimaire</option>
-                            @foreach($agentsMemeDepartement as $agent)
-                                <option value="{{ $agent->nom }} {{ $agent->prenom }}"
-                                    {{ $demande->interimaire === $agent->nom.' '.$agent->prenom ? 'selected' : '' }}>
-                                    {{ $agent->nom }} {{ $agent->prenom }} — {{ $agent->poste }}
+                            @foreach($AgentsMemeDepartement as $Agent)
+                                <option value="{{ $Agent->nom }} {{ $Agent->prenom }}"
+                                    {{ $demande->interimaire === $Agent->nom.' '.$Agent->prenom ? 'selected' : '' }}>
+                                    {{ $Agent->nom }} {{ $Agent->prenom }} — {{ $Agent->poste }}
                                 </option>
                             @endforeach
                         </select>
@@ -269,7 +269,7 @@
                     @endif
                     <div class="mb-3">
                         <label class="form-label fw-bold">
-                            @if(in_array(auth()->user()->role->libelle, ['sg','dg','pca']))
+                            @if(in_array(auth()->user()->role->libelle, ['SG','DG','PCA']))
                                 Décision
                             @else
                                 Avis

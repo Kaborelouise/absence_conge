@@ -47,12 +47,12 @@
                     @csrf
                     <input type="hidden" name="demande_conge_id" value="{{ $demande->id }}">
 
-                    {{-- Type : seulement agent_rh pour les congés
+                    {{-- Type : seulement Agent RH pour les congés
                          Basé sur workflow slide 6 --}}
                     <div class="mb-3">
                         <label class="form-label fw-bold">Type d'avis</label>
                         <input type="text" class="form-control" value="Agent RH" readonly>
-                        <input type="hidden" name="type" value="agent_rh">
+                        <input type="hidden" name="type" value="Agent RH">
                     </div>
 
                     {{-- Décision --}}

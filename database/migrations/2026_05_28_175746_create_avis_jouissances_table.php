@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('avis_jouissances', function (Blueprint $table) {
             $table->id();
             $table->enum('avis',['favorable', 'defavorable','en_attente'])->default('en_attente');
-            $table->enum('type', ['chef_departement', 'responsable_direction', 'agent_rh', 'sg', 'dg', 'pca']);
+            $table->enum('type', ['Chef de Département', 'Responsable Direction', 'Agent RH', 'SG', 'DG', 'PCA']);
             $table->text('commentaire')->nullable();
 
             $table->foreignId('demande_jouissance_id')->constrained('demande_jouissances')->onDelete('cascade');
