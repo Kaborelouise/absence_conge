@@ -287,15 +287,20 @@
                 <span>Départements</span>
             </a>
 
+                @php
+            $role = auth()->user()->role->libelle ?? null;
+        @endphp
+
+        @if(in_array($role, ['Administrateur', 'Agent RH']))
             <a href="{{ route('sessions_Administratives.index') }}"
                 class="sidebar-link {{ request()->routeIs('sessions_Administratives.*') ? 'active' : '' }}">
                 <i class="bi bi-calendar-event"></i>
                 <span>Sessions Administratives</span>
             </a>
+        @endif
            
 
         </div>
-
         {{-- Contenu principal --}}
         <div class="main-wrapper">
 

@@ -17,11 +17,9 @@ class DashboardController extends Controller
         $role = $user->role->libelle;
 
         // ============================================================
-        // TABLEAU DE BORD Agent
-        // Statistiques personnelles de l'Agent connecté
+        // TABLEAU DE BORD AGENT
         // ============================================================
         if ($role === 'Agent') {
-            // Solde absence calculé dynamiquement (Option A)
             $joursAbsenceUtilises = DemandeAbsence::where('user_id', $user->id)
                 ->where('statut', 'validee')
                 ->whereYear('date_debut', now()->year)
@@ -29,23 +27,13 @@ class DashboardController extends Controller
                 ->sum(fn($d) => Carbon::parse($d->date_debut)
                     ->diffInDays(Carbon::parse($d->date_fin)) + 1);
 
-            $soldeAbsence = max(0, 10 - $joursAbsenceUtilises);
-            $soldeConge   = $user->solde_conge ?? 30;
-
-            // Demandes de congé de l'Agent
-            $mesConges = DemandeConge::where('user_id', $user->id)->get();
-
-            // Demandes d'absence de l'Agent
-            $mesAbsences = DemandeAbsence::where('user_id', $user->id)->get();
-
-            // Demandes de jouissance de l'Agent
+            $soldeAbsence   = max(0, 10 - $joursAbsenceUtilises);
+            $soldeConge     = $user->solde_conge ?? 30;
+            $mesConges      = DemandeConge::where('user_id', $user->id)->get();
+            $mesAbsences    = DemandeAbsence::where('user_id', $user->id)->get();
             $mesJouissances = DemandeJouissance::where('user_id', $user->id)->get();
-
-            // Dernières demandes toutes catégories confondues
             $dernieresDemandes = $this->dernieresDemandes($user->id);
-
-            // Évolution des demandes sur 12 mois (pour le graphique)
-            $evolutionMois = $this->evolutionMoisAgent($user->id);
+            $evolutionMois  = $this->evolutionMoisAgent($user->id);
 
             return view('dashboard', compact(
                 'role', 'user',
@@ -56,27 +44,22 @@ class DashboardController extends Controller
         }
 
         // ============================================================
-        // TABLEAU DE BORD CHEF DE DÉPARTEMENT
-        // Statistiques du département de l'Agent connecté
+        // TABLEAU DE BORD RESPONSABLE DÉPARTEMENT
         // ============================================================
-        if ($role === 'Chef de Département' || $user->est_responsable_departement) {
+        if ($role === 'Responsable Département' || $user->est_responsable_departement) {
             $departementId = $user->departement_id;
 
-            // Nombre d'Agents dans le département
             $nbAgents = User::where('departement_id', $departementId)->count();
 
-            // Demandes de congé du département
             $congesDept = DemandeJouissance::whereHas('user', fn($q) =>
                 $q->where('departement_id', $departementId)
             )->get();
 
-            // Demandes d'absence du département
             $absencesDept = DemandeAbsence::whereHas('user', fn($q) =>
                 $q->where('departement_id', $departementId)
             )->get();
 
-            // Alertes : demandes en attente de l'avis du chef
-            $alertesConge   = DemandeJouissance::whereHas('user', fn($q) =>
+            $alertesConge = DemandeJouissance::whereHas('user', fn($q) =>
                 $q->where('departement_id', $departementId)
             )->where('statut', 'en_attente')->count();
 
@@ -84,65 +67,52 @@ class DashboardController extends Controller
                 $q->where('departement_id', $departementId)
             )->where('statut', 'en_attente')->count();
 
-            // Agents actuellement en congé (jouissance validée et en cours)
-            $AgentsEnConge = DemandeJouissance::whereHas('user', fn($q) =>
+            $agentsEnConge = DemandeJouissance::whereHas('user', fn($q) =>
                 $q->where('departement_id', $departementId)
             )->where('statut', 'validee')
              ->where('date_debut', '<=', now())
              ->where('date_fin', '>=', now())
-             ->with('user')
-             ->get();
+             ->with('user')->get();
 
-            // Agents en absence
-            $AgentsEnAbsence = DemandeAbsence::whereHas('user', fn($q) =>
+            $agentsEnAbsence = DemandeAbsence::whereHas('user', fn($q) =>
                 $q->where('departement_id', $departementId)
             )->where('statut', 'validee')
              ->where('date_debut', '<=', now())
              ->where('date_fin', '>=', now())
-             ->with('user')
-             ->get();
+             ->with('user')->get();
 
-            // Évolution des demandes sur 6 mois
-            $evolutionMois = $this->evolutionMoisDept($departementId);
-
-            // Liste détaillée des demandes par Agent
+            $evolutionMois    = $this->evolutionMoisDept($departementId);
             $demandesParAgent = User::where('departement_id', $departementId)
-                ->with(['demandeAbsences', 'demandeJouissances'])
-                ->get();
+                ->with(['demandeAbsences', 'demandeJouissances'])->get();
 
             return view('dashboard', compact(
                 'role', 'user',
                 'nbAgents', 'congesDept', 'absencesDept',
                 'alertesConge', 'alertesAbsence',
-                'AgentsEnConge', 'AgentsEnAbsence',
+                'agentsEnConge', 'agentsEnAbsence',
                 'evolutionMois', 'demandesParAgent'
             ));
         }
 
         // ============================================================
-        // TABLEAU DE BORD RESPONSABLE DE DIRECTION
-        // Statistiques de toute la direction
+        // TABLEAU DE BORD RESPONSABLE DIRECTION
         // ============================================================
         if ($role === 'Responsable Direction') {
             $directionId = $user->departement->direction_id;
 
-            // Nombre d'Agents dans la direction
             $nbAgents = User::whereHas('departement', fn($q) =>
                 $q->where('direction_id', $directionId)
             )->count();
 
-            // Demandes de congé de la direction
             $congesDir = DemandeJouissance::whereHas('user.departement', fn($q) =>
                 $q->where('direction_id', $directionId)
             )->get();
 
-            // Demandes d'absence de la direction
             $absencesDir = DemandeAbsence::whereHas('user.departement', fn($q) =>
                 $q->where('direction_id', $directionId)
             )->get();
 
-            // Alertes : en attente d'avis du responsable
-            $alertesConge   = DemandeJouissance::whereHas('user.departement', fn($q) =>
+            $alertesConge = DemandeJouissance::whereHas('user.departement', fn($q) =>
                 $q->where('direction_id', $directionId)
             )->where('statut', 'en_cours')->count();
 
@@ -150,53 +120,44 @@ class DashboardController extends Controller
                 $q->where('direction_id', $directionId)
             )->where('statut', 'en_cours')->count();
 
-            // Agents en absence dans la direction
-            $AgentsEnAbsence = DemandeAbsence::whereHas('user.departement', fn($q) =>
-                $q->where('direction_id', $directionId)
-            )->where('statut', 'validee')
-            ->where('date_debut', '<=', now())
-            ->where('date_fin', '>=', now())
-            ->with('user.departement')
-            ->get();
-
-            // Agents en congé dans la direction
-            $AgentsEnConge = DemandeJouissance::whereHas('user.departement', fn($q) =>
+            $agentsEnConge = DemandeJouissance::whereHas('user.departement', fn($q) =>
                 $q->where('direction_id', $directionId)
             )->where('statut', 'validee')
              ->where('date_debut', '<=', now())
              ->where('date_fin', '>=', now())
-             ->with('user.departement')
-             ->get();
+             ->with('user.departement')->get();
 
-            // Répartition par département
+            // AJOUT : agents en absence dans la direction
+            $agentsEnAbsence = DemandeAbsence::whereHas('user.departement', fn($q) =>
+                $q->where('direction_id', $directionId)
+            )->where('statut', 'validee')
+             ->where('date_debut', '<=', now())
+             ->where('date_fin', '>=', now())
+             ->with('user.departement')->get();
+
             $repartitionDepts = $this->repartitionParDept($directionId);
-
-            // Évolution sur 6 mois
-            $evolutionMois = $this->evolutionMoisDirection($directionId);
+            $evolutionMois    = $this->evolutionMoisDirection($directionId);
 
             return view('dashboard', compact(
-            'role', 'user',
-            'nbAgents', 'congesDir', 'absencesDir',
-            'alertesConge', 'alertesAbsence',
-            'AgentsEnConge', 'AgentsEnAbsence', // AJOUT
-            'repartitionDepts', 'evolutionMois'
-        ));
+                'role', 'user',
+                'nbAgents', 'congesDir', 'absencesDir',
+                'alertesConge', 'alertesAbsence',
+                'agentsEnConge', 'agentsEnAbsence',
+                'repartitionDepts', 'evolutionMois'
+            ));
         }
 
         // ============================================================
-        // TABLEAU DE BORD RH / SG / DG / PCA
-        // Vue globale de toute la structure
+        // TABLEAU DE BORD AGENT RH / SG / DG / PCA
         // ============================================================
         if (in_array($role, ['Agent RH', 'SG', 'DG', 'PCA'])) {
             $nbAgents     = User::count();
             $nbDirections = Direction::count();
 
-            // Toutes les demandes de jouissance (congé)
             $tousConges   = DemandeJouissance::all();
             $tousAbsences = DemandeAbsence::all();
 
-            // Agents actuellement en congé
-            $nbEnConge   = DemandeJouissance::where('statut', 'validee')
+            $nbEnConge = DemandeJouissance::where('statut', 'validee')
                 ->where('date_debut', '<=', now())
                 ->where('date_fin', '>=', now())
                 ->count();
@@ -206,60 +167,44 @@ class DashboardController extends Controller
                 ->where('date_fin', '>=', now())
                 ->count();
 
-            // Alertes par étape du circuit
+            // Alertes par étape — on cherche 'agent_rh', 'sg', 'dg' en minuscule
+            // car c'est la valeur stockée dans la colonne 'type' des avis
             $alertesRH = DemandeAbsence::where('statut', 'en_cours')
                 ->whereDoesntHave('avisAbsence', fn($q) =>
-                    $q->where('type', 'Agent RH')
+                    $q->where('type', 'agent_rh')
                 )->count()
                 + DemandeJouissance::where('statut', 'en_cours')
                 ->whereDoesntHave('avis', fn($q) =>
-                    $q->where('type', 'Agent RH')
+                    $q->where('type', 'agent_rh')
                 )->count();
 
             $alertesSG = DemandeAbsence::where('statut', 'en_cours')
                 ->whereHas('avisAbsence', fn($q) =>
-                    $q->where('type', 'Agent RH')->where('avis', 'favorable')
+                    $q->where('type', 'agent_rh')->where('avis', 'favorable')
                 )
                 ->whereDoesntHave('avisAbsence', fn($q) =>
-                    $q->where('type', 'SG')
+                    $q->where('type', 'sg')
                 )->count();
 
             $alertesDG = DemandeAbsence::where('statut', 'en_cours')
                 ->whereHas('avisAbsence', fn($q) =>
-                    $q->where('type', 'SG')->where('avis', 'favorable')
+                    $q->where('type', 'sg')->where('avis', 'favorable')
                 )
                 ->whereDoesntHave('avisAbsence', fn($q) =>
-                    $q->where('type', 'DG')
+                    $q->where('type', 'dg')
                 )->count();
 
-            // Total alertes
             $totalAlertes = $alertesRH + $alertesSG + $alertesDG;
 
-            // Demandes par direction
-            $demandesParDirection = Direction::withCount([
-                'departements as nb_conges' => fn($q) =>
-                    $q->join('users', 'departements.id', '=', 'users.departement_id')
-                      ->join('demande_jouissances', 'users.id', '=', 'demande_jouissances.user_id'),
-                'departements as nb_absences' => fn($q) =>
-                    $q->join('users', 'departements.id', '=', 'users.departement_id')
-                      ->join('demande_absences', 'users.id', '=', 'demande_absences.user_id'),
-            ])->get();
-
-            // Agents en congé avec info de retour
-            $AgentsEnConge = DemandeJouissance::with('user.departement.direction')
+            $agentsEnConge = DemandeJouissance::with('user.departement.direction')
                 ->where('statut', 'validee')
                 ->where('date_debut', '<=', now())
                 ->where('date_fin', '>=', now())
-                ->latest()
-                ->take(5)
-                ->get();
+                ->latest()->take(5)->get();
 
-            // Dernières demandes toutes catégories
             $dernieresDemandes = $this->dernieresDemandes();
-
-            // Évolution sur 12 mois
-            $evolutionConges   = $this->evolutionMoiSGlobal('conge');
-            $evolutionAbsences = $this->evolutionMoiSGlobal('absence');
+            $evolutionConges   = $this->evolutionMoisGlobal('conge');
+            $evolutionAbsences = $this->evolutionMoisGlobal('absence');
 
             return view('dashboard', compact(
                 'role', 'user',
@@ -267,61 +212,60 @@ class DashboardController extends Controller
                 'tousConges', 'tousAbsences',
                 'nbEnConge', 'nbEnAbsence',
                 'alertesRH', 'alertesSG', 'alertesDG', 'totalAlertes',
-                'demandesParDirection', 'AgentsEnConge',
-                'dernieresDemandes',
+                'agentsEnConge', 'dernieresDemandes',
                 'evolutionConges', 'evolutionAbsences'
             ));
         }
 
         // ============================================================
-        // TABLEAU DE BORD AdministrateurISTRATEUR
-        // Gestion complète + journal d'audit
+        // TABLEAU DE BORD ADMINISTRATEUR
         // ============================================================
         if ($role === 'Administrateur') {
-            $totalUsers        = User::count();
-            $totalAdministrateurs       = User::whereHas('role', fn($q) => $q->where('libelle', 'Administrateur'))->count();
+            $totalUsers           = User::count();
+            $totalAdministrateurs = User::whereHas('role', fn($q) =>
+                $q->where('libelle', 'Administrateur')
+            )->count();
 
-            // Utilisateurs connectés aujourd'hui
             $connectesAujourdhui = User::whereDate('updated_at', today())->count();
 
-            // Jamais connectés
+            // On utilise remember_token comme proxy pour "jamais connecté"
             $jamaisConnectes = User::whereNull('remember_token')->count();
 
-            // Utilisateurs par rôle (pour le diagramme)
             $userParRole = User::with('role')
                 ->get()
                 ->groupBy('role.libelle')
                 ->map->count();
 
-            // Liste des Agents n'ayant pas soumis de demande de congé cette année
-            $AgentsSansConge = User::whereHas('role', fn($q) =>
-                $q->whereNotIn('libelle', ['Administrateur', 'Agent RH', 'SG', 'DG', 'PCA', 'Chef de Département','Responsable Direction'])
+            // Agents sans demande de congé cette année
+            // On exclut tous les rôles non-agents
+            $agentsSansConge = User::whereHas('role', fn($q) =>
+                $q->whereNotIn('libelle', [
+                    'Administrateur', 'Agent RH', 'SG', 'DG', 'PCA',
+                    'Responsable Direction', 'Responsable Département'
+                ])
             )->whereDoesntHave('demandeConges', fn($q) =>
                 $q->whereYear('created_at', now()->year)
-            )->with('departement.direction')
-             ->get();
+            )->with('departement.direction')->get();
 
-            // Dernières demandes pour l'aperçu global
             $dernieresDemandes = $this->dernieresDemandes();
 
             return view('dashboard', compact(
                 'role', 'user',
                 'totalUsers', 'totalAdministrateurs',
                 'connectesAujourdhui', 'jamaisConnectes',
-                'userParRole', 'AgentsSansConge',
+                'userParRole', 'agentsSansConge',
                 'dernieresDemandes'
             ));
         }
 
-        // Fallback : vue vide
+        // Fallback si aucun rôle ne correspond
         return view('dashboard', compact('role', 'user'));
     }
 
     // ================================================================
-    // MÉTHODES PRIVÉES UTILITAIRES
+    // MÉTHODES PRIVÉES
     // ================================================================
 
-    // Dernières demandes toutes catégories (optionnel : filtré par user)
     private function dernieresDemandes(?int $userId = null): array
     {
         $absences = DemandeAbsence::with('user.departement.direction')
@@ -329,7 +273,7 @@ class DashboardController extends Controller
             ->latest()->take(5)->get()
             ->map(fn($d) => [
                 'type'    => 'Absence',
-                'Agent'   => $d->user->nom . ' ' . $d->user->prenom,
+                'agent'   => $d->user->nom . ' ' . $d->user->prenom,
                 'dir'     => $d->user->departement->direction->libelle_court ?? '—',
                 'periode' => Carbon::parse($d->date_debut)->format('d/m/Y')
                            . ' - ' . Carbon::parse($d->date_fin)->format('d/m/Y'),
@@ -342,7 +286,7 @@ class DashboardController extends Controller
             ->latest()->take(5)->get()
             ->map(fn($d) => [
                 'type'    => 'Congé',
-                'Agent'   => $d->user->nom . ' ' . $d->user->prenom,
+                'agent'   => $d->user->nom . ' ' . $d->user->prenom,
                 'dir'     => $d->user->departement->direction->libelle_court ?? '—',
                 'periode' => Carbon::parse($d->date_debut)->format('d/m/Y')
                            . ' - ' . Carbon::parse($d->date_fin)->format('d/m/Y'),
@@ -357,104 +301,87 @@ class DashboardController extends Controller
             ->toArray();
     }
 
-    // Évolution mensuelle pour un Agent (12 derniers mois)
     private function evolutionMoisAgent(int $userId): array
     {
         $mois = [];
         for ($i = 11; $i >= 0; $i--) {
-            $date    = now()->subMonths($i);
-            $mois[]  = [
+            $date   = now()->subMonths($i);
+            $mois[] = [
                 'label'    => $date->locale('fr')->isoFormat('MMM'),
                 'validees' => DemandeAbsence::where('user_id', $userId)
                     ->where('statut', 'validee')
                     ->whereYear('created_at', $date->year)
-                    ->whereMonth('created_at', $date->month)
-                    ->count(),
+                    ->whereMonth('created_at', $date->month)->count(),
                 'en_cours' => DemandeAbsence::where('user_id', $userId)
                     ->where('statut', 'en_cours')
                     ->whereYear('created_at', $date->year)
-                    ->whereMonth('created_at', $date->month)
-                    ->count(),
+                    ->whereMonth('created_at', $date->month)->count(),
                 'rejetees' => DemandeAbsence::where('user_id', $userId)
                     ->where('statut', 'rejetee')
                     ->whereYear('created_at', $date->year)
-                    ->whereMonth('created_at', $date->month)
-                    ->count(),
+                    ->whereMonth('created_at', $date->month)->count(),
             ];
         }
         return $mois;
     }
 
-    // Évolution mensuelle pour un département (6 derniers mois)
     private function evolutionMoisDept(int $deptId): array
     {
         $mois = [];
         for ($i = 5; $i >= 0; $i--) {
             $date   = now()->subMonths($i);
             $mois[] = [
-                'label'   => $date->locale('fr')->isoFormat('MMM'),
-                'conges'  => DemandeJouissance::whereHas('user', fn($q) =>
+                'label'    => $date->locale('fr')->isoFormat('MMM'),
+                'conges'   => DemandeJouissance::whereHas('user', fn($q) =>
                     $q->where('departement_id', $deptId))
                     ->whereYear('created_at', $date->year)
-                    ->whereMonth('created_at', $date->month)
-                    ->count(),
+                    ->whereMonth('created_at', $date->month)->count(),
                 'absences' => DemandeAbsence::whereHas('user', fn($q) =>
                     $q->where('departement_id', $deptId))
                     ->whereYear('created_at', $date->year)
-                    ->whereMonth('created_at', $date->month)
-                    ->count(),
+                    ->whereMonth('created_at', $date->month)->count(),
             ];
         }
         return $mois;
     }
 
-    // Évolution mensuelle pour une direction (6 derniers mois)
     private function evolutionMoisDirection(int $dirId): array
     {
         $mois = [];
         for ($i = 5; $i >= 0; $i--) {
             $date   = now()->subMonths($i);
             $mois[] = [
-                'label'   => $date->locale('fr')->isoFormat('MMM'),
-                'conges'  => DemandeJouissance::whereHas('user.departement', fn($q) =>
+                'label'    => $date->locale('fr')->isoFormat('MMM'),
+                'conges'   => DemandeJouissance::whereHas('user.departement', fn($q) =>
                     $q->where('direction_id', $dirId))
                     ->whereYear('created_at', $date->year)
-                    ->whereMonth('created_at', $date->month)
-                    ->count(),
+                    ->whereMonth('created_at', $date->month)->count(),
                 'absences' => DemandeAbsence::whereHas('user.departement', fn($q) =>
                     $q->where('direction_id', $dirId))
                     ->whereYear('created_at', $date->year)
-                    ->whereMonth('created_at', $date->month)
-                    ->count(),
+                    ->whereMonth('created_at', $date->month)->count(),
             ];
         }
         return $mois;
     }
 
-    // Évolution mensuelle globale (12 derniers mois)
-    private function evolutionMoiSGlobal(string $type): array
+    private function evolutionMoisGlobal(string $type): array
     {
         $mois = [];
         for ($i = 11; $i >= 0; $i--) {
-            $date = now()->subMonths($i);
-            if ($type === 'conge') {
-                $mois[] = [
-                    'label' => $date->locale('fr')->isoFormat('MMM'),
-                    'count' => DemandeJouissance::whereYear('created_at', $date->year)
+            $date   = now()->subMonths($i);
+            $mois[] = [
+                'label' => $date->locale('fr')->isoFormat('MMM'),
+                'count' => $type === 'conge'
+                    ? DemandeJouissance::whereYear('created_at', $date->year)
+                        ->whereMonth('created_at', $date->month)->count()
+                    : DemandeAbsence::whereYear('created_at', $date->year)
                         ->whereMonth('created_at', $date->month)->count(),
-                ];
-            } else {
-                $mois[] = [
-                    'label' => $date->locale('fr')->isoFormat('MMM'),
-                    'count' => DemandeAbsence::whereYear('created_at', $date->year)
-                        ->whereMonth('created_at', $date->month)->count(),
-                ];
-            }
+            ];
         }
         return $mois;
     }
 
-    // Répartition par département dans une direction
     private function repartitionParDept(int $dirId): array
     {
         return \App\Models\Departement::where('direction_id', $dirId)

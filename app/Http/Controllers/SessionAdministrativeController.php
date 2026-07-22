@@ -75,7 +75,7 @@ class SessionAdministrativeController extends Controller
         $session = SessionAdministrative::findOrFail($id);
         $session->update(['active_absence' => !$session->active_absence]);
         $etat = $session->active_absence ? 'ouverte' : 'fermée';
-        return redirect()->route('sessions_Administrateuristratives.index')
+        return redirect()->route('sessions_Administratives.index')
             ->with('success', "Absence {$etat}.");
     }
 
@@ -85,7 +85,7 @@ class SessionAdministrativeController extends Controller
         $session = SessionAdministrative::findOrFail($id);
         $session->update(['active_conge' => !$session->active_conge]);
         $etat = $session->active_conge ? 'ouvert' : 'fermé';
-        return redirect()->route('sessions_Administrateuristratives.index')
+        return redirect()->route('sessions_Administratives.index')
             ->with('success', "Congé {$etat}.");
     }
 
@@ -95,7 +95,7 @@ class SessionAdministrativeController extends Controller
         $session = SessionAdministrative::findOrFail($id);
         $session->update(['active_jouissance' => !$session->active_jouissance]);
         $etat = $session->active_jouissance ? 'ouverte' : 'fermée';
-        return redirect()->route('sessions_Administrateuristratives.index')
+        return redirect()->route('sessions_Administratives.index')
             ->with('success', "Jouissance {$etat}.");
     }
 }
