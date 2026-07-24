@@ -154,7 +154,7 @@
                             code, en plus du rôle principal ci-dessus qui reste
                             utilisé par toute la logique de circuit existante.
                         --}}
-                        <div class="col-md-12">
+                        <!-- <div class="col-md-12">
                             <label class="form-label fw-bold">Rôles additionnels (optionnel)</label>
                             <div class="row">
                                 @foreach($roles as $role)
@@ -173,7 +173,7 @@
                                 @endforeach
                             </div>
                             <small class="text-muted">Ne coche pas le même rôle que le rôle principal ci-dessus.</small>
-                        </div>
+                        </div> -->
 
                         {{-- Département --}}
                         <div class="col-md-6">

@@ -6,6 +6,8 @@ use App\Models\DemandeConge;
 use App\Models\CompilationConge;
 use App\Models\SessionAdministrative;
 use Illuminate\Http\Request;
+use App\Helpers\LogActivity;
+
 
 class DemandeCongeController extends Controller
 {

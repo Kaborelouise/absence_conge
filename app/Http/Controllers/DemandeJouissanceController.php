@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\DemandeJouissance;
 use App\Models\SessionAdministrative;
 use Illuminate\Http\Request;
+use App\Helpers\LogActivity;
+
 
 class DemandeJouissanceController extends Controller
 {
@@ -59,7 +61,7 @@ class DemandeJouissanceController extends Controller
         if ($session === null || !$session->estOuvertePour('jouissance')) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Aucune session n\'est actuellement ouverte pour les demandes de jouissance. Contactez l\'Administrateuristration.');
+                ->with('error', 'Aucune session n\'est actuellement ouverte pour les demandes de jouissance. Contactez l\'Administration.');
         }
 
         $congeCompile = $user->demandeConges()
@@ -92,7 +94,7 @@ class DemandeJouissanceController extends Controller
             'user_id'     => $user->id,
             'statut'      => 'en_attente',
             // AJOUTÉ : rattachement à la session courante
-            'session_Administrateuristrative_id' => $session->id,
+            'session_Administrative_id' => $session->id,
         ]);
 
         // Réservation immédiate des jours sur le solde congé

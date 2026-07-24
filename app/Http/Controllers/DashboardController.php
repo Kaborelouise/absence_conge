@@ -8,6 +8,8 @@ use App\Models\DemandeConge;
 use App\Models\DemandeJouissance;
 use App\Models\Direction;
 use Carbon\Carbon;
+use App\Helpers\LogActivity;
+
 
 class DashboardController extends Controller
 {

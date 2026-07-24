@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\AvisConge;
 use App\Models\DemandeConge;
 use Illuminate\Http\Request;
+use App\Helpers\LogActivity;
+
 
 class AvisCongeController extends Controller
 {

@@ -1,3 +1,4 @@
+```php
 <?php
 
 namespace App\Http\Controllers\Auth;
@@ -28,6 +29,17 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // AJOUT : enregistre la date de dernière connexion
+        auth()->user()->update(['last_login_at' => now()]);
+
+        // AJOUT : log de connexion
+        \App\Helpers\LogActivity::log(
+            'connexion',
+            'User',
+            auth()->id(),
+            'Connexion de ' . auth()->user()->prenom . ' ' . auth()->user()->nom
+        );
+
         return redirect()->intended(route('dashboard'));
     }
 
@@ -45,3 +57,4 @@ class AuthenticatedSessionController extends Controller
         return redirect('/');
     }
 }
+

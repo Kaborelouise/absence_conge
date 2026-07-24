@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use App\Helpers\LogActivity;
+
 
 class NewPasswordController extends Controller
 {

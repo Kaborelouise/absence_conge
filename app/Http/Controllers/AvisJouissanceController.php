@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\AvisJouissance;
 use App\Models\DemandeJouissance;
 use Illuminate\Http\Request;
+use App\Helpers\LogActivity;
+
 
 class AvisJouissanceController extends Controller
 {

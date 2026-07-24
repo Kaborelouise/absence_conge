@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SessionAdministrative;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Helpers\LogActivity;
 
 class SessionAdministrativeController extends Controller
 {

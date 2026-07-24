@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\JustificatifAbsence;
 use App\Models\DemandeAbsence;
 use Illuminate\Http\Request;
+use App\Helpers\LogActivity;
 
 class JustificatifAbsenceController extends Controller
 {

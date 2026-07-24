@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Direction;
 use Illuminate\Http\Request;
+use App\Helpers\LogActivity;
+
 
 class DirectionController extends Controller
 {

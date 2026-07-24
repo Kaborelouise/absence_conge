@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\AvisAbsence;
 use App\Models\DemandeAbsence;
 use Illuminate\Http\Request;
+use App\Helpers\LogActivity;
+
 
 class AvisAbsenceController extends Controller
 {

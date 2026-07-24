@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\DemandeAbsence;
 use App\Models\SessionAdministrateuristrative;
 use Illuminate\Http\Request;
+use App\Helpers\LogActivity;
+
 
 class DemandeAbsenceController extends Controller
 {
@@ -120,7 +122,7 @@ class DemandeAbsenceController extends Controller
             'interimaire' => $request->interimaire,
             'user_id'     => $user->id,
             'statut'      => 'en_attente',
-            // AJOUTÉ : rattachement à la session courante
+            // Ajout : rattachement à la session courante
             'session_Administrateuristrative_id' => $session->id,
         ]);
 
@@ -129,8 +131,12 @@ class DemandeAbsenceController extends Controller
         // est refusée/abandonnée/supprimée plus tard, ces jours seront restitués.
         $user->decrement('solde_absence', $jours);
 
+
+        LogActivity::log('create', 'DemandeAbsence', $demande->id, "Soumission demande absence");
+
         return redirect()->route('demande_absences.index')
             ->with('success', "Demande soumise avec succès. {$jours} jour(s) réservé(s) sur votre solde.");
+
     }
 
     public function show($id)

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use Illuminate\Http\Request;
+use App\Helpers\LogActivity;
 
 class RoleController extends Controller
 {
