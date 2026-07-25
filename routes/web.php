@@ -23,9 +23,7 @@ require __DIR__.'/auth.php';
 Route::middleware('auth')->group(function () {
 
     // ACCUEIL
-    Route::get('/', function () {
-        return view('accueil');
-    })->name('accueil');
+  Route::redirect('/', '/dashboard')->name('accueil');
     // ->name('accueil') : donne le nom 'accueil' à cette route
     // Maintenant route('accueil') fonctionnera
 
@@ -87,8 +85,6 @@ Route::middleware('auth')->group(function () {
     Route::post('sessions_Administratives/{id}/toggle-jouissance',
         [SessionAdministrativeController::class, 'toggleJouissance'])
         ->name('sessions_Administratives.toggle_jouissance');
-
-
 
 
 

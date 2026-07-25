@@ -1,28 +1,31 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+   
     public function up(): void
     {
-        Schema::table('json', function (Blueprint $table) {
-            //
-        });
+
+        DB::statement('ALTER TABLE demande_conges DROP CONSTRAINT IF EXISTS demande_conges_lieu_jouissance_check');
+        DB::statement("
+            ALTER TABLE demande_conges
+            ALTER COLUMN lieu_jouissance TYPE json
+            USING CASE
+                WHEN lieu_jouissance IS NULL THEN '[]'::json
+                ELSE to_json(ARRAY[lieu_jouissance]::text[])
+            END
+        ");
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::table('json', function (Blueprint $table) {
-            //
-        });
+        DB::statement("
+            ALTER TABLE demande_conges
+            ALTER COLUMN lieu_jouissance TYPE varchar(255)
+            USING (lieu_jouissance->>0)
+        ");
     }
 };

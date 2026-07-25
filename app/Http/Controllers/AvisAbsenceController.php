@@ -7,7 +7,6 @@ use App\Models\DemandeAbsence;
 use Illuminate\Http\Request;
 use App\Helpers\LogActivity;
 
-
 class AvisAbsenceController extends Controller
 {
     public function store(Request $request)
@@ -32,32 +31,18 @@ class AvisAbsenceController extends Controller
 
         $role = $user->role->libelle;
 
-     $typeAvis = match (true) {
-        $role === 'Chef de Département' || $user->est_responsable_departement
-            => 'Chef de Département',
-
-        $role === 'Responsable Direction' || $user->est_Responsable_direction
-            => 'Responsable Direction',
-
-        $role === 'Agent RH'
-            => 'Agent RH',
-
-        $role === 'SG'
-            => 'SG',
-
-        $role === 'DG'
-            => 'DG',
-
-        $role === 'PCA'
-            => 'PCA',
-
-        default => null,
-    };
+        $typeAvis = match (true) {
+            $role === 'Responsable Département' || $user->est_responsable_departement => 'chef_departement',
+            $role === 'Responsable Direction'                                          => 'responsable_direction',
+            $role === 'Agent RH'                                                       => 'agent_rh',
+            $role === 'SG'                                                             => 'sg',
+            $role === 'DG'                                                             => 'dg',
+            $role === 'PCA'                                                            => 'pca',
+            default                                                                    => strtolower($role),
+        };
 
         if ($role === 'Agent RH') {
-            $demande->update([
-                'retenue_salaire' => $request->boolean('retenue_salaire'),
-            ]);
+            $demande->update(['retenue_salaire' => $request->boolean('retenue_salaire')]);
         }
 
         AvisAbsence::create([
@@ -65,22 +50,20 @@ class AvisAbsenceController extends Controller
             'avis'               => $request->avis,
             'type'               => $typeAvis,
             'commentaire'        => $request->commentaire,
-            'user_id'            => $user->id, // On enregistre l'utilisateur qui a donné l'avis
+            'user_id'            => $user->id,
         ]);
 
-        /**
-         * MODIFIÉ : le solde a été réservé (décrémenté) dès la CRÉATION de la demande
-         * (voir DemandeAbsenceController::store). Si un avis défavorable est donné,
-         * la demande n'aboutira jamais : il faut donc RESTITUER les jours réservés,
-         * sinon l'Agent perdrait définitivement des jours pour une demande refusée —
-         * ce qui contredit la règle métier ("si une demande est refusée, pourquoi
-         * extraire ça du solde ?").
-         */
         if ($request->avis === 'defavorable') {
             $demande->update(['statut' => 'rejetee']);
-
-            // Restitution des jours réservés à la création, la demande est rejetée
             $demande->user->increment('solde_absence', $demande->nombreJours());
+
+            // LOG : avis défavorable — rejet demande
+            LogActivity::log(
+                'update',
+                'DemandeAbsence',
+                $demande->id,
+                "Avis défavorable ({$role}) sur demande absence #{$demande->num_demande} — demande rejetée"
+            );
 
             return redirect()
                 ->route('demande_absences.show', $demande->id)
@@ -90,16 +73,16 @@ class AvisAbsenceController extends Controller
         $demande->load('avisAbsence');
         $prochainActeur = $demande->prochainActeur();
 
-        /**
-         * MODIFIÉ : avant, ce bloc recalculait les jours et décrémentait le solde
-         * ICI, à la validation finale, avec un "max(0, ...)" qui camouflait un
-         * éventuel dépassement au lieu de le bloquer. Désormais, le solde a déjà
-         * été décrémenté dès la création de la demande (réservation immédiate) :
-         * il n'y a donc PLUS RIEN À FAIRE sur le solde à ce stade, on se contente
-         * de passer le statut à "validee".
-         */
         if ($prochainActeur === null) {
             $demande->update(['statut' => 'validee']);
+
+            // LOG : validation finale
+            LogActivity::log(
+                'update',
+                'DemandeAbsence',
+                $demande->id,
+                "Validation finale ({$role}) demande absence #{$demande->num_demande}"
+            );
 
             return redirect()
                 ->route('demande_absences.show', $demande->id)
@@ -107,6 +90,14 @@ class AvisAbsenceController extends Controller
         }
 
         $demande->update(['statut' => 'en_cours']);
+
+        // LOG : avis favorable intermédiaire
+        LogActivity::log(
+            'update',
+            'DemandeAbsence',
+            $demande->id,
+            "Avis favorable ({$role}) sur demande absence #{$demande->num_demande}"
+        );
 
         return redirect()
             ->route('demande_absences.show', $demande->id)
@@ -130,7 +121,7 @@ class AvisAbsenceController extends Controller
 
     public function destroy($id)
     {
-        $avis = AvisAbsence::findOrFail($id);
+        $avis      = AvisAbsence::findOrFail($id);
         $demandeId = $avis->demande_absence_id;
         $avis->delete();
 
