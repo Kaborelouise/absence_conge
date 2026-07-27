@@ -16,8 +16,8 @@ class DemandeAbsence extends Model
         'statut',
         'user_id',
         'abandonnee',
-        // AJOUTÉ : rattachement à la campagne annuelle (voir SessionAdministrateuristrative).
-        'session_Administrateuristrative_id',
+        // AJOUTÉ : rattachement à la campagne annuelle (voir SessionAdministrative).
+        'session_administrative_id',
         ];
 
         protected $cast =[
@@ -31,10 +31,14 @@ class DemandeAbsence extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-
-    public function sessionAdministrateuristrative()
+    /**
+     * NOUVEAU : la session administrative (campagne annuelle) sous laquelle
+     * cette demande a été créée. Sert au filtrage/historique par année, et
+     * dans le cas de l'absence, uniquement à ça (voir règle "informatif").
+     */
+    public function sessionAdministrative()
     {
-        return $this->belongsTo(SessionAdministrateuristrative::class, 'session_Administrateuristrative_id');
+        return $this->belongsTo(SessionAdministrative::class, 'session_administrative_id');
     }
 
     public function justificatifAbsence()
@@ -47,7 +51,15 @@ class DemandeAbsence extends Model
         return $this->hasMany(AvisAbsence::class);
     }
 
-
+    /**
+     * NOUVEAU : méthode centralisée pour calculer le nombre de jours d'une demande.
+     *
+     * Pourquoi centraliser ? Avant, "diffInDays" était recalculé à plusieurs endroits
+     * (circuitAttendu, AvisAbsenceController...) sans le "+1", ce qui faisait perdre
+     * un jour à chaque calcul (ex: 1er au 6 janvier = 5 jours au lieu de 6, bornes incluses).
+     * En centralisant ici, on corrige le bug une seule fois et tout le reste du code
+     * (circuit de validation, réservation de solde, etc.) devient automatiquement cohérent.
+     */
     public function nombreJours(): int
     {
         return \Carbon\Carbon::parse($this->date_debut)
@@ -60,49 +72,44 @@ class DemandeAbsence extends Model
         $role  = $user->role->libelle;
         $jours = $this->nombreJours();
 
-        // Cas du SG le DG valide toujours peu importe la durée
+        // Cas du sg le DG valide toujours peu importe la durée
         // (règle spécifique confirmée : le SG ne peut pas s'auto-valider, donc même
         // une demande d'1 jour passe systématiquement par le DG. Pas de branchement
         // par durée pour ce cas, contrairement au circuit général ci-dessous.)
-        if ($role === 'SG') {
-            return ['Agent RH', 'DG'];
+        if ($role === 'sg') {
+            return ['agent_rh', 'dg'];
         }
 
-        // Cas de l'Agent RH : il occupe normalement l'étape "Agent RH" (vérification)
-        // du circuit des autres demandeurs, mais il ne peut pas vérifier sa propre
-        // demande. Sa demande saute donc directement à l'avis du SG, sans notion de
-        // durée (contrairement aux rôles ci-dessous où une courte absence de 1-2
-        // jours ne nécessite aucune validation SG/DG).
-        if ($role === 'Agent RH') {
-            return ['SG'];
+
+        if ($role === 'agent_rh') {
+            return ['sg'];
         }
 
-        // Cas du DG cest le PCA qui valide toujours (même logique que ci-dessus)
-        if ($role === 'DG') {
-            return ['Agent RH', 'PCA'];
+        // Cas du dg cest le PCA qui valide toujours (même logique que ci-dessus)
+        if ($role === 'dg') {
+            return ['agent_rh', 'pca'];
         }
-
 
         if ($jours <= 2) {
             $etapesFinales = [];
         } elseif ($jours < 5) {
-            $etapesFinales = ['SG'];
+            $etapesFinales = ['sg'];
         } else {
-            $etapesFinales = ['DG'];
+            $etapesFinales = ['dg'];
         }
 
         // Cas du Responsable de direction 
-        if ($role === 'Responsable Direction') {
-            return array_merge(['Agent RH'], $etapesFinales);
+        if ($role === 'responsable_direction') {
+            return array_merge(['agent_rh'], $etapesFinales);
         }
 
         // Cas Agent de direction ou Chef de département :
-        if ($role === 'Chef Département' || $user->est_responsable_departement) {
-            return array_merge(['Responsable Direction', 'Agent RH'], $etapesFinales);
+        if ($role === 'chef_departement' || $user->est_responsable_departement) {
+            return array_merge(['responsable_direction', 'agent_rh'], $etapesFinales);
         }
 
         // Cas Agent simple d'un département 
-        return array_merge(['Chef Département', 'Responsable Direction', 'Agent RH'], $etapesFinales);
+        return array_merge(['chef_departement', 'responsable_direction', 'agent_rh'], $etapesFinales);
     }
     // Retourne le type d'avis attendu à l'étape actuelle
     public function prochainActeur(): ?string
@@ -125,39 +132,33 @@ class DemandeAbsence extends Model
 
     // cette fonction vérifie si l'utilisateur peut donner son avis
 
-     public function peutDonnerAvis(User $user): bool
+    public function peutDonnerAvis(User $user): bool
     {
-        if (in_array($this->statut, ['validee', 'rejetee', 'abandonnee'])) {
+        if (in_array($this->statut, ['validee', 'rejetee'])) {
             return false;
         }
 
-        $role = $user->role->libelle;
+        $role     = $user->role->libelle;
         $prochain = $this->prochainActeur();
 
-        if (in_array($role, ['SG', 'DG', 'PCA'])) {
+        if (in_array($role, ['sg', 'dg', 'pca'])) {
             return $prochain === $role;
         }
 
-        if ($role === 'Responsable Direction') {
-
+        if ($role === 'responsable_direction') {
             $dirUser  = $user->departement->direction_id ?? null;
             $dirAgent = $this->user->departement->direction_id ?? null;
-
-            return $prochain === 'Responsable Direction'
+            return $prochain === 'responsable_direction'
                 && $dirUser === $dirAgent;
         }
 
-        if (
-            $role === 'Chef de Département'
-            || $user->est_responsable_departement
-        ) {
-
-            return $prochain === 'Responsable Département'
+        if ($role === 'chef_departement' || $user->est_responsable_departement) {
+            return $prochain === 'chef_departement'
                 && $user->departement_id === $this->user->departement_id;
         }
 
-        if ($role === 'Agent RH') {
-            return $prochain === 'Agent RH';
+        if ($role === 'agent_rh') {
+            return $prochain === 'agent_rh';
         }
 
         return false;

@@ -76,7 +76,7 @@
                     <tr>
                         <th class="ps-3">Resp. direction</th>
                         <td>
-                            @if($user->est_Responsable Direction)
+                            @if($user->est_Responsable_Direction)
                                 <span class="baDGe-statut baDGe-validee">Oui</span>
                             @else
                                 <span class="baDGe-statut baDGe-rejetee">Non</span>

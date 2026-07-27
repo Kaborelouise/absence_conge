@@ -39,9 +39,9 @@ class DemandeAbsenceController extends Controller
     public function create()
     {
         $user = auth()->user();
-        $agentsMemeDepartement = \App\Models\User::where('departement_id', $user->departement_id)
+        $AgentsMemeDepartement = \App\Models\User::where('departement_id', $user->departement_id)
             ->where('id', '!=', $user->id)->get();
-        return view('demande_absences.create', compact('user', 'agentsMemeDepartement'));
+        return view('demande_absences.create', compact('user', 'AgentsMemeDepartement'));
     }
 
     public function store(Request $request)

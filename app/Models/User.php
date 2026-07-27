@@ -143,13 +143,7 @@ class User extends Authenticatable
         return $debut->copy()->addMonths($cyclesEcoules * 12);
     }
 
-    /**
-     * NOUVEAU : l'Agent est-il éligible au congé Administrateuristratif AUJOURD'HUI,
-     * c'est-à-dire a-t-il dépassé la fin de sa période ouvrant droit du cycle
-     * en cours (donc entré dans sa période de jouissance) ?
-     * Utilisé pour bloquer la création d'une DemandeConge (voir
-     * DemandeCongeController::store()).
-     */
+  
     public function estEligibleAuConge(): bool
     {
         $periode = $this->periodeOuvrantDroit();
@@ -162,6 +156,22 @@ class User extends Authenticatable
         }
 
         return \Carbon\Carbon::today()->gt($periode['fin']);
+
+    }
+
+    public function avisAbsences()
+    {
+        return $this->hasMany(AvisAbsence::class);
+    }
+
+    public function avisConges()
+    {
+        return $this->hasMany(AvisConge::class);
+    }
+
+    public function avisJouissances()
+    {
+        return $this->hasMany(AvisJouissance::class);
     }
 
 }

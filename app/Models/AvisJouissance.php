@@ -17,4 +17,9 @@ class AvisJouissance extends Model
     {
         return $this->belongsTo(DemandeJouissance::class);
     }
+
+     public function user()
+        {
+            return $this->belongsTo(User::class);
+        }
 }
