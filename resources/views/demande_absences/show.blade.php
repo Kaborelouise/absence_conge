@@ -4,7 +4,17 @@
 
 @section('content')
 
-
+@php
+// AJOUT : labels lisibles pour chaque type d'étape du circuit
+$etapeLabels = [
+    'chef_departement'      => 'Chef Département',
+    'responsable_direction' => 'Responsable Direction',
+    'agent_rh'              => 'Vérification RH',
+    'sg'                    => 'Secrétaire Général',
+    'dg'                    => 'Directeur Général',
+    'pca'                   => 'PCA',
+];
+@endphp
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="fw-bold mb-0">Détail / Suivi de la demande</h5>
@@ -26,22 +36,12 @@
     </div>
 @endif
 
-@php
-    $etapeLabels = [
-        'Chef de Département'      => 'Avis Chef Département',
-        'Responsable Direction' => 'Avis Responsable Direction',
-        'Agent RH'              => 'Vérification RH',
-        'SG'                    => 'Validation Secrétaire Général',
-        'DG'                    => 'Validation Directeur Général',
-        'PCA'                   => 'Validation PCA',
-    ];
-@endphp
-
 <div class="row g-3">
 
+    {{-- Colonne gauche : infos demande --}}
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
-            <div class="card-header text-center card-header-anptic">
+            <div class="card-header card-header-anptic text-center">
                 <i class="bi bi-file-text me-2"></i> Informations de la demande
             </div>
             <div class="card-body p-0">
@@ -72,22 +72,23 @@
                     </tr>
                     <tr>
                         <th class="ps-3">Durée</th>
-                        <td>
-                           {{ \Carbon\Carbon::parse($demande->date_debut)->diffInDays($demande->date_fin) + 1 }} jour(s)
-                        </td>
+                        <td>{{ $demande->nombreJours() }} jour(s)</td>
                     </tr>
                     <tr>
                         <th class="ps-3">Motif</th>
                         <td>
                             @php
-                                $motifLabels = [
-                                    'evenement_familliaux'                 => 'Évènements familiaux (décès)',
-                                    'jouissance_de_reliquat_de_congé_paye' => 'Jouissance de reliquats de congés payés',
-                                    'convenances_personnelles'             => 'Convenances personnelles',
-                                    'autre'                                => 'Autre'
-                                ];
+                            $motifLabels = [
+                                'evenement_familliaux'                 => 'Évènements familiaux (décès)',
+                                'jouissance_de_reliquat_de_congé_paye' => 'Jouissance de reliquats de congés payés',
+                                'convenances_personnelles'             => 'Convenances personnelles',
+                                'autre'                                => 'Autre (à préciser)',
+                            ];
                             @endphp
                             {{ $motifLabels[$demande->motif] ?? $demande->motif }}
+                            @if($demande->motif === 'autre' && $demande->motif_autre)
+                                : <em>{{ $demande->motif_autre }}</em>
+                            @endif
                         </td>
                     </tr>
                     <tr>
@@ -102,24 +103,26 @@
                         <th class="ps-3">Étape actuelle</th>
                         <td>
                             @if($demande->statut === 'validee')
-                                {{-- Demande entièrement validée --}}
-                                <span class="baDGe-statut baDGe-validee">Validée</span>
+                                <span class="badge-statut badge-validee">Validée</span>
 
                             @elseif($demande->statut === 'rejetee')
-                                {{-- Demande rejetée --}}
-                                <span class="baDGe-statut baDGe-rejetee">Rejetée</span>
+                                <span class="badge-statut badge-rejetee">Rejetée</span>
+
+                            @elseif($demande->statut === 'abandonnee')
+                                <span class="badge-statut badge-rejetee">Abandonnée</span>
 
                             @elseif($demande->statut === 'en_attente')
-                                {{-- Aucun avis encore donné : initiation --}}
-                                <span class="baDGe-statut baDGe-en_attente">
-                                    Initiation 
-                                    {{-- — en attente de : --}}
-                                    {{-- {{ $etapeLabels[$prochainActeur] ?? $prochainActeur }} --}}
+                                <span class="badge-statut badge-en_attente">
+                                    Initiation — en attente de :
+                                    {{-- CORRECTION : affiche le label lisible --}}
+                                    {{ $etapeLabels[$prochainActeur] ?? $prochainActeur }}
                                 </span>
 
                             @else
-                                <span class="baDGe-statut baDGe-en_cours">
-                                    En cours — {{ $etapeLabels[$derniereEtape] ?? $derniereEtape }}
+                                <span class="badge-statut badge-en_cours">
+                                    En cours —
+                                    {{-- CORRECTION : affiche le label lisible de la dernière étape --}}
+                                    {{ $etapeLabels[$derniereEtape] ?? $derniereEtape }}
                                 </span>
                             @endif
                         </td>
@@ -129,25 +132,29 @@
         </div>
     </div>
 
+    {{-- Colonne droite : circuit --}}
     <div class="col-md-6">
 
         <div class="card shadow-sm mb-3">
-            <div class="card-header text-center card-header-anptic">
+            <div class="card-header card-header-anptic text-center">
                 <i class="bi bi-diagram-3 me-2"></i> Historique
             </div>
             <div class="card-body">
 
                 @forelse($demande->avisAbsence as $avis)
                 <div class="d-flex align-items-start gap-3 mb-3 pb-3 border-bottom">
+                    {{-- Avatar avec initiales du type --}}
                     <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                         style="width:38px;height:38px;background:#1B384F;color:white;font-size:11px;">
-                        {{ strtoupper(substr($avis->type, 0, 2)) }}
+                         style="width:38px;height:38px;background:#1B384F;color:white;font-size:10px;font-weight:bold;">
+                        {{-- CORRECTION : initiales à partir du label lisible --}}
+                        {{ strtoupper(substr($etapeLabels[$avis->type] ?? $avis->type, 0, 2)) }}
                     </div>
                     <div class="flex-grow-1">
                         <div class="fw-bold" style="font-size:13px;">
+                            {{-- CORRECTION : label lisible au lieu de agent_rh etc. --}}
                             {{ $etapeLabels[$avis->type] ?? ucfirst(str_replace('_', ' ', $avis->type)) }}
                         </div>
-                        <span class="baDGe-statut baDGe-{{ $avis->avis === 'favorable' ? 'validee' : 'rejetee' }}">
+                        <span class="badge-statut badge-{{ $avis->avis === 'favorable' ? 'validee' : 'rejetee' }}">
                             {{ ucfirst($avis->avis) }}
                         </span>
                         @if($avis->commentaire)
@@ -155,7 +162,7 @@
                                 {{ $avis->commentaire }}
                             </div>
                         @endif
-                        <div class="text-muted" style="font-size:11px;">
+                        <div class="text-muted" style="font-size:11px; margin-top:4px;">
                             {{ $avis->created_at->format('d/m/Y H:i') }}
                         </div>
                     </div>
@@ -167,11 +174,12 @@
                     </p>
                 @endforelse
 
-                {{-- Correction prochaine étape = $prochainActeur (qui doit agir ensuite) --}}
-                @if(!in_array($demande->statut, ['validee', 'rejetee']) && $prochainActeur)
+                {{-- Prochaine étape --}}
+                @if(!in_array($demande->statut, ['validee', 'rejetee', 'abandonnee']) && $prochainActeur)
                     <div class="alert alert-info mb-0 mt-2 py-2" style="font-size:12px;">
                         <i class="bi bi-arrow-right-circle me-1"></i>
                         En attente de :
+                        {{-- CORRECTION : label lisible --}}
                         <strong>{{ $etapeLabels[$prochainActeur] ?? $prochainActeur }}</strong>
                     </div>
                 @endif
@@ -179,7 +187,7 @@
             </div>
         </div>
 
-        {{-- Bouton télécharger si la demande est acceptée--}}
+        {{-- Bouton télécharger si validée --}}
         @if($demande->statut === 'validee' && $demande->user_id === auth()->id())
         <div class="d-grid mb-3">
             <a href="{{ route('demande_absences.telecharger', $demande->id) }}"
@@ -192,30 +200,42 @@
         {{-- Bouton donner avis --}}
         @if($peutAgir)
         <div class="d-grid mb-3">
-            <button type="button"
-                    class="btn btn-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modalAvis">
+            <button type="button" class="btn btn-primary"
+                    data-bs-toggle="modal" data-bs-target="#modalAvis">
                 <i class="bi bi-pencil-square me-2"></i>
                 @if(in_array(auth()->user()->role->libelle, ['SG','DG','PCA']))
-                   Valider ou rejeter la demande
+                    Valider ou rejeter la demande
                 @else
                     Donner mon avis
                 @endif
             </button>
         </div>
         @endif
+
+        {{-- Bouton abandonner --}}
+        @if(isset($peutAbandonner) && $peutAbandonner)
+        <div class="d-grid">
+            <form action="{{ route('demande_absences.abandonner', $demande->id) }}" method="POST">
+                @csrf
+                <button type="submit" class="btn btn-warning w-100"
+                        onclick="return confirm('Abandonner cette demande ?')">
+                    <i class="bi bi-x-octagon me-2"></i> Abandonner la demande
+                </button>
+            </form>
+        </div>
+        @endif
+
     </div>
 </div>
 
-{{-- Modal donner un avis --}}
+{{-- Modal donner avis --}}
 @if($peutAgir)
-<div class="modal fade" id="modalAvis" tabindex="-1" aria-labelledby="modalAvisLabel" aria-hidden="true">
+<div class="modal fade" id="modalAvis" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
 
             <div class="modal-header card-header-anptic">
-                <h5 class="modal-title" id="modalAvisLabel">
+                <h5 class="modal-title">
                     <i class="bi bi-pencil-square me-2"></i>
                     @if(in_array(auth()->user()->role->libelle, ['SG','DG','PCA']))
                         Valider ou rejeter la demande
@@ -232,10 +252,11 @@
 
                 <div class="modal-body">
 
+                    {{-- Champ retenue salaire pour Agent RH --}}
                     @if(auth()->user()->role->libelle === 'Agent RH')
                     <div class="alert alert-info py-2 mb-3" style="font-size:13px;">
                         <i class="bi bi-info-circle me-1"></i>
-                        Solde d'absence restant de l'Agent :
+                        Solde restant de l'agent :
                         <strong>{{ $demande->user->solde_absence }} jours</strong>
                     </div>
                     <div class="mb-3">
@@ -250,7 +271,9 @@
                     </div>
                     @endif
 
-                    @if(in_array(auth()->user()->role->libelle, ['Chef de Département', 'Responsable Direction']))
+                    {{-- Champ intérimaire pour Chef Département --}}
+                    @if(auth()->user()->role->libelle === 'Responsable Département'
+                        || auth()->user()->est_responsable_departement)
                     <div class="mb-3">
                         <label class="form-label fw-bold">
                             Intérimaire désigné
@@ -258,15 +281,17 @@
                         </label>
                         <select name="interimaire" class="form-select">
                             <option value="">Choisir un intérimaire</option>
-                            @foreach($AgentsMemeDepartement as $Agent)
-                                <option value="{{ $Agent->nom }} {{ $Agent->prenom }}"
-                                    {{ $demande->interimaire === $Agent->nom.' '.$Agent->prenom ? 'selected' : '' }}>
-                                    {{ $Agent->nom }} {{ $Agent->prenom }} — {{ $Agent->poste }}
+                            @foreach($agentsMemeDepartement as $agent)
+                                <option value="{{ $agent->nom }} {{ $agent->prenom }}"
+                                    {{ $demande->interimaire === $agent->nom.' '.$agent->prenom ? 'selected' : '' }}>
+                                    {{ $agent->nom }} {{ $agent->prenom }} — {{ $agent->poste }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
                     @endif
+
+                    {{-- Avis favorable / défavorable --}}
                     <div class="mb-3">
                         <label class="form-label fw-bold">
                             @if(in_array(auth()->user()->role->libelle, ['SG','DG','PCA']))
@@ -278,17 +303,15 @@
                         <div class="d-flex gap-4">
                             <div class="form-check">
                                 <input class="form-check-input" type="radio"
-                                       name="avis" value="favorable"
-                                       id="favorable" required
-                                       onchange="toggleMotif(this.value)">
+                                       name="avis" value="favorable" id="favorable"
+                                       required onchange="toggleMotif(this.value)">
                                 <label class="form-check-label text-success fw-bold" for="favorable">
                                     <i class="bi bi-check-circle me-1"></i> Favorable
                                 </label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio"
-                                       name="avis" value="defavorable"
-                                       id="defavorable"
+                                       name="avis" value="defavorable" id="defavorable"
                                        onchange="toggleMotif(this.value)">
                                 <label class="form-check-label text-danger fw-bold" for="defavorable">
                                     <i class="bi bi-x-circle me-1"></i> Défavorable
@@ -296,17 +319,19 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="mb-3">
                         <label class="form-label fw-bold" id="labelCommentaire">
                             Commentaire
                             <span class="text-muted fw-normal">(optionnel)</span>
                         </label>
-                        <textarea name="commentaire"
-                                  id="commentaire"
+                        <textarea name="commentaire" id="commentaire"
                                   class="form-control" rows="3"
                                   placeholder="Remarques éventuelles..."></textarea>
                     </div>
+
                 </div>
+
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         Annuler
@@ -315,6 +340,7 @@
                         <i class="bi bi-send me-1"></i> Soumettre
                     </button>
                 </div>
+
             </form>
         </div>
     </div>
@@ -328,7 +354,6 @@
 function toggleMotif(valeur) {
     const label       = document.getElementById('labelCommentaire');
     const commentaire = document.getElementById('commentaire');
-
     if (valeur === 'defavorable') {
         label.innerHTML         = '<i class="bi bi-exclamation-triangle me-1 text-danger"></i>'
                                 + '<span class="text-danger fw-bold">Motif du refus *</span>';

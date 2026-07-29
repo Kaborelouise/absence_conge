@@ -35,7 +35,10 @@
                     celui-ci compilé par le RH.
                 --}}
                 @php
-                    $periode = $user->periodeJouissance();
+                $periode = $user->datePeriodeJouissance()
+                    ? ['debut' => $user->datePeriodeJouissance(), 
+                    'fin'   => $user->datePeriodeJouissance()->addDays(30)]
+                    : null;
                 @endphp
                 <div class="mb-4">
                     <label class="form-label fw-bold">Période de jouissance</label>

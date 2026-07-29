@@ -9,7 +9,10 @@
 @section('content')
 
 {{-- ================================================================
-     AGENT
+     1. AGENT
+     Respecte le PDF au pied de la lettre : "Demandes de congé" (pas
+     "jouissance") + "Demandes d'autorisation d'absence", chacune avec
+     total / rejetées / en cours / validées, plus les 2 soldes.
      ================================================================ --}}
 @if($role === 'Agent')
 
@@ -20,8 +23,9 @@
     </div>
 </div>
 
+{{-- Soldes --}}
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
+    <div class="col-md-6">
         <div class="card h-100 border-0 shadow-sm">
             <div class="card-body d-flex align-items-center gap-3">
                 <div class="rounded-circle d-flex align-items-center justify-content-center"
@@ -29,14 +33,14 @@
                     <i class="bi bi-calendar-check text-success fs-4"></i>
                 </div>
                 <div>
-                    <div class="text-muted" style="font-size:12px;">Solde congé</div>
+                    <div class="text-muted" style="font-size:12px;">Solde de congé</div>
                     <div class="fw-bold fs-4">{{ $soldeConge }}</div>
                     <div class="text-muted" style="font-size:11px;">jours restants</div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-6">
         <div class="card h-100 border-0 shadow-sm">
             <div class="card-body d-flex align-items-center gap-3">
                 <div class="rounded-circle d-flex align-items-center justify-content-center"
@@ -44,141 +48,209 @@
                     <i class="bi bi-clock-history text-primary fs-4"></i>
                 </div>
                 <div>
-                    <div class="text-muted" style="font-size:12px;">Solde absence</div>
+                    <div class="text-muted" style="font-size:12px;">Solde d'autorisation d'absence</div>
                     <div class="fw-bold fs-4">{{ $soldeAbsence }}</div>
                     <div class="text-muted" style="font-size:11px;">jours restants</div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body d-flex align-items-center gap-3">
-                <div class="rounded-circle d-flex align-items-center justify-content-center"
-                     style="width:50px;height:50px;background:#fce4ec;">
-                    <i class="bi bi-file-earmark-text text-danger fs-4"></i>
-                </div>
-                <div>
-                    <div class="text-muted" style="font-size:12px;">Total demandes</div>
-                    <div class="fw-bold fs-4">
-                        {{ $mesConges->count() + $mesAbsences->count() + $mesJouissances->count() }}
-                    </div>
-                    <div class="text-muted" style="font-size:11px;">demandes</div>
+</div>
+
+{{-- Demandes de congé / Demandes d'autorisation d'absence --}}
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header card-header-anptic">
+                <i class="bi bi-bookmark-check me-2"></i> Demandes de congé
+            </div>
+            <div class="card-body">
+                <div class="row text-center g-2">
+                    <div class="col-3"><div class="fw-bold fs-4">{{ $congeTotal }}</div><div style="font-size:11px;">Total</div></div>
+                    <div class="col-3"><div class="fw-bold fs-4 text-danger">{{ $congeRejetees }}</div><div style="font-size:11px;">Rejetées</div></div>
+                    <div class="col-3"><div class="fw-bold fs-4 text-primary">{{ $congeEnCours }}</div><div style="font-size:11px;">En cours</div></div>
+                    <div class="col-3"><div class="fw-bold fs-4 text-success">{{ $congeValidees }}</div><div style="font-size:11px;">Validées</div></div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body d-flex align-items-center gap-3">
-                <div class="rounded-circle d-flex align-items-center justify-content-center"
-                     style="width:50px;height:50px;background:#fff8e1;">
-                    <i class="bi bi-hourglass-split text-warning fs-4"></i>
-                </div>
-                <div>
-                    <div class="text-muted" style="font-size:12px;">En attente</div>
-                    <div class="fw-bold fs-4">
-                        {{ $mesAbsences->whereIn('statut', ['en_attente','en_cours'])->count()
-                         + $mesJouissances->whereIn('statut', ['en_attente','en_cours'])->count() }}
-                    </div>
-                    <div class="text-muted" style="font-size:11px;">demandes</div>
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header card-header-anptic">
+                <i class="bi bi-person-x me-2"></i> Demandes d'autorisation d'absence
+            </div>
+            <div class="card-body">
+                <div class="row text-center g-2">
+                    <div class="col-3"><div class="fw-bold fs-4">{{ $absenceTotal }}</div><div style="font-size:11px;">Total</div></div>
+                    <div class="col-3"><div class="fw-bold fs-4 text-danger">{{ $absenceRejetees }}</div><div style="font-size:11px;">Rejetées</div></div>
+                    <div class="col-3"><div class="fw-bold fs-4 text-primary">{{ $absenceEnCours }}</div><div style="font-size:11px;">En cours</div></div>
+                    <div class="col-3"><div class="fw-bold fs-4 text-success">{{ $absenceValidees }}</div><div style="font-size:11px;">Validées</div></div>
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+{{-- ================================================================
+     2 & 3. CHEF DE DÉPARTEMENT / RESPONSABLE DE DIRECTION
+     Mêmes variables des deux côtés (calculées à l'échelle département ou
+     direction selon le rôle dans le contrôleur) → un seul bloc de vue.
+     ================================================================ --}}
+@elseif(in_array($role, ['Chef de Département', 'Responsable Direction']))
+
+@php
+    $perimetre = $role === 'Chef de Département' ? 'département' : 'direction';
+@endphp
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-bold mb-0">Tableau de bord — {{ ucfirst($perimetre) }}</h5>
+</div>
+
+{{-- Globale --}}
+<div class="row g-3 mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm text-center p-3">
+            <i class="bi bi-people fs-3 text-primary mb-1"></i>
+            <div class="fw-bold fs-2">{{ $nbAgents }}</div>
+            <div style="font-size:12px;">Agents du {{ $perimetre }}</div>
+        </div>
+    </div>
+</div>
+
+{{-- ── DEMANDE DE JOUISSANCE DE CONGÉ ──────────────────────────────── --}}
+<h6 class="fw-bold mb-3"><i class="bi bi-bookmark-check me-2"></i>Demande de jouissance de congé</h6>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-6">
+        <div class="card shadow-sm text-center p-3">
+            <div class="fw-bold fs-3 text-success">{{ $nbAgentsEnConge }}</div>
+            <div style="font-size:11px;">Agents en congé dans le {{ $perimetre }} (suivi)</div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm text-center p-3 border-warning">
+            <div class="fw-bold fs-3 text-warning">{{ $alerteConge }}</div>
+            <div style="font-size:11px;">Demandes de congé en attente de votre avis (alerte)</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-4">{{ $congeStats['total'] }}</div><div style="font-size:11px;">Total</div></div></div>
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-4 text-danger">{{ $congeStats['rejetees'] }}</div><div style="font-size:11px;">Rejetées</div></div></div>
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-4 text-primary">{{ $congeStats['en_cours'] }}</div><div style="font-size:11px;">En cours</div></div></div>
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-4 text-success">{{ $congeStats['validees'] }}</div><div style="font-size:11px;">Validées</div></div></div>
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-4 text-secondary">{{ $congeStats['cloturees'] }}</div><div style="font-size:11px;">Clôturées</div></div></div>
+</div>
+
+{{-- Stratégique : calendrier (Gantt) des congés, sauf rejetées --}}
+<div class="card shadow-sm mb-3">
+    <div class="card-header card-header-anptic">
+        <i class="bi bi-calendar3-range me-2"></i> Répartition des demandes de congé (calendrier)
+    </div>
+    <div class="card-body"><canvas id="ganttConge" height="140"></canvas></div>
+</div>
+
+{{-- Détaillée : par agent / par année --}}
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header card-header-anptic">Congés par agent</div>
+            <div class="card-body p-0" style="max-height:220px;overflow-y:auto;">
+                <table class="table table-sm mb-0">
+                    <thead class="table-anptic-dark"><tr><th class="ps-2">Agent</th><th>Nb</th></tr></thead>
+                    <tbody>
+                        @forelse($congeParAgent as $agent => $nb)
+                        <tr><td class="ps-2" style="font-size:11px;">{{ $agent }}</td><td>{{ $nb }}</td></tr>
+                        @empty
+                        <tr><td colspan="2" class="text-center text-muted">Aucune demande</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header card-header-anptic">Congés par année</div>
+            <div class="card-body p-0" style="max-height:220px;overflow-y:auto;">
+                <table class="table table-sm mb-0">
+                    <thead class="table-anptic-dark"><tr><th class="ps-2">Année</th><th>Nb</th></tr></thead>
+                    <tbody>
+                        @forelse($congeParAnnee as $annee => $nb)
+                        <tr><td class="ps-2">{{ $annee }}</td><td>{{ $nb }}</td></tr>
+                        @empty
+                        <tr><td colspan="2" class="text-center text-muted">Aucune demande</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ── DEMANDE D'AUTORISATION D'ABSENCE ────────────────────────────── --}}
+<h6 class="fw-bold mb-3"><i class="bi bi-person-x me-2"></i>Demande d'autorisation d'absence</h6>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-6">
+        <div class="card shadow-sm text-center p-3">
+            <div class="fw-bold fs-3 text-info">{{ $nbAgentsEnAbsence }}</div>
+            <div style="font-size:11px;">Agents en absence dans le {{ $perimetre }} (suivi)</div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm text-center p-3 border-warning">
+            <div class="fw-bold fs-3 text-warning">{{ $alerteAbsence }}</div>
+            <div style="font-size:11px;">Demandes d'absence en attente de votre avis (alerte)</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-4">{{ $absenceStats['total'] }}</div><div style="font-size:11px;">Total</div></div></div>
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-4 text-danger">{{ $absenceStats['rejetees'] }}</div><div style="font-size:11px;">Rejetées</div></div></div>
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-4 text-primary">{{ $absenceStats['en_cours'] }}</div><div style="font-size:11px;">En cours</div></div></div>
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-4 text-success">{{ $absenceStats['validees'] }}</div><div style="font-size:11px;">Validées</div></div></div>
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-4 text-secondary">{{ $absenceStats['cloturees'] }}</div><div style="font-size:11px;">Clôturées</div></div></div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header card-header-anptic">
+        <i class="bi bi-calendar3-range me-2"></i> Répartition des demandes d'absence (calendrier)
+    </div>
+    <div class="card-body"><canvas id="ganttAbsence" height="140"></canvas></div>
 </div>
 
 <div class="row g-3 mb-4">
     <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header card-header-anptic">
-                <i class="bi bi-bookmark-check me-2"></i> Mes demandes de jouissance
-            </div>
-            <div class="card-body">
-                <div class="row text-center g-2">
-                    <div class="col-3">
-                        <div class="fw-bold fs-4">{{ $mesJouissances->count() }}</div>
-                        <div style="font-size:11px;color:#666;">Total</div>
-                    </div>
-                    <div class="col-3">
-                        <div class="fw-bold fs-4 text-success">{{ $mesJouissances->where('statut','validee')->count() }}</div>
-                        <div style="font-size:11px;color:#666;">Validées</div>
-                    </div>
-                    <div class="col-3">
-                        <div class="fw-bold fs-4 text-primary">{{ $mesJouissances->whereIn('statut',['en_attente','en_cours'])->count() }}</div>
-                        <div style="font-size:11px;color:#666;">En cours</div>
-                    </div>
-                    <div class="col-3">
-                        <div class="fw-bold fs-4 text-danger">{{ $mesJouissances->where('statut','rejetee')->count() }}</div>
-                        <div style="font-size:11px;color:#666;">Rejetées</div>
-                    </div>
-                </div>
+        <div class="card shadow-sm">
+            <div class="card-header card-header-anptic">Absences par agent</div>
+            <div class="card-body p-0" style="max-height:220px;overflow-y:auto;">
+                <table class="table table-sm mb-0">
+                    <thead class="table-anptic-dark"><tr><th class="ps-2">Agent</th><th>Nb</th></tr></thead>
+                    <tbody>
+                        @forelse($absenceParAgent as $agent => $nb)
+                        <tr><td class="ps-2" style="font-size:11px;">{{ $agent }}</td><td>{{ $nb }}</td></tr>
+                        @empty
+                        <tr><td colspan="2" class="text-center text-muted">Aucune demande</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header card-header-anptic">
-                <i class="bi bi-person-x me-2"></i> Mes autorisations d'absence
-            </div>
-            <div class="card-body">
-                <div class="row text-center g-2">
-                    <div class="col-3">
-                        <div class="fw-bold fs-4">{{ $mesAbsences->count() }}</div>
-                        <div style="font-size:11px;color:#666;">Total</div>
-                    </div>
-                    <div class="col-3">
-                        <div class="fw-bold fs-4 text-success">{{ $mesAbsences->where('statut','validee')->count() }}</div>
-                        <div style="font-size:11px;color:#666;">Validées</div>
-                    </div>
-                    <div class="col-3">
-                        <div class="fw-bold fs-4 text-primary">{{ $mesAbsences->whereIn('statut',['en_attente','en_cours'])->count() }}</div>
-                        <div style="font-size:11px;color:#666;">En cours</div>
-                    </div>
-                    <div class="col-3">
-                        <div class="fw-bold fs-4 text-danger">{{ $mesAbsences->where('statut','rejetee')->count() }}</div>
-                        <div style="font-size:11px;color:#666;">Rejetées</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-3">
-    <div class="col-md-7">
         <div class="card shadow-sm">
-            <div class="card-header card-header-anptic">
-                <i class="bi bi-graph-up me-2"></i> Évolution de mes demandes (12 derniers mois)
-            </div>
-            <div class="card-body">
-                <canvas id="chartEvolution" height="120"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-5">
-        <div class="card shadow-sm">
-            <div class="card-header card-header-anptic">
-                <i class="bi bi-list-ul me-2"></i> Mes dernières demandes
-            </div>
-            <div class="card-body p-0">
+            <div class="card-header card-header-anptic">Absences par année</div>
+            <div class="card-body p-0" style="max-height:220px;overflow-y:auto;">
                 <table class="table table-sm mb-0">
-                    <thead class="table-anptic-dark">
-                        <tr>
-                            <th class="ps-3">Type</th>
-                            <th>Période</th>
-                            <th>Statut</th>
-                        </tr>
-                    </thead>
+                    <thead class="table-anptic-dark"><tr><th class="ps-2">Année</th><th>Nb</th></tr></thead>
                     <tbody>
-                        @forelse($dernieresDemandes as $d)
-                        <tr>
-                            <td class="ps-3">{{ $d['type'] }}</td>
-                            <td style="font-size:11px;">{{ $d['periode'] }}</td>
-                            <td><span class="badge-statut badge-{{ $d['statut'] }}">{{ ucfirst(str_replace('_',' ',$d['statut'])) }}</span></td>
-                        </tr>
+                        @forelse($absenceParAnnee as $annee => $nb)
+                        <tr><td class="ps-2">{{ $annee }}</td><td>{{ $nb }}</td></tr>
                         @empty
-                        <tr><td colspan="3" class="text-center text-muted">Aucune demande</td></tr>
+                        <tr><td colspan="2" class="text-center text-muted">Aucune demande</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -188,100 +260,7 @@
 </div>
 
 {{-- ================================================================
-     RESPONSABLE DÉPARTEMENT / RESPONSABLE DIRECTION
-     ================================================================ --}}
-@elseif(in_array($role, ['Responsable Département', 'Responsable Direction']) || $user->est_responsable_departement)
-
-@php
-    $estChef  = $role === 'Responsable Département' || $user->est_responsable_departement;
-    $scope    = $estChef ? 'département' : 'direction';
-    $conges   = $estChef ? $congesDept : $congesDir;
-    $absences = $estChef ? $absencesDept : $absencesDir;
-@endphp
-
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h5 class="fw-bold mb-0">Tableau de bord — {{ ucfirst($scope) }}</h5>
-        <small class="text-muted">
-            {{ $estChef
-                ? ($user->departement->libelle_court ?? '')
-                : ($user->departement->direction->libelle_court ?? '') }}
-        </small>
-    </div>
-</div>
-
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card shadow-sm text-center p-3">
-            <div class="fw-bold fs-2 text-primary">{{ $nbAgents }}</div>
-            <div style="font-size:12px;color:#666;">Agents du {{ $scope }}</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm text-center p-3">
-            <div class="fw-bold fs-2 text-success">{{ $agentsEnConge->count() }}</div>
-            <div style="font-size:12px;color:#666;">En congé actuellement</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm text-center p-3">
-            <div class="fw-bold fs-2 text-info">{{ $agentsEnAbsence->count() }}</div>
-            <div style="font-size:12px;color:#666;">En absence actuellement</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm text-center p-3" style="background:#fff3cd;">
-            <div class="fw-bold fs-2 text-warning">{{ $alertesConge + $alertesAbsence }}</div>
-            <div style="font-size:12px;color:#856404;">Demandes à valider</div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-3 mb-4">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-header card-header-anptic">
-                <i class="bi bi-bookmark-check me-2"></i> Demandes de jouissance — {{ ucfirst($scope) }}
-            </div>
-            <div class="card-body">
-                <div class="row text-center g-2">
-                    <div class="col"><div class="fw-bold fs-4">{{ $conges->count() }}</div><div style="font-size:11px;">Total</div></div>
-                    <div class="col"><div class="fw-bold fs-4 text-success">{{ $conges->where('statut','validee')->count() }}</div><div style="font-size:11px;">Validées</div></div>
-                    <div class="col"><div class="fw-bold fs-4 text-primary">{{ $conges->whereIn('statut',['en_attente','en_cours'])->count() }}</div><div style="font-size:11px;">En cours</div></div>
-                    <div class="col"><div class="fw-bold fs-4 text-danger">{{ $conges->where('statut','rejetee')->count() }}</div><div style="font-size:11px;">Rejetées</div></div>
-                    <div class="col"><div class="fw-bold fs-4 text-secondary">{{ $conges->filter(fn($d) => $d->estCloturee())->count() }}</div><div style="font-size:11px;">Clôturées</div></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-header card-header-anptic">
-                <i class="bi bi-person-x me-2"></i> Autorisations d'absence — {{ ucfirst($scope) }}
-            </div>
-            <div class="card-body">
-                <div class="row text-center g-2">
-                    <div class="col"><div class="fw-bold fs-4">{{ $absences->count() }}</div><div style="font-size:11px;">Total</div></div>
-                    <div class="col"><div class="fw-bold fs-4 text-success">{{ $absences->where('statut','validee')->count() }}</div><div style="font-size:11px;">Validées</div></div>
-                    <div class="col"><div class="fw-bold fs-4 text-primary">{{ $absences->whereIn('statut',['en_attente','en_cours'])->count() }}</div><div style="font-size:11px;">En cours</div></div>
-                    <div class="col"><div class="fw-bold fs-4 text-danger">{{ $absences->where('statut','rejetee')->count() }}</div><div style="font-size:11px;">Rejetées</div></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card shadow-sm mb-3">
-    <div class="card-header card-header-anptic">
-        <i class="bi bi-graph-up me-2"></i> Évolution des demandes (6 derniers mois)
-    </div>
-    <div class="card-body">
-        <canvas id="chartEvolution" height="80"></canvas>
-    </div>
-</div>
-
-{{-- ================================================================
-     AGENT RH / SG / DG / PCA
+     4. RH / SG / DG / PCA
      ================================================================ --}}
 @elseif(in_array($role, ['Agent RH', 'SG', 'DG', 'PCA']))
 
@@ -290,140 +269,249 @@
     <span class="badge-statut badge-en_cours">{{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</span>
 </div>
 
+{{-- ── GLOBALE ─────────────────────────────────────────────────────── --}}
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="card shadow-sm text-center p-3">
             <i class="bi bi-people fs-3 text-primary mb-1"></i>
-            <div class="fw-bold fs-3">{{ $nbAgents }}</div>
-            <div style="font-size:12px;">Agents total ANPTIC</div>
+            <div class="fw-bold fs-2">{{ $nbAgents }}</div>
+            <div style="font-size:12px;">Agents de la structure</div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="card shadow-sm text-center p-3">
             <i class="bi bi-bookmark-check fs-3 text-success mb-1"></i>
-            <div class="fw-bold fs-3">{{ $nbEnConge }}</div>
-            <div style="font-size:12px;">En congé actuellement</div>
+            <div class="fw-bold fs-2">{{ $nbEnConge }}</div>
+            <div style="font-size:12px;">Agents en congé actuellement</div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="card shadow-sm text-center p-3">
             <i class="bi bi-person-x fs-3 text-info mb-1"></i>
-            <div class="fw-bold fs-3">{{ $nbEnAbsence }}</div>
-            <div style="font-size:12px;">En absence actuellement</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm text-center p-3" style="background:#fff3cd;">
-            <i class="bi bi-exclamation-triangle fs-3 text-warning mb-1"></i>
-            <div class="fw-bold fs-3">{{ $totalAlertes }}</div>
-            <div style="font-size:12px;color:#856404;">Alertes à traiter</div>
+            <div class="fw-bold fs-2">{{ $nbEnAbsence }}</div>
+            <div style="font-size:12px;">Agents en absence actuellement</div>
         </div>
     </div>
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card shadow-sm border-start border-warning border-3">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <div style="font-size:12px;color:#666;">En attente vérification RH</div>
-                    <div class="fw-bold fs-3">{{ $alertesRH }}</div>
-                </div>
-                <i class="bi bi-person-check fs-2 text-warning"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm border-start border-info border-3">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <div style="font-size:12px;color:#666;">En attente avis SG</div>
-                    <div class="fw-bold fs-3">{{ $alertesSG }}</div>
-                </div>
-                <i class="bi bi-person-badge fs-2 text-info"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm border-start border-primary border-3">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <div style="font-size:12px;color:#666;">En attente avis DG</div>
-                    <div class="fw-bold fs-3">{{ $alertesDG }}</div>
-                </div>
-                <i class="bi bi-person-badge fs-2 text-primary"></i>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-3 mb-4">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-header card-header-anptic">
-                <i class="bi bi-graph-up me-2"></i> Évolution congés (12 mois)
-            </div>
-            <div class="card-body"><canvas id="chartConges" height="120"></canvas></div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-header card-header-anptic">
-                <i class="bi bi-graph-up me-2"></i> Évolution absences (12 mois)
-            </div>
-            <div class="card-body"><canvas id="chartAbsences" height="120"></canvas></div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-3">
     <div class="col-md-5">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm h-100">
             <div class="card-header card-header-anptic">
-                <i class="bi bi-people me-2"></i> Agents actuellement en congé
+                <i class="bi bi-pie-chart me-2"></i> Agents par direction
             </div>
-            <div class="card-body p-0">
+            <div class="card-body"><canvas id="chartAgentsDir" height="180"></canvas></div>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-header card-header-anptic">
+                <i class="bi bi-pie-chart me-2"></i> Agents en congé par direction
+            </div>
+            <div class="card-body"><canvas id="chartCongesDir" height="180"></canvas></div>
+        </div>
+    </div>
+</div>
+
+{{-- ── ALERTES ─────────────────────────────────────────────────────── --}}
+<h6 class="fw-bold mb-3 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Alertes</h6>
+<div class="row g-3 mb-4">
+    <div class="col-md-2">
+        <div class="card shadow-sm text-center p-3 border-warning">
+            <div class="fw-bold fs-3 text-warning">{{ $alertesCongeRH }}</div>
+            <div style="font-size:11px;">Congés en attente<br>vérification RH</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm text-center p-3 border-info">
+            <div class="fw-bold fs-3 text-info">{{ $alertesCongeSG }}</div>
+            <div style="font-size:11px;">Congés en attente<br>avis SG</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm text-center p-3 border-primary">
+            <div class="fw-bold fs-3 text-primary">{{ $alertesCongeDG }}</div>
+            <div style="font-size:11px;">Congés en attente<br>avis DG</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm text-center p-3 border-warning">
+            <div class="fw-bold fs-3 text-warning">{{ $alertesAbsenceRH }}</div>
+            <div style="font-size:11px;">Absences en attente<br>vérification RH</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm text-center p-3 border-info">
+            <div class="fw-bold fs-3 text-info">{{ $alertesAbsenceSG }}</div>
+            <div style="font-size:11px;">Absences en attente<br>avis SG</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm text-center p-3 border-primary">
+            <div class="fw-bold fs-3 text-primary">{{ $alertesAbsenceDG }}</div>
+            <div style="font-size:11px;">Absences en attente<br>avis DG</div>
+        </div>
+    </div>
+</div>
+
+{{-- ── GÉNÉRALE CONGÉS ─────────────────────────────────────────────── --}}
+<h6 class="fw-bold mb-3"><i class="bi bi-bookmark-check me-2"></i>Demandes de jouissance de congé</h6>
+<div class="row g-3 mb-4">
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-3">{{ $congeStats['total'] }}</div><div style="font-size:11px;">Total</div></div></div>
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-3 text-danger">{{ $congeStats['rejetees'] }}</div><div style="font-size:11px;">Rejetées</div></div></div>
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-3 text-primary">{{ $congeStats['en_cours'] }}</div><div style="font-size:11px;">En cours</div></div></div>
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-3 text-success">{{ $congeStats['validees'] }}</div><div style="font-size:11px;">Validées</div></div></div>
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-3 text-secondary">{{ $congeStats['cloturees'] }}</div><div style="font-size:11px;">Clôturées</div></div></div>
+</div>
+
+{{-- Générale par direction : 5 diagrammes circulaires exigés par le PDF --}}
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header card-header-anptic" style="font-size:11px;">Total congés par direction</div>
+            <div class="card-body"><canvas id="chartCongesTotal" height="160"></canvas></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header card-header-anptic" style="font-size:11px;">Congés rejetés par direction</div>
+            <div class="card-body"><canvas id="chartCongesRejetes" height="160"></canvas></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header card-header-anptic" style="font-size:11px;">Congés en cours par direction</div>
+            <div class="card-body"><canvas id="chartCongesEnCours" height="160"></canvas></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header card-header-anptic" style="font-size:11px;">Congés validés par direction</div>
+            <div class="card-body"><canvas id="chartCongesValides" height="160"></canvas></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header card-header-anptic" style="font-size:11px;">Congés clôturés par direction</div>
+            <div class="card-body"><canvas id="chartCongesClotures" height="160"></canvas></div>
+        </div>
+    </div>
+</div>
+
+{{-- Stratégique : Gantt congé, avec filtre par direction --}}
+<div class="card shadow-sm mb-4">
+    <div class="card-header card-header-anptic d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-calendar3-range me-2"></i> Répartition des demandes de congé (Gantt)</span>
+        <select id="filtreDirectionConge" class="form-select form-select-sm" style="width:auto;">
+            <option value="">Toutes les directions</option>
+            @foreach($directions as $dir)
+            <option value="{{ $dir->libelle_court }}">{{ $dir->libelle_court }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="card-body"><canvas id="ganttConge" height="180"></canvas></div>
+</div>
+
+{{-- Détaillée congés --}}
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header card-header-anptic">Par agent</div>
+            <div class="card-body p-0" style="max-height:200px;overflow-y:auto;">
                 <table class="table table-sm mb-0">
-                    <thead class="table-anptic-dark">
-                        <tr><th class="ps-3">Agent</th><th>Direction</th><th>Retour</th></tr>
-                    </thead>
+                    <thead class="table-anptic-dark"><tr><th class="ps-2">Agent</th><th>Nb</th></tr></thead>
                     <tbody>
-                        @forelse($agentsEnConge as $d)
-                        <tr>
-                            <td class="ps-3">{{ $d->user->nom }} {{ $d->user->prenom }}</td>
-                            <td>{{ $d->user->departement->direction->libelle_court ?? '—' }}</td>
-                            <td style="font-size:11px;">{{ \Carbon\Carbon::parse($d->date_fin)->format('d/m/Y') }}</td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="3" class="text-center text-muted">Aucun agent en congé</td></tr>
-                        @endforelse
+                        @foreach($congeParAgent as $agent => $nb)
+                        <tr><td class="ps-2" style="font-size:11px;">{{ $agent }}</td><td>{{ $nb }}</td></tr>
+                        @endforeach
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-    <div class="col-md-7">
+    <div class="col-md-4">
         <div class="card shadow-sm">
-            <div class="card-header card-header-anptic">
-                <i class="bi bi-list-ul me-2"></i> Dernières demandes
-            </div>
+            <div class="card-header card-header-anptic">Par année</div>
             <div class="card-body p-0">
                 <table class="table table-sm mb-0">
-                    <thead class="table-anptic-dark">
-                        <tr><th class="ps-3">Agent</th><th>Direction</th><th>Type</th><th>Période</th><th>Statut</th></tr>
-                    </thead>
+                    <thead class="table-anptic-dark"><tr><th class="ps-2">Année</th><th>Nb</th></tr></thead>
                     <tbody>
-                        @forelse($dernieresDemandes as $d)
-                        <tr>
-                            <td class="ps-3">{{ $d['agent'] }}</td>
-                            <td>{{ $d['dir'] }}</td>
-                            <td>{{ $d['type'] }}</td>
-                            <td style="font-size:11px;">{{ $d['periode'] }}</td>
-                            <td><span class="badge-statut badge-{{ $d['statut'] }}">{{ ucfirst(str_replace('_',' ',$d['statut'])) }}</span></td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="5" class="text-center text-muted">Aucune demande</td></tr>
-                        @endforelse
+                        @foreach($congeParAnnee as $annee => $nb)
+                        <tr><td class="ps-2">{{ $annee }}</td><td>{{ $nb }}</td></tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header card-header-anptic">Par direction</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead class="table-anptic-dark"><tr><th class="ps-2">Direction</th><th>Nb</th></tr></thead>
+                    <tbody>
+                        @foreach($congeParDirectionListe as $dir => $nb)
+                        <tr><td class="ps-2">{{ $dir }}</td><td>{{ $nb }}</td></tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ── GÉNÉRALE ABSENCES ───────────────────────────────────────────── --}}
+<h6 class="fw-bold mb-3"><i class="bi bi-person-x me-2"></i>Demandes d'autorisation d'absence</h6>
+<div class="row g-3 mb-4">
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-3">{{ $absenceStats['total'] }}</div><div style="font-size:11px;">Total</div></div></div>
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-3 text-danger">{{ $absenceStats['rejetees'] }}</div><div style="font-size:11px;">Rejetées</div></div></div>
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-3 text-primary">{{ $absenceStats['en_cours'] }}</div><div style="font-size:11px;">En cours</div></div></div>
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-3 text-success">{{ $absenceStats['validees'] }}</div><div style="font-size:11px;">Validées</div></div></div>
+    <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-3 text-secondary">{{ $absenceStats['cloturees'] }}</div><div style="font-size:11px;">Clôturées</div></div></div>
+</div>
+
+{{-- Stratégique : Gantt absence, avec filtre par direction --}}
+<div class="card shadow-sm mb-4">
+    <div class="card-header card-header-anptic d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-calendar3-range me-2"></i> Répartition des demandes d'absence (Gantt)</span>
+        <select id="filtreDirectionAbsence" class="form-select form-select-sm" style="width:auto;">
+            <option value="">Toutes les directions</option>
+            @foreach($directions as $dir)
+            <option value="{{ $dir->libelle_court }}">{{ $dir->libelle_court }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="card-body"><canvas id="ganttAbsence" height="180"></canvas></div>
+</div>
+
+{{-- Détaillée absences (2 listes seulement, comme demandé par le PDF) --}}
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header card-header-anptic">Absences par agent</div>
+            <div class="card-body p-0" style="max-height:200px;overflow-y:auto;">
+                <table class="table table-sm mb-0">
+                    <thead class="table-anptic-dark"><tr><th class="ps-2">Agent</th><th>Nb</th></tr></thead>
+                    <tbody>
+                        @foreach($absenceParAgent as $agent => $nb)
+                        <tr><td class="ps-2" style="font-size:11px;">{{ $agent }}</td><td>{{ $nb }}</td></tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header card-header-anptic">Absences par année</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead class="table-anptic-dark"><tr><th class="ps-2">Année</th><th>Nb</th></tr></thead>
+                    <tbody>
+                        @foreach($absenceParAnnee as $annee => $nb)
+                        <tr><td class="ps-2">{{ $annee }}</td><td>{{ $nb }}</td></tr>
+                        @endforeach
                     </tbody>
                 </table>
             </div>
@@ -432,7 +520,7 @@
 </div>
 
 {{-- ================================================================
-     ADMINISTRATEUR
+     5. ADMINISTRATEUR
      ================================================================ --}}
 @elseif($role === 'Administrateur')
 
@@ -471,66 +559,137 @@
     </div>
 </div>
 
+{{-- Utilisateurs par rôle --}}
 <div class="row g-3 mb-4">
     <div class="col-md-4">
         <div class="card shadow-sm h-100">
             <div class="card-header card-header-anptic">
                 <i class="bi bi-pie-chart me-2"></i> Utilisateurs par rôle
             </div>
-            <div class="card-body">
-                <canvas id="chartRoles" height="160"></canvas>
-            </div>
+            <div class="card-body"><canvas id="chartRoles" height="180"></canvas></div>
         </div>
     </div>
+
+    {{-- Export Excel : boutons génériques par table.
+         NOTE : ces boutons pointent vers des routes admin.export.* qui
+         doivent encore être créées côté routes/web.php + un contrôleur
+         d'export (voir message d'accompagnement). --}}
     <div class="col-md-8">
         <div class="card shadow-sm h-100">
             <div class="card-header card-header-anptic">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                Agents n'ayant pas soumis de congé en {{ now()->year }}
+                <i class="bi bi-file-earmark-excel me-2"></i> Export des données (Excel)
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive" style="max-height:250px;overflow-y:auto;">
-                    <table class="table table-sm mb-0">
-                        <thead class="table-anptic-dark">
-                            <tr><th class="ps-3">Agent</th><th>Direction</th></tr>
-                        </thead>
-                        <tbody>
-                            @forelse($agentsSansConge as $agent)
-                            <tr>
-                                <td class="ps-3">{{ $agent->nom }} {{ $agent->prenom }}</td>
-                                <td>{{ $agent->departement->direction->libelle_court ?? '—' }}</td>
-                            </tr>
-                            @empty
-                            <tr><td colspan="2" class="text-center text-muted">Tous les agents ont soumis</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+            <div class="card-body d-flex flex-wrap gap-2 align-items-start">
+                <a href="{{ route('admin.export.users') }}" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-download me-1"></i> Utilisateurs
+                </a>
+                <a href="{{ route('admin.export.conges') }}" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-download me-1"></i> Demandes de congé
+                </a>
+                <a href="{{ route('admin.export.jouissances') }}" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-download me-1"></i> Demandes de jouissance
+                </a>
+                <a href="{{ route('admin.export.absences') }}" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-download me-1"></i> Demandes d'absence
+                </a>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm">
+{{-- Liste des utilisateurs : statut + dernière authentification + filtre direction --}}
+<div class="card shadow-sm mb-4">
+    <div class="card-header card-header-anptic d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-list-ul me-2"></i> Liste des utilisateurs</span>
+        <select id="filtreDirectionUsers" class="form-select form-select-sm" style="width:auto;">
+            <option value="">Toutes les directions</option>
+            @foreach($toutesDirections as $dir)
+            <option value="{{ $dir }}">{{ $dir }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="card-body p-0" style="max-height:320px;overflow-y:auto;">
+        <table class="table table-sm mb-0" id="tableUsers">
+            <thead class="table-anptic-dark">
+                <tr><th class="ps-3">Nom</th><th>Rôle</th><th>Direction</th><th>Statut</th><th>Dernière connexion</th></tr>
+            </thead>
+            <tbody>
+                @foreach($listeUtilisateurs as $u)
+                <tr data-direction="{{ $u['direction'] }}">
+                    <td class="ps-3">{{ $u['nom'] }}</td>
+                    <td style="font-size:11px;">{{ $u['role'] }}</td>
+                    <td style="font-size:11px;">{{ $u['direction'] }}</td>
+                    <td>
+                        <span class="badge-statut badge-{{ $u['statut'] === 'Confirmé' ? 'validee' : 'rejetee' }}">
+                            {{ $u['statut'] }}
+                        </span>
+                    </td>
+                    <td style="font-size:11px;">{{ $u['derniere_connexion'] }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{{-- Agents sans demande de congé, avec sélecteur d'année --}}
+<div class="card shadow-sm mb-4">
+    <div class="card-header card-header-anptic d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-exclamation-triangle me-2"></i> Agents sans demande de congé</span>
+        <form method="GET" class="d-flex align-items-center gap-2">
+            <select name="annee" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                @foreach($anneesDisponibles as $annee)
+                <option value="{{ $annee }}" @selected($annee == $anneeSelectionnee)>{{ $annee }}</option>
+                @endforeach
+            </select>
+        </form>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive" style="max-height:250px;overflow-y:auto;">
+            <table class="table table-sm mb-0">
+                <thead class="table-anptic-dark">
+                    <tr><th class="ps-3">Agent</th><th>Direction</th></tr>
+                </thead>
+                <tbody>
+                    @forelse($agentsSansConge as $agent)
+                    <tr>
+                        <td class="ps-3">{{ $agent->nom }} {{ $agent->prenom }}</td>
+                        <td>{{ $agent->departement->direction->libelle_court ?? '—' }}</td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="2" class="text-center text-muted">Tous les agents ont soumis une demande en {{ $anneeSelectionnee }}</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{-- Journal d'audit --}}
+<div class="card shadow-sm mb-4">
     <div class="card-header card-header-anptic">
-        <i class="bi bi-list-ul me-2"></i> Dernières demandes
+        <i class="bi bi-clock-history me-2"></i> Historique des actions
     </div>
     <div class="card-body p-0">
         <table class="table table-sm mb-0">
             <thead class="table-anptic-dark">
-                <tr><th class="ps-3">Agent</th><th>Direction</th><th>Type</th><th>Période</th><th>Statut</th></tr>
+                <tr><th class="ps-3">Date/Heure</th><th>Utilisateur</th><th>Action</th><th>Module</th><th>Description</th></tr>
             </thead>
             <tbody>
-                @forelse($dernieresDemandes as $d)
+                @forelse($journalActions as $log)
                 <tr>
-                    <td class="ps-3">{{ $d['agent'] }}</td>
-                    <td>{{ $d['dir'] }}</td>
-                    <td>{{ $d['type'] }}</td>
-                    <td style="font-size:11px;">{{ $d['periode'] }}</td>
-                    <td><span class="badge-statut badge-{{ $d['statut'] }}">{{ ucfirst(str_replace('_',' ',$d['statut'])) }}</span></td>
+                    <td class="ps-3" style="font-size:11px;">{{ $log->created_at->format('d/m/Y H:i') }}</td>
+                    <td style="font-size:11px;">{{ $log->user->nom ?? '—' }} {{ $log->user->prenom ?? '' }}</td>
+                    <td>
+                        <span class="badge-statut badge-{{ $log->action === 'create' ? 'validee' : ($log->action === 'delete' ? 'rejetee' : 'en_cours') }}">
+                            {{ ucfirst($log->action) }}
+                        </span>
+                    </td>
+                    <td style="font-size:11px;">{{ $log->model }}</td>
+                    <td style="font-size:11px;">{{ $log->description }}</td>
                 </tr>
                 @empty
-                <tr><td colspan="5" class="text-center text-muted">Aucune demande</td></tr>
+                <tr><td colspan="5" class="text-center text-muted">Aucune action enregistrée</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -538,7 +697,6 @@
 </div>
 
 @else
-{{-- Fallback si aucun rôle ne correspond --}}
 <div class="alert alert-warning">
     Tableau de bord non disponible pour le rôle : <strong>{{ $role }}</strong>
 </div>
@@ -548,78 +706,149 @@
 
 @section('scripts')
 <script>
-const COLORS = {
-    validee  : '#198754',
-    en_cours : '#0d6efd',
-    rejetee  : '#dc3545',
-    attente  : '#ffc107',
-    conge    : '#1B384F',
-    absence  : '#42A5F5',
-};
+const COLORS = ['#1B384F','#42A5F5','#198754','#dc3545','#ffc107','#6f42c1','#0dcaf0','#fd7e14','#20c997'];
 
-@if($role === 'Agent')
-const evoData = @json($evolutionMois);
-new Chart(document.getElementById('chartEvolution'), {
-    type : 'line',
-    data : {
-        labels   : evoData.map(m => m.label),
-        datasets : [
-            { label:'Validées', data: evoData.map(m => m.validees), borderColor: COLORS.validee, backgroundColor: COLORS.validee+'22', tension:.3, fill:true },
-            { label:'En cours', data: evoData.map(m => m.en_cours), borderColor: COLORS.en_cours, backgroundColor: COLORS.en_cours+'22', tension:.3, fill:true },
-            { label:'Rejetées', data: evoData.map(m => m.rejetees), borderColor: COLORS.rejetee, backgroundColor: COLORS.rejetee+'22', tension:.3, fill:true },
-        ]
-    },
-    options : { plugins:{ legend:{ position:'top' } }, scales:{ y:{ beginAtZero:true } } }
-});
-@endif
+/**
+ * Couleur d'une barre du Gantt selon le statut de la demande.
+ */
+function couleurStatut(statut) {
+    if (statut === 'validee') return '#198754';
+    if (statut === 'rejetee') return '#dc3545';
+    return '#42A5F5'; // en_attente / en_cours
+}
 
-@if(in_array($role, ['Responsable Département', 'Responsable Direction']) || $user->est_responsable_departement)
-const evoMois = @json($evolutionMois ?? []);
-if (document.getElementById('chartEvolution') && evoMois.length) {
-    new Chart(document.getElementById('chartEvolution'), {
-        type : 'bar',
-        data : {
-            labels   : evoMois.map(m => m.label),
-            datasets : [
-                { label:'Congés',   data: evoMois.map(m => m.conges),   backgroundColor: COLORS.conge },
-                { label:'Absences', data: evoMois.map(m => m.absences), backgroundColor: COLORS.absence },
-            ]
+/**
+ * Diagramme de Gantt "maison" avec Chart.js : barres flottantes
+ * horizontales (une par demande), l'axe X représente les jours écoulés
+ * depuis la première date de la série. On évite ainsi de dépendre d'un
+ * plugin d'adaptateur de dates non chargé sur cette page.
+ *
+ * items : tableau d'objets {agent, direction, debut, fin, statut}
+ *         (format renvoyé par DashboardController::timelineData)
+ */
+function renderGantt(canvasId, items) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return null;
+
+    if (items.length === 0) {
+        ctx.replaceWith(Object.assign(document.createElement('div'), {
+            className: 'text-center text-muted p-4',
+            innerText: 'Aucune donnée à afficher pour ce filtre.'
+        }));
+        return null;
+    }
+
+    const toDay = (iso) => Math.floor(new Date(iso + 'T00:00:00').getTime() / 86400000);
+    const origine = Math.min(...items.map(i => toDay(i.debut)));
+
+    const labels = items.map(i => `${i.agent} (${i.direction})`);
+    const data   = items.map(i => [toDay(i.debut) - origine, toDay(i.fin) - origine + 1]);
+    const colors = items.map(i => couleurStatut(i.statut));
+
+    return new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{ data, backgroundColor: colors, borderRadius: 3 }]
         },
-        options : { plugins:{ legend:{ position:'top' } }, scales:{ y:{ beginAtZero:true } } }
+        options: {
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (c) => {
+                            const item = items[c.dataIndex];
+                            return `${item.debut} → ${item.fin} (${item.statut})`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        callback: (v) => {
+                            const d = new Date(origine * 86400000 + v * 86400000);
+                            return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+                        }
+                    }
+                },
+                y: { ticks: { font: { size: 10 } } }
+            }
+        }
     });
 }
+
+@if($role === 'Chef de Département' || $role === 'Responsable Direction')
+renderGantt('ganttConge', @json($congeCalendrier));
+renderGantt('ganttAbsence', @json($absenceCalendrier));
 @endif
 
 @if(in_array($role, ['Agent RH', 'SG', 'DG', 'PCA']))
-const congesData = @json($evolutionConges);
-new Chart(document.getElementById('chartConges'), {
-    type : 'line',
-    data : {
-        labels   : congesData.map(m => m.label),
-        datasets : [{ label: 'Demandes de congé', data: congesData.map(m => m.count), borderColor: COLORS.conge, backgroundColor: COLORS.conge+'33', tension:.3, fill:true }]
-    },
-    options : { plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true } } }
+const agentsDir = @json($agentsParDirection);
+new Chart(document.getElementById('chartAgentsDir'), {
+    type: 'doughnut',
+    data: { labels: agentsDir.map(d => d.label), datasets: [{ data: agentsDir.map(d => d.count), backgroundColor: COLORS }] },
+    options: { plugins:{ legend:{ position:'bottom', labels:{ font:{ size:10 } } } } }
 });
-const absencesData = @json($evolutionAbsences);
-new Chart(document.getElementById('chartAbsences'), {
-    type : 'line',
-    data : {
-        labels   : absencesData.map(m => m.label),
-        datasets : [{ label: "Demandes d'absence", data: absencesData.map(m => m.count), borderColor: COLORS.absence, backgroundColor: COLORS.absence+'33', tension:.3, fill:true }]
-    },
-    options : { plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true } } }
+
+const congesDir = @json($congesParDirection);
+new Chart(document.getElementById('chartCongesDir'), {
+    type: 'doughnut',
+    data: { labels: Object.keys(congesDir), datasets: [{ data: Object.values(congesDir), backgroundColor: COLORS }] },
+    options: { plugins:{ legend:{ position:'bottom', labels:{ font:{ size:10 } } } } }
+});
+
+// Les 5 diagrammes "Générale par direction" exigés par le PDF.
+const statDir = @json($congesStatParDirection);
+function pieParDirection(canvasId, champ) {
+    new Chart(document.getElementById(canvasId), {
+        type: 'pie',
+        data: { labels: statDir.map(d => d.label), datasets: [{ data: statDir.map(d => d[champ]), backgroundColor: COLORS }] },
+        options: { plugins:{ legend:{ position:'bottom', labels:{ font:{ size:9 } } } } }
+    });
+}
+pieParDirection('chartCongesTotal', 'total');
+pieParDirection('chartCongesRejetes', 'rejetes');
+pieParDirection('chartCongesEnCours', 'en_cours');
+pieParDirection('chartCongesValides', 'valides');
+pieParDirection('chartCongesClotures', 'clotures');
+
+// Gantt avec filtre par direction (congé ET absence, comme demandé).
+const congeCalendrierData   = @json($congeCalendrier);
+const absenceCalendrierData = @json($absenceCalendrier);
+let ganttCongeChart   = renderGantt('ganttConge', congeCalendrierData);
+let ganttAbsenceChart = renderGantt('ganttAbsence', absenceCalendrierData);
+
+document.getElementById('filtreDirectionConge')?.addEventListener('change', function () {
+    const filtre = this.value;
+    const filtrees = filtre ? congeCalendrierData.filter(i => i.direction === filtre) : congeCalendrierData;
+    ganttCongeChart?.destroy();
+    ganttCongeChart = renderGantt('ganttConge', filtrees);
+});
+
+document.getElementById('filtreDirectionAbsence')?.addEventListener('change', function () {
+    const filtre = this.value;
+    const filtrees = filtre ? absenceCalendrierData.filter(i => i.direction === filtre) : absenceCalendrierData;
+    ganttAbsenceChart?.destroy();
+    ganttAbsenceChart = renderGantt('ganttAbsence', filtrees);
 });
 @endif
 
 @if($role === 'Administrateur')
 const rolesData = @json($userParRole);
 new Chart(document.getElementById('chartRoles'), {
-    type : 'doughnut',
-    data : {
-        labels   : Object.keys(rolesData),
-        datasets : [{ data: Object.values(rolesData), backgroundColor: ['#1B384F','#42A5F5','#198754','#dc3545','#ffc107','#6f42c1','#0dcaf0','#fd7e14'] }]
-    },
-    options : { plugins:{ legend:{ position:'bottom', labels:{ font:{ size:11 } } } } }
+    type: 'doughnut',
+    data: { labels: Object.keys(rolesData), datasets: [{ data: Object.values(rolesData), backgroundColor: COLORS }] },
+    options: { plugins:{ legend:{ position:'bottom', labels:{ font:{ size:11 } } } } }
+});
+
+// Filtre client de la liste des utilisateurs par direction.
+document.getElementById('filtreDirectionUsers')?.addEventListener('change', function () {
+    const filtre = this.value;
+    document.querySelectorAll('#tableUsers tbody tr').forEach(tr => {
+        tr.style.display = (!filtre || tr.dataset.direction === filtre) ? '' : 'none';
+    });
 });
 @endif
 </script>

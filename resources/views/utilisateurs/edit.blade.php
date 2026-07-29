@@ -84,6 +84,25 @@
                         </div>
                     </div>
 
+                    {{--
+                        AJOUTÉ (correctif) : champ de confirmation du mot de passe.
+                        La règle 'confirmed' côté contrôleur (update) exige un champ
+                        nommé exactement "password_confirmation" dès qu'un nouveau
+                        mot de passe est saisi. Sans ce champ, dès que l'admin
+                        essayait de changer le mot de passe, la validation échouait
+                        systématiquement (comparaison à null).
+                    --}}
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 offset-md-6">
+                            <label class="form-label">
+                                Confirmer le nouveau mot de passe
+                                <span class="text-muted fw-normal">(si modifié ci-dessus)</span>
+                            </label>
+                            <input type="password" name="password_confirmation"
+                                   class="form-control">
+                        </div>
+                    </div>
+
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Poste</label>
@@ -182,10 +201,20 @@
                             </div>
                         </div>
                         <div class="col-md-6">
+                            {{--
+                                CORRIGÉ : name et $user->est_Responsable_Direction
+                                utilisaient une casse différente de celle attendue par
+                                le contrôleur (est_responsable_direction, tout en
+                                minuscules). En PHP/Laravel, les noms de champs de
+                                requête et les attributs de modèle sont sensibles à la
+                                casse : le contrôleur ne lisait donc jamais cette
+                                checkbox, et elle ne pouvait pas non plus être
+                                pré-cochée correctement à l'ouverture du formulaire.
+                            --}}
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox"
-                                       name="est_Responsable_Direction" value="1" id="est_resp_dir"
-                                       {{ old('est_Responsable_Direction', $user->est_Responsable_Direction) ? 'checked' : '' }}>
+                                       name="est_responsable_direction" value="1" id="est_resp_dir"
+                                       {{ old('est_responsable_direction', $user->est_responsable_direction) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="est_resp_dir">
                                     Responsable de direction
                                 </label>

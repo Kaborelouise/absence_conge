@@ -108,5 +108,18 @@ Route::middleware('auth')->group(function () {
     Route::post('demande_conges/{id}/abandonner', [DemandeCongeController::class, 'abandonner'])
     ->name('demande_conges.abandonner');
 
+
+    Route::get('/admin/export/users', [ExportController::class, 'users'])
+    ->name('admin.export.users');
+
+Route::get('/admin/export/conges', [ExportController::class, 'conges'])
+    ->name('admin.export.conges');
+
+Route::get('/admin/export/jouissances', [ExportController::class, 'jouissances'])
+    ->name('admin.export.jouissances');
+
+Route::get('/admin/export/absences', [ExportController::class, 'absences'])
+    ->name('admin.export.absences');
+
     
 });

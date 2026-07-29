@@ -125,13 +125,18 @@
     function calculerDuree() {
         const debut = document.getElementById('date_debut').value;
         const fin   = document.getElementById('date_fin').value;
+
         if (debut && fin) {
-            const diff = Math.ceil((new Date(fin) - new Date(debut)) / 86400000);
-            document.getElementById('duree').value = diff > 0 ? diff + ' jour(s)' : 'Date invalide';
+            const diff = Math.ceil((new Date(fin) - new Date(debut)) / 86400000) + 1;
+
+            document.getElementById('duree').value =
+                diff > 0 ? diff + ' jour(s)' : 'Date invalide';
         }
     }
+
     document.getElementById('date_debut').addEventListener('change', calculerDuree);
     document.getElementById('date_fin').addEventListener('change', calculerDuree);
-    calculerDuree(); // Calcule dès le chargement
+
+    calculerDuree();
 </script>
 @endsection

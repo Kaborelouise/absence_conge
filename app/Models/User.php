@@ -2,37 +2,22 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Carbon\Carbon;
 
-#[Fillable(['name', 'email', 'password', 'matricule', 'nom', 'prenom', 'poste', 'email', 'signature', 'password', 'password', 'est_responsable_departement', 'est_Responsable Direction', 'role_id', 'departement_id', 'direction_id', 'date_prise_service', 'certificat_prise_service'])]
-#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
-     protected $table = 'users';
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+    protected $table = 'users';
 
-    
-
-
-
-    protected $fillable = ['password', 'matricule', 'nom', 'prenom', 'poste', 'email', 'signature', 'est_responsable_departement', 'est_Responsable Direction', 'role_id',  'departement_id',
-        // AJOUTÉ : les deux nouveaux champs du cycle congé/jouissance (voir migration
-        // 2026_07_08_000001_add_date_prise_service_to_users_table).
-        'date_prise_service',
-        'certificat_prise_service',
+    protected $fillable = [
+        'password', 'matricule', 'nom', 'prenom', 'poste', 'email',
+        'signature', 'est_responsable_departement', 'est_responsable_direction',
+        'role_id', 'departement_id', 'solde_conge', 'solde_absence',
+        'date_prise_service', 'certificat_prise_service', 'last_login_at',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -40,34 +25,28 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'email_verified_at'           => 'datetime',
+            'password'                    => 'hashed',
             'est_responsable_departement' => 'boolean',
-            'est_Responsable Direction' => 'boolean',
-            // AJOUTÉ : cast en Carbon pour pouvoir faire des calculs de dates dessus
-            // directement (ex: $user->date_prise_service->addMonths(11)).
-            'date_prise_service' => 'date',
-        ];}
+            'est_responsable_direction'   => 'boolean',
+            'date_prise_service'          => 'date',
+            'last_login_at'               => 'datetime',
+        ];
+    }
 
-        
-    // Un utilisateur a un rôle
     public function role()
     {
         return $this->belongsTo(Role::class);
     }
 
-    // Un utilisateur appartient à un département
-    
     public function departement()
     {
         return $this->belongsTo(Departement::class);
     }
 
-    // Demandes de l'utilisateur
     public function demandeAbsences()
     {
         return $this->hasMany(DemandeAbsence::class, 'user_id');
-        // On précise 'utilisateur_id' car Laravel chercherait 'user_id' par défaut
     }
 
     public function demandeConges()
@@ -80,98 +59,77 @@ class User extends Authenticatable
         return $this->hasMany(DemandeJouissance::class, 'user_id');
     }
 
-    /**
-     * NOUVEAU : calcule la "période ouvrant droit au congé" du cycle EN COURS,
-     * c'est-à-dire les 11 mois de travail effectif exigés avant de pouvoir
-     * prétendre au congé Administrateuristratif.
-     *
-     * Le cycle se répète chaque année à l'anniversaire de date_prise_service.
-     * On calcule donc d'abord combien de cycles complets de 12 mois se sont
-     * écoulés depuis date_prise_service, pour trouver le début du cycle actuel,
-     * puis on applique la formule confirmée par le document officiel (décret) :
-     * "+ 11 mois - 1 jour" pour la fin de la période ouvrant droit.
-     *
-     * Exemple (cas réel du décret) : date_prise_service = 21/12/2025
-     * → période ouvrant droit = 21/12/2025 → 20/11/2026 (11 mois pile,
-     *   bornes incluses).
-     *
-     * Retourne un tableau ['debut' => Carbon, 'fin' => Carbon].
-     */
-    public function periodeOuvrantDroit(): ?array
+   
+    public function estEligibleAuConge(): bool
     {
-        if ($this->date_prise_service === null) {
-            return null;
-        }
+        if (!$this->date_prise_service) return false;
 
-        $debutCycleActuel = $this->debutCycleActuel();
+        // CORRECTION : (int) force la conversion proprement
+        $mois = (int) Carbon::parse($this->date_prise_service)
+            ->diffInMonths(Carbon::now());
 
-        return [
-            'debut' => $debutCycleActuel->copy(),
-            'fin'   => $debutCycleActuel->copy()->addMonths(11)->subDay(),
-        ];
-    }
-
-    /**
-     * NOUVEAU : calcule la "période de jouissance" du cycle EN COURS (le 12e
-     * mois), pendant laquelle l'Agent peut effectivement poser ses jours de
-     * congé. Commence le lendemain de la fin de la période ouvrant droit.
-     *
-     * Exemple (cas réel du décret) : date_prise_service = 21/12/2025
-     * → période de jouissance = 21/11/2026 → 20/12/2026.
-     */
-    public function periodeJouissance(): ?array
-    {
-        if ($this->date_prise_service === null) {
-            return null;
-        }
-
-        $debutCycleActuel = $this->debutCycleActuel();
-
-        return [
-            'debut' => $debutCycleActuel->copy()->addMonths(11),
-            'fin'   => $debutCycleActuel->copy()->addMonths(12)->subDay(),
-        ];
+        return $mois >= 11;
     }
 
    
-    private function debutCycleActuel(): \Carbon\Carbon
+    public function datePeriodeJouissance(): ?Carbon
     {
-        $debut = $this->date_prise_service->copy();
-        $cyclesEcoules = $debut->diffInMonths(\Carbon\Carbon::today()->startOfDay(), false);
-        $cyclesEcoules = intdiv(max(0, $cyclesEcoules), 12);
-
-        return $debut->copy()->addMonths($cyclesEcoules * 12);
+        if (!$this->date_prise_service) return null;
+        return Carbon::parse($this->date_prise_service)->addMonths(12);
     }
 
-  
-    public function estEligibleAuConge(): bool
+   
+    public function estEligibleJouissance(): bool
     {
-        $periode = $this->periodeOuvrantDroit();
+        if (!$this->date_prise_service) return false;
 
-        if ($periode === null) {
-            // Pas de date_prise_service renseignée : on considère l'Agent comme
-            // non éligible par sécurité (empêche de créer une demande de congé
-            // tant que sa fiche n'est pas complète).
-            return false;
+        $mois = (int) Carbon::parse($this->date_prise_service)
+            ->diffInMonths(Carbon::now());
+
+        if ($mois < 12) return false;
+
+        return $this->demandeConges()
+            ->where('statut', 'compilee')
+            ->exists();
+    }
+
+    public function periodeTravailFormatee(): string
+    {
+        if (!$this->date_prise_service) return '—';
+
+        $debut = Carbon::parse($this->date_prise_service);
+        $fin   = $debut->copy()->addMonths(11)->subDay();
+
+        return $debut->format('d/m/Y') . ' au ' . $fin->format('d/m/Y');
+    }
+
+    public function periodeJouissanceFormatee(): string
+    {
+        if (!$this->date_prise_service) return '—';
+
+        $debut = Carbon::parse($this->date_prise_service)->addMonths(12);
+        $fin   = $debut->copy()->addDays(30);
+
+        return $debut->format('d/m/Y') . ' au ' . $fin->format('d/m/Y');
+    }
+
+    public function periodeOuvrantDroit(): ?array
+    {
+        if (!$this->date_prise_service) return null;
+
+        $debut = Carbon::parse($this->date_prise_service);
+        $fin   = $debut->copy()->addMonths(11)->subDay();
+
+        return ['debut' => $debut, 'fin' => $fin];
+    }
+
+        public function periodeJouissance(): ?array
+        {
+            $debut = $this->datePeriodeJouissance();
+            if (!$debut) return null;
+            return [
+                'debut' => $debut,
+                'fin'   => $debut->copy()->addDays(30)
+            ];
         }
-
-        return \Carbon\Carbon::today()->gt($periode['fin']);
-
-    }
-
-    public function avisAbsences()
-    {
-        return $this->hasMany(AvisAbsence::class);
-    }
-
-    public function avisConges()
-    {
-        return $this->hasMany(AvisConge::class);
-    }
-
-    public function avisJouissances()
-    {
-        return $this->hasMany(AvisJouissance::class);
-    }
-
 }

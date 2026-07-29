@@ -31,14 +31,14 @@
                             <span class="text-danger">*</span>
                             {{--sélection multiple --}}
                         </label>
+                            @php
+                                // Liste des lieux
+                                $lieux = ['Afrique', 'Burkina', 'Canada', 'Europe', 'Asie', 'USA'];
 
-                        @php
-                            {{-- AJOUT : liste des lieux --}}
-                            $lieux = ['Afrique', 'Burkina', 'Canada', 'Europe', 'Asie', 'USA'];
-                            {{-- AJOUT : récupère les choix existants de la demande
-                                 old() reprend les anciens choix si erreur de validation --}}
-                            $choixActuels = old('lieu_jouissance', $demande->lieu_jouissance ?? []);
-                        @endphp
+                                // Récupère les choix existants de la demande
+                                // old() reprend les anciens choix si erreur de validation
+                                $choixActuels = old('lieu_jouissance', $demande->lieu_jouissance ?? []);
+                            @endphp
 
                         {{--cases à cocher --}}
                         <div class="row">

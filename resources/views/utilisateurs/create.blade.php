@@ -126,6 +126,23 @@
                             @enderror
                         </div>
 
+                        {{--
+                            AJOUTÉ (correctif) : champ de confirmation du mot de passe.
+                            La règle de validation 'confirmed' côté contrôleur exige un
+                            champ nommé exactement "password_confirmation". Sans ce
+                            champ, la validation échouait TOUJOURS (comparaison à null),
+                            ce qui empêchait toute création d'utilisateur.
+                        --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Confirmer le mot de passe <span class="text-danger">*</span>
+                            </label>
+                            <input type="password"
+                                   name="password_confirmation"
+                                   class="form-control"
+                                   required>
+                        </div>
+
                         {{-- Rôle principal --}}
                         <div class="col-md-6">
                             <label class="form-label fw-bold">
@@ -275,13 +292,20 @@
                                     Chef de département
                                 </label>
                             </div>
+                            {{--
+                                CORRIGÉ : le name contenait un espace
+                                ("est_Responsable Direction"), ce qui ne correspondait
+                                pas au champ attendu par le contrôleur
+                                (est_responsable_direction). La checkbox n'était donc
+                                jamais prise en compte, quel que soit son état.
+                            --}}
                             <div class="form-check">
                                 <input type="checkbox"
-                                       name="est_Responsable Direction"
+                                       name="est_responsable_direction"
                                        value="1"
                                        class="form-check-input"
                                        id="resp_dir"
-                                       {{ old('est_Responsable Direction') ? 'checked' : '' }}>
+                                       {{ old('est_responsable_direction') ? 'checked' : '' }}>
                                 <label class="form-check-label" for="resp_dir">
                                     Responsable de direction
                                 </label>

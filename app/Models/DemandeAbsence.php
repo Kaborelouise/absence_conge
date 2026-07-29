@@ -3,42 +3,24 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class DemandeAbsence extends Model
 {
     protected $fillable = [
-        'num_demande',
-        'date_debut',
-        'date_fin',
-        'motif',
-        'interimaire',
-        'retenue_salaire',
-        'statut',
-        'user_id',
-        'abandonnee',
-        // AJOUTÉ : rattachement à la campagne annuelle (voir SessionAdministrative).
+        'num_demande', 'date_debut', 'date_fin', 'motif', 'motif_autre',
+        'interimaire', 'retenue_salaire', 'statut', 'user_id', 'abandonnee',
         'session_administrative_id',
-        ];
+    ];
 
-        protected $cast =[
-            'abandonnee' => 'boolean',
-            'retenue_salaire' => 'boolean',
-
-        ];
+    protected $casts = [
+        'abandonnee'      => 'boolean',
+        'retenue_salaire' => 'boolean',
+    ];
 
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
-    }
-
-    /**
-     * NOUVEAU : la session administrative (campagne annuelle) sous laquelle
-     * cette demande a été créée. Sert au filtrage/historique par année, et
-     * dans le cas de l'absence, uniquement à ça (voir règle "informatif").
-     */
-    public function sessionAdministrative()
-    {
-        return $this->belongsTo(SessionAdministrative::class, 'session_administrative_id');
     }
 
     public function justificatifAbsence()
@@ -51,67 +33,67 @@ class DemandeAbsence extends Model
         return $this->hasMany(AvisAbsence::class);
     }
 
-    /**
-     * NOUVEAU : méthode centralisée pour calculer le nombre de jours d'une demande.
-     *
-     * Pourquoi centraliser ? Avant, "diffInDays" était recalculé à plusieurs endroits
-     * (circuitAttendu, AvisAbsenceController...) sans le "+1", ce qui faisait perdre
-     * un jour à chaque calcul (ex: 1er au 6 janvier = 5 jours au lieu de 6, bornes incluses).
-     * En centralisant ici, on corrige le bug une seule fois et tout le reste du code
-     * (circuit de validation, réservation de solde, etc.) devient automatiquement cohérent.
-     */
     public function nombreJours(): int
     {
-        return \Carbon\Carbon::parse($this->date_debut)
-            ->diffInDays(\Carbon\Carbon::parse($this->date_fin)) + 1;
+        return Carbon::parse($this->date_debut)
+            ->diffInDays(Carbon::parse($this->date_fin)) + 1;
     }
 
+    // ================================================================
+    // CORRECTION COMPLÈTE : circuit basé sur la POSITION RÉELLE
+    // de l'agent dans la hiérarchie, pas seulement son rôle libellé
+    //
+    // Logique :
+    // - Agent simple          → Chef Dpt → Resp. Direction → RH → SG/DG
+    // - Chef de département   → Resp. Direction → RH → SG/DG
+    // - Resp. de direction    → RH → SG/DG
+    // - SG                    → RH → DG
+    // - DG                    → RH → PCA
+    //
+    // Le validateur final (SG ou DG) dépend de la durée :
+    //   ≤ 5 jours → SG
+    //   > 5 jours → DG
+    // ================================================================
     public function circuitAttendu(): array
     {
         $user  = $this->user;
         $role  = $user->role->libelle;
         $jours = $this->nombreJours();
 
-        // Cas du sg le DG valide toujours peu importe la durée
-        // (règle spécifique confirmée : le SG ne peut pas s'auto-valider, donc même
-        // une demande d'1 jour passe systématiquement par le DG. Pas de branchement
-        // par durée pour ce cas, contrairement au circuit général ci-dessous.)
-        if ($role === 'sg') {
+        $validateurFinal = $jours > 5 ? 'dg' : 'sg';
+
+        // SG → validé uniquement par DG (peu importe la durée)
+        if ($role === 'SG') {
             return ['agent_rh', 'dg'];
         }
 
-
-        if ($role === 'agent_rh') {
-            return ['sg'];
-        }
-
-        // Cas du dg cest le PCA qui valide toujours (même logique que ci-dessus)
-        if ($role === 'dg') {
+        // DG → validé uniquement par PCA
+        if ($role === 'DG') {
             return ['agent_rh', 'pca'];
         }
 
-        if ($jours <= 2) {
-            $etapesFinales = [];
-        } elseif ($jours < 5) {
-            $etapesFinales = ['sg'];
-        } else {
-            $etapesFinales = ['dg'];
+        // Responsable de direction (rôle explicite)
+        // → saute chef département ET responsable direction
+        if ($role === 'Responsable Direction') {
+            return ['agent_rh', $validateurFinal];
         }
 
-        // Cas du Responsable de direction 
-        if ($role === 'responsable_direction') {
-            return array_merge(['agent_rh'], $etapesFinales);
+        // Chef de département :
+        // - soit rôle explicite "Responsable Département"
+        // - soit est_responsable_departement = true (agent promu chef)
+        // → saute l'étape chef département, commence à responsable direction
+        if ($role === 'Responsable Département' || $user->est_responsable_departement) {
+            return ['responsable_direction', 'agent_rh', $validateurFinal];
         }
 
-        // Cas Agent de direction ou Chef de département :
-        if ($role === 'chef_departement' || $user->est_responsable_departement) {
-            return array_merge(['responsable_direction', 'agent_rh'], $etapesFinales);
-        }
-
-        // Cas Agent simple d'un département 
-        return array_merge(['chef_departement', 'responsable_direction', 'agent_rh'], $etapesFinales);
+        // Agent simple → circuit complet
+        return ['chef_departement', 'responsable_direction', 'agent_rh', $validateurFinal];
     }
-    // Retourne le type d'avis attendu à l'étape actuelle
+
+    // ================================================================
+    // Retourne la prochaine étape du circuit
+    // = première étape sans avis favorable
+    // ================================================================
     public function prochainActeur(): ?string
     {
         $circuit = $this->circuitAttendu();
@@ -130,51 +112,67 @@ class DemandeAbsence extends Model
         return null;
     }
 
-    // cette fonction vérifie si l'utilisateur peut donner son avis
-
+    // ================================================================
+    // CORRECTION : peutDonnerAvis vérifie 4 conditions :
+    // 1. La demande n'est pas terminée
+    // 2. C'est le tour de cet utilisateur dans le circuit
+    // 3. L'utilisateur n'a PAS déjà donné son avis
+    // 4. L'utilisateur est bien dans la bonne direction/département
+    // ================================================================
     public function peutDonnerAvis(User $user): bool
     {
-        if (in_array($this->statut, ['validee', 'rejetee'])) {
+        // Condition 1 : demande non terminée
+        if (in_array($this->statut, ['validee', 'rejetee', 'abandonnee'])) {
             return false;
         }
 
         $role     = $user->role->libelle;
         $prochain = $this->prochainActeur();
 
-        if (in_array($role, ['sg', 'dg', 'pca'])) {
-            return $prochain === $role;
+        // Détermine le type d'avis que cet utilisateur pourrait donner
+        $typeAvis = match(true) {
+            $role === 'Responsable Département' || $user->est_responsable_departement => 'chef_departement',
+            $role === 'Responsable Direction'                                          => 'responsable_direction',
+            $role === 'Agent RH'                                                       => 'agent_rh',
+            $role === 'SG'                                                             => 'sg',
+            $role === 'DG'                                                             => 'dg',
+            $role === 'PCA'                                                            => 'pca',
+            default                                                                    => null,
+        };
+
+        if ($typeAvis === null) return false;
+
+        // Condition 2 : c'est bien son tour
+        if ($prochain !== $typeAvis) return false;
+
+        // Condition 3 : il n'a pas déjà donné son avis
+        $aDejaGive = $this->avisAbsence
+            ->where('user_id', $user->id)
+            ->isNotEmpty();
+
+        if ($aDejaGive) return false;
+
+        // Condition 4 : vérification périmètre géographique
+        // Le chef de département ne peut agir que sur son propre département
+        if ($typeAvis === 'chef_departement') {
+            return $user->departement_id === $this->user->departement_id;
         }
 
-        if ($role === 'responsable_direction') {
+        // Le responsable de direction ne peut agir que sur sa propre direction
+        if ($typeAvis === 'responsable_direction') {
             $dirUser  = $user->departement->direction_id ?? null;
             $dirAgent = $this->user->departement->direction_id ?? null;
-            return $prochain === 'responsable_direction'
-                && $dirUser === $dirAgent;
+            return $dirUser !== null && $dirUser === $dirAgent;
         }
 
-        if ($role === 'chef_departement' || $user->est_responsable_departement) {
-            return $prochain === 'chef_departement'
-                && $user->departement_id === $this->user->departement_id;
-        }
-
-        if ($role === 'agent_rh') {
-            return $prochain === 'agent_rh';
-        }
-
-        return false;
+        // Agent RH, SG, DG, PCA → portée globale (toute l'organisation)
+        return true;
     }
-    //l'auteur peut abandonner sa demande si elle n'est pas encore traiter
-      public function peutEtreAbandonneePar(User $user): bool
+
+    public function peutEtreAbandonneePar(User $user): bool
     {
-    if ($this->abandonnee ?? false) {
-        return false;
+        if ($this->abandonnee ?? false) return false;
+        if (in_array($this->statut, ['validee', 'rejetee'])) return false;
+        return $this->user_id === $user->id;
     }
-
-    if (in_array($this->statut, ['validee', 'rejetee'])) {
-        return false;
-    }
-
-    return $this->user_id === $user->id;
-     }
-    
 }

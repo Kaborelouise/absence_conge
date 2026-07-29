@@ -63,7 +63,7 @@ class DemandeAbsenceController extends Controller
         }
 
         $jours = \Carbon\Carbon::parse($request->date_debut)
-            ->diffInDays(\Carbon\Carbon::parse($request->date_fin)) + 1;
+    ->diffInDays(\Carbon\Carbon::parse($request->date_fin)) + 1;
 
         if ($jours > $user->solde_absence) {
             return redirect()->back()->withInput()
@@ -84,7 +84,7 @@ class DemandeAbsenceController extends Controller
 
         $user->decrement('solde_absence', $jours);
 
-        // LOG : soumission demande absence — placé AVANT le return
+
         LogActivity::log(
             'create',
             'DemandeAbsence',
@@ -149,7 +149,7 @@ class DemandeAbsenceController extends Controller
         $demande->update($request->only(['date_debut', 'date_fin', 'motif', 'interimaire']));
         $user->update(['solde_absence' => $soldeDisponible - $nouveauxJours]);
 
-        // LOG : modification demande absence
+
         LogActivity::log(
             'update',
             'DemandeAbsence',
@@ -174,7 +174,6 @@ class DemandeAbsenceController extends Controller
 
         $demande->user->increment('solde_absence', $demande->nombreJours());
 
-        // LOG : suppression — AVANT delete() car après l'id n'existe plus
         LogActivity::log(
             'delete',
             'DemandeAbsence',
@@ -212,6 +211,19 @@ class DemandeAbsenceController extends Controller
             ->with('success', 'Demande abandonnée.');
     }
 
+    /**
+     * ====================================================================
+     * MODIFIÉ : le téléchargement clôture désormais le processus.
+     *
+     * Le workflow (PPTX, slide 1) décrit une seule action : "Télécharger la
+     * demande d'autorisation d'absence et clôturer le processus" — pas deux
+     * étapes séparées comme pour la jouissance (qui a un bouton "Clôturer"
+     * distinct après upload de 2 certificats). On clôture donc au moment du
+     * téléchargement, une seule fois : si l'agent retélécharge le PDF plus
+     * tard, cloturee_at n'est pas réécrit (peutEtreClotureePar sert de garde
+     * conceptuelle : estCloturee() ne doit passer à true qu'une fois).
+     * ====================================================================
+     */
     public function telecharger($id)
     {
         $demande = DemandeAbsence::with('user.departement.direction', 'avisAbsence')
@@ -222,7 +234,17 @@ class DemandeAbsenceController extends Controller
                 ->with('error', 'Téléchargement non autorisé.');
         }
 
-        // LOG : téléchargement PDF absence
+        if (!$demande->estCloturee()) {
+            $demande->update(['cloturee_at' => now()]);
+
+            LogActivity::log(
+                'update',
+                'DemandeAbsence',
+                $demande->id,
+                "Clôture demande absence #{$demande->num_demande}"
+            );
+        }
+
         LogActivity::log(
             'read',
             'DemandeAbsence',
@@ -232,5 +254,21 @@ class DemandeAbsenceController extends Controller
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.absence', compact('demande'));
         return $pdf->download("autorisation_absence_{$demande->num_demande}.pdf");
+    }
+
+    public function edit($id)
+    {
+        $demande = DemandeAbsence::findOrFail($id);
+
+        // Sécurité : seul le propriétaire peut modifier
+        if ($demande->user_id !== auth()->id()
+            || $demande->statut !== 'en_attente'
+            || $demande->avisAbsence()->exists()) {
+
+            return redirect()->route('demande_absences.show', $id)
+                ->with('error', 'Modification non autorisée.');
+        }
+
+        return view('demande_absences.edit', compact('demande'));
     }
 }
