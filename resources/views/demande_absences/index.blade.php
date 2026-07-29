@@ -54,10 +54,7 @@
                         && $demande->statut === 'en_attente'
                         && $demande->avisAbsence->isEmpty();
 
-                    $peutAbandonner =
-                        $estAuteur
-                        && $demande->statut === 'en_attente'
-                        && $demande->avisAbsence->isNotEmpty();
+                    $peutAbandonner = $demande->peutEtreAbandonneePar(auth()->user());
                 @endphp
 
                 <tr>

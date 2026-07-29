@@ -11,11 +11,14 @@ class DemandeAbsence extends Model
         'num_demande', 'date_debut', 'date_fin', 'motif', 'motif_autre',
         'interimaire', 'retenue_salaire', 'statut', 'user_id', 'abandonnee',
         'session_administrative_id',
+
+        'cloturee_at',
     ];
 
     protected $casts = [
         'abandonnee'      => 'boolean',
         'retenue_salaire' => 'boolean',
+        'cloturee_at'     => 'datetime',
     ];
 
     public function user()
@@ -39,21 +42,24 @@ class DemandeAbsence extends Model
             ->diffInDays(Carbon::parse($this->date_fin)) + 1;
     }
 
-    // ================================================================
-    // CORRECTION COMPLÈTE : circuit basé sur la POSITION RÉELLE
-    // de l'agent dans la hiérarchie, pas seulement son rôle libellé
-    //
-    // Logique :
-    // - Agent simple          → Chef Dpt → Resp. Direction → RH → SG/DG
-    // - Chef de département   → Resp. Direction → RH → SG/DG
-    // - Resp. de direction    → RH → SG/DG
-    // - SG                    → RH → DG
-    // - DG                    → RH → PCA
-    //
-    // Le validateur final (SG ou DG) dépend de la durée :
-    //   ≤ 5 jours → SG
-    //   > 5 jours → DG
-    // ================================================================
+    public function estCloturee(): bool
+    {
+        return $this->cloturee_at !== null;
+    }
+
+
+    // seul l'agent initiateur peut clôturer, et seulement une fois la
+    //  demande validée (par le SG ou le DG selon la durée) — pas avant,
+    //  pas s'il l'a déjà fait.
+
+    public function peutEtreClotureePar(User $user): bool
+    {
+        return $this->statut === 'validee'
+            && !$this->estCloturee()
+            && $this->user_id === $user->id;
+    }
+
+ 
     public function circuitAttendu(): array
     {
         $user  = $this->user;
@@ -90,10 +96,9 @@ class DemandeAbsence extends Model
         return ['chef_departement', 'responsable_direction', 'agent_rh', $validateurFinal];
     }
 
-    // ================================================================
-    // Retourne la prochaine étape du circuit
-    // = première étape sans avis favorable
-    // ================================================================
+
+    // Retourne la prochaine étape du circuit = première étape sans avis favorable
+
     public function prochainActeur(): ?string
     {
         $circuit = $this->circuitAttendu();
@@ -112,13 +117,7 @@ class DemandeAbsence extends Model
         return null;
     }
 
-    // ================================================================
-    // CORRECTION : peutDonnerAvis vérifie 4 conditions :
-    // 1. La demande n'est pas terminée
-    // 2. C'est le tour de cet utilisateur dans le circuit
-    // 3. L'utilisateur n'a PAS déjà donné son avis
-    // 4. L'utilisateur est bien dans la bonne direction/département
-    // ================================================================
+
     public function peutDonnerAvis(User $user): bool
     {
         // Condition 1 : demande non terminée
@@ -142,7 +141,6 @@ class DemandeAbsence extends Model
 
         if ($typeAvis === null) return false;
 
-        // Condition 2 : c'est bien son tour
         if ($prochain !== $typeAvis) return false;
 
         // Condition 3 : il n'a pas déjà donné son avis
@@ -169,10 +167,12 @@ class DemandeAbsence extends Model
         return true;
     }
 
+
     public function peutEtreAbandonneePar(User $user): bool
     {
         if ($this->abandonnee ?? false) return false;
         if (in_array($this->statut, ['validee', 'rejetee'])) return false;
+        if ($this->avisAbsence->isEmpty()) return false;
         return $this->user_id === $user->id;
     }
 }

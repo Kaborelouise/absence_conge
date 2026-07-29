@@ -5,7 +5,7 @@
 @section('content')
 
 @php
-// AJOUT : labels lisibles pour chaque type d'étape du circuit
+// Labels lisibles pour chaque type d'étape du circuit
 $etapeLabels = [
     'chef_departement'      => 'Chef Département',
     'responsable_direction' => 'Responsable Direction',
@@ -14,6 +14,13 @@ $etapeLabels = [
     'dg'                    => 'Directeur Général',
     'pca'                   => 'PCA',
 ];
+
+
+$circuit       = $demande->circuitAttendu();
+$indexActuel   = $prochainActeur ? array_search($prochainActeur, $circuit) : false;
+$etapeSuivante = ($indexActuel !== false && isset($circuit[$indexActuel + 1]))
+    ? $circuit[$indexActuel + 1]
+    : null;
 @endphp
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -99,31 +106,28 @@ $etapeLabels = [
                         <th class="ps-3">Retenue salaire</th>
                         <td>{{ $demande->retenue_salaire ? 'Oui' : 'Non' }}</td>
                     </tr>
+                    {{-- ============================================================
+                         CORRIGÉ : "Étape actuelle" affiche désormais UNIQUEMENT
+                         l'étape à laquelle la demande se trouve réellement en ce
+                         moment (qui doit agir MAINTENANT), sans le préfixe
+                         "Initiation — en attente de" qui dupliquait l'information
+                         déjà présente dans le bloc Historique à droite.
+                         ============================================================ --}}
                     <tr>
                         <th class="ps-3">Étape actuelle</th>
                         <td>
                             @if($demande->statut === 'validee')
                                 <span class="badge-statut badge-validee">Validée</span>
-
                             @elseif($demande->statut === 'rejetee')
                                 <span class="badge-statut badge-rejetee">Rejetée</span>
-
                             @elseif($demande->statut === 'abandonnee')
                                 <span class="badge-statut badge-rejetee">Abandonnée</span>
-
-                            @elseif($demande->statut === 'en_attente')
-                                <span class="badge-statut badge-en_attente">
-                                    Initiation — en attente de :
-                                    {{-- CORRECTION : affiche le label lisible --}}
+                            @elseif($prochainActeur)
+                                <span class="badge-statut badge-en_cours">
                                     {{ $etapeLabels[$prochainActeur] ?? $prochainActeur }}
                                 </span>
-
                             @else
-                                <span class="badge-statut badge-en_cours">
-                                    En cours —
-                                    {{-- CORRECTION : affiche le label lisible de la dernière étape --}}
-                                    {{ $etapeLabels[$derniereEtape] ?? $derniereEtape }}
-                                </span>
+                                <span class="badge-statut badge-en_cours">En cours de traitement</span>
                             @endif
                         </td>
                     </tr>
@@ -143,15 +147,12 @@ $etapeLabels = [
 
                 @forelse($demande->avisAbsence as $avis)
                 <div class="d-flex align-items-start gap-3 mb-3 pb-3 border-bottom">
-                    {{-- Avatar avec initiales du type --}}
                     <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
                          style="width:38px;height:38px;background:#1B384F;color:white;font-size:10px;font-weight:bold;">
-                        {{-- CORRECTION : initiales à partir du label lisible --}}
                         {{ strtoupper(substr($etapeLabels[$avis->type] ?? $avis->type, 0, 2)) }}
                     </div>
                     <div class="flex-grow-1">
                         <div class="fw-bold" style="font-size:13px;">
-                            {{-- CORRECTION : label lisible au lieu de agent_rh etc. --}}
                             {{ $etapeLabels[$avis->type] ?? ucfirst(str_replace('_', ' ', $avis->type)) }}
                         </div>
                         <span class="badge-statut badge-{{ $avis->avis === 'favorable' ? 'validee' : 'rejetee' }}">
@@ -174,14 +175,27 @@ $etapeLabels = [
                     </p>
                 @endforelse
 
-                {{-- Prochaine étape --}}
-                @if(!in_array($demande->statut, ['validee', 'rejetee', 'abandonnee']) && $prochainActeur)
-                    <div class="alert alert-info mb-0 mt-2 py-2" style="font-size:12px;">
-                        <i class="bi bi-arrow-right-circle me-1"></i>
-                        En attente de :
-                        {{-- CORRECTION : label lisible --}}
-                        <strong>{{ $etapeLabels[$prochainActeur] ?? $prochainActeur }}</strong>
-                    </div>
+                {{-- ========================================================
+                     CORRIGÉ : n'affiche plus "en attente de : <étape actuelle>"
+                     (déjà visible dans la cellule "Étape actuelle" à gauche),
+                     mais l'ÉTAPE SUIVANTE (étape+1) dans le circuit — c.-à-d.
+                     ce qui se passera APRÈS que l'étape en cours ait donné
+                     son avis favorable.
+                     ======================================================== --}}
+                @if(!in_array($demande->statut, ['validee', 'rejetee', 'abandonnee']))
+                    @if($etapeSuivante)
+                        <div class="alert alert-info mb-0 mt-2 py-2" style="font-size:12px;">
+                            <i class="bi bi-arrow-right-circle me-1"></i>
+                            Étape suivante après avis de
+                            <strong>{{ $etapeLabels[$prochainActeur] ?? $prochainActeur }}</strong> :
+                            <strong>{{ $etapeLabels[$etapeSuivante] ?? $etapeSuivante }}</strong>
+                        </div>
+                    @else
+                        <div class="alert alert-success mb-0 mt-2 py-2" style="font-size:12px;">
+                            <i class="bi bi-flag-checkered me-1"></i>
+                            Dernière étape du circuit — la demande sera validée après cet avis.
+                        </div>
+                    @endif
                 @endif
 
             </div>
@@ -212,19 +226,6 @@ $etapeLabels = [
         </div>
         @endif
 
-        {{-- Bouton abandonner --}}
-        @if(isset($peutAbandonner) && $peutAbandonner)
-        <div class="d-grid">
-            <form action="{{ route('demande_absences.abandonner', $demande->id) }}" method="POST">
-                @csrf
-                <button type="submit" class="btn btn-warning w-100"
-                        onclick="return confirm('Abandonner cette demande ?')">
-                    <i class="bi bi-x-octagon me-2"></i> Abandonner la demande
-                </button>
-            </form>
-        </div>
-        @endif
-
     </div>
 </div>
 
@@ -252,7 +253,6 @@ $etapeLabels = [
 
                 <div class="modal-body">
 
-                    {{-- Champ retenue salaire pour Agent RH --}}
                     @if(auth()->user()->role->libelle === 'Agent RH')
                     <div class="alert alert-info py-2 mb-3" style="font-size:13px;">
                         <i class="bi bi-info-circle me-1"></i>
@@ -271,7 +271,6 @@ $etapeLabels = [
                     </div>
                     @endif
 
-                    {{-- Champ intérimaire pour Chef Département --}}
                     @if(auth()->user()->role->libelle === 'Responsable Département'
                         || auth()->user()->est_responsable_departement)
                     <div class="mb-3">
@@ -291,7 +290,6 @@ $etapeLabels = [
                     </div>
                     @endif
 
-                    {{-- Avis favorable / défavorable --}}
                     <div class="mb-3">
                         <label class="form-label fw-bold">
                             @if(in_array(auth()->user()->role->libelle, ['SG','DG','PCA']))

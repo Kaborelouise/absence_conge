@@ -8,9 +8,6 @@
     <h5 class="mb-0 fw-bold">Liste des demandes de congé</h5>
 
     {{--
-        AJOUTÉ : zone d'actions globales (RH uniquement), avec état qui change
-        selon où on en est dans le cycle compiler/télécharger/décompiler
-        (règle confirmée) :
         - Rien compilé              → Compiler + Nouvelle demande
         - Compilé                   → Décompiler + Télécharger décision
         - Décision téléchargée      → Décompiler seulement
@@ -61,10 +58,24 @@
                 </a>
             @endif
         @else
-            {{-- Agents non-RH : uniquement Nouvelle demande --}}
-            <a href="{{ route('demande_conges.create') }}" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-lg me-1"></i> Nouvelle demande
-            </a>
+            {{--
+                CORRIGÉ : les agents non-RH affichaient "Nouvelle demande" en
+                permanence, sans jamais vérifier $compilationActive. Résultat :
+                le bouton restait visible même une fois la session compilée,
+                ce qui contredit la règle métier (une fois compilé, plus aucune
+                nouvelle demande tant que la RH n'a pas décompilé).
+                On applique donc la même condition que pour la RH.
+            --}}
+            @if(!$compilationActive)
+                <a href="{{ route('demande_conges.create') }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-lg me-1"></i> Nouvelle demande
+                </a>
+            @else
+                <span class="text-muted fst-italic" style="font-size: 13px;">
+                    <i class="bi bi-lock me-1"></i>
+                    Les demandes sont compilées, dépôt de nouvelle demande impossible pour le moment.
+                </span>
+            @endif
         @endif
     </div>
 </div>

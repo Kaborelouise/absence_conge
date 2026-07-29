@@ -14,6 +14,7 @@ use App\Http\Controllers\AvisCongeController;
 use App\Http\Controllers\DemandeJouissanceController;
 use App\Http\Controllers\AvisJouissanceController;
 use App\Http\Controllers\SessionAdministrativeController;
+use App\Http\Controllers\AdminExportController;
 
 
 // Auth routes générées par Breeze
@@ -109,17 +110,15 @@ Route::middleware('auth')->group(function () {
     ->name('demande_conges.abandonner');
 
 
-    Route::get('/admin/export/users', [ExportController::class, 'users'])
-    ->name('admin.export.users');
 
-Route::get('/admin/export/conges', [ExportController::class, 'conges'])
-    ->name('admin.export.conges');
 
-Route::get('/admin/export/jouissances', [ExportController::class, 'jouissances'])
-    ->name('admin.export.jouissances');
+    Route::prefix('admin/export')->name('admin.export.')->group(function () {
+        Route::get('users', [AdminExportController::class, 'users'])->name('users');
+        Route::get('conges', [AdminExportController::class, 'conges'])->name('conges');
+        Route::get('jouissances', [AdminExportController::class, 'jouissances'])->name('jouissances');
+        Route::get('absences', [AdminExportController::class, 'absences'])->name('absences');
 
-Route::get('/admin/export/absences', [ExportController::class, 'absences'])
-    ->name('admin.export.absences');
+});
 
     
 });

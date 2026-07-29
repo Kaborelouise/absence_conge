@@ -49,6 +49,25 @@ class DemandeCongeController extends Controller
         ]);
 
         $user    = auth()->user();
+
+        // ====================================================================
+        // AJOUTÉ : même règle que pour les absences — un agent ne peut pas
+        // avoir 2 demandes de congé actives en même temps. Ici, "en cours"
+        // signifie : pas encore compilée par l'Agent RH (estCompilee() ===
+        // false, cf. DemandeConge — pas de statut "rejetée" pour ce type de
+        // demande, juste "compilée" ou non) ET pas abandonnée.
+        // ====================================================================
+        $demandeEnCours = DemandeConge::where('user_id', $user->id)
+            ->where('abandonnee', false)
+            ->whereDoesntHave('avisConge')
+            ->exists();
+
+        if ($demandeEnCours) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Vous avez déjà une demande de congé en cours de traitement. '
+                    . 'Vous devez attendre qu\'elle soit compilée ou l\'abandonner avant d\'en soumettre une nouvelle.');
+        }
+
         $session = SessionAdministrative::courante();
 
         if ($session === null || !$session->estOuvertePour('conge')) {

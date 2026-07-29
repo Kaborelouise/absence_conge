@@ -8,12 +8,7 @@
 
 @section('content')
 
-{{-- ================================================================
-     1. AGENT
-     Respecte le PDF au pied de la lettre : "Demandes de congé" (pas
-     "jouissance") + "Demandes d'autorisation d'absence", chacune avec
-     total / rejetées / en cours / validées, plus les 2 soldes.
-     ================================================================ --}}
+{{-- tableau de bord 1. AGENT--}}
 @if($role === 'Agent')
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -91,11 +86,8 @@
     </div>
 </div>
 
-{{-- ================================================================
-     2 & 3. CHEF DE DÉPARTEMENT / RESPONSABLE DE DIRECTION
-     Mêmes variables des deux côtés (calculées à l'échelle département ou
-     direction selon le rôle dans le contrôleur) → un seul bloc de vue.
-     ================================================================ --}}
+{{-- 2 et 3. Chef de Département / Responsable Direction --}}
+
 @elseif(in_array($role, ['Chef de Département', 'Responsable Direction']))
 
 @php
@@ -117,7 +109,7 @@
     </div>
 </div>
 
-{{-- ── DEMANDE DE JOUISSANCE DE CONGÉ ──────────────────────────────── --}}
+{{-- DEMANDE DE JOUISSANCE DE CONGÉ --}}
 <h6 class="fw-bold mb-3"><i class="bi bi-bookmark-check me-2"></i>Demande de jouissance de congé</h6>
 
 <div class="row g-3 mb-3">
@@ -143,7 +135,7 @@
     <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-4 text-secondary">{{ $congeStats['cloturees'] }}</div><div style="font-size:11px;">Clôturées</div></div></div>
 </div>
 
-{{-- Stratégique : calendrier (Gantt) des congés, sauf rejetées --}}
+{{-- Stratégique : calendrier des congés, sauf rejetées --}}
 <div class="card shadow-sm mb-3">
     <div class="card-header card-header-anptic">
         <i class="bi bi-calendar3-range me-2"></i> Répartition des demandes de congé (calendrier)
@@ -151,7 +143,7 @@
     <div class="card-body"><canvas id="ganttConge" height="140"></canvas></div>
 </div>
 
-{{-- Détaillée : par agent / par année --}}
+{{-- Détaillée par agent et par année --}}
 <div class="row g-3 mb-4">
     <div class="col-md-6">
         <div class="card shadow-sm">
@@ -189,7 +181,7 @@
     </div>
 </div>
 
-{{-- ── DEMANDE D'AUTORISATION D'ABSENCE ────────────────────────────── --}}
+{{-- Demande d'autorisation d'absence --}}
 <h6 class="fw-bold mb-3"><i class="bi bi-person-x me-2"></i>Demande d'autorisation d'absence</h6>
 
 <div class="row g-3 mb-3">
@@ -259,9 +251,7 @@
     </div>
 </div>
 
-{{-- ================================================================
-     4. RH / SG / DG / PCA
-     ================================================================ --}}
+{{--4. RH / SG / DG / PCA --}}
 @elseif(in_array($role, ['Agent RH', 'SG', 'DG', 'PCA']))
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -269,7 +259,7 @@
     <span class="badge-statut badge-en_cours">{{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</span>
 </div>
 
-{{-- ── GLOBALE ─────────────────────────────────────────────────────── --}}
+{{--GLOBALE --}}
 <div class="row g-3 mb-4">
     <div class="col-md-4">
         <div class="card shadow-sm text-center p-3">
@@ -313,7 +303,7 @@
     </div>
 </div>
 
-{{-- ── ALERTES ─────────────────────────────────────────────────────── --}}
+{{-- Alertes --}}
 <h6 class="fw-bold mb-3 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Alertes</h6>
 <div class="row g-3 mb-4">
     <div class="col-md-2">
@@ -354,7 +344,7 @@
     </div>
 </div>
 
-{{-- ── GÉNÉRALE CONGÉS ─────────────────────────────────────────────── --}}
+{{-- Générale congés--}}
 <h6 class="fw-bold mb-3"><i class="bi bi-bookmark-check me-2"></i>Demandes de jouissance de congé</h6>
 <div class="row g-3 mb-4">
     <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-3">{{ $congeStats['total'] }}</div><div style="font-size:11px;">Total</div></div></div>
@@ -364,7 +354,7 @@
     <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-3 text-secondary">{{ $congeStats['cloturees'] }}</div><div style="font-size:11px;">Clôturées</div></div></div>
 </div>
 
-{{-- Générale par direction : 5 diagrammes circulaires exigés par le PDF --}}
+{{-- Générale par direction 5 diagrammes circulaires --}}
 <div class="row g-3 mb-4">
     <div class="col-md-4">
         <div class="card shadow-sm">
@@ -398,7 +388,7 @@
     </div>
 </div>
 
-{{-- Stratégique : Gantt congé, avec filtre par direction --}}
+{{-- Stratégique Gantt congé, avec filtre par direction --}}
 <div class="card shadow-sm mb-4">
     <div class="card-header card-header-anptic d-flex justify-content-between align-items-center">
         <span><i class="bi bi-calendar3-range me-2"></i> Répartition des demandes de congé (Gantt)</span>
@@ -461,7 +451,7 @@
     </div>
 </div>
 
-{{-- ── GÉNÉRALE ABSENCES ───────────────────────────────────────────── --}}
+{{-- Générale absences --}}
 <h6 class="fw-bold mb-3"><i class="bi bi-person-x me-2"></i>Demandes d'autorisation d'absence</h6>
 <div class="row g-3 mb-4">
     <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-3">{{ $absenceStats['total'] }}</div><div style="font-size:11px;">Total</div></div></div>
@@ -485,7 +475,7 @@
     <div class="card-body"><canvas id="ganttAbsence" height="180"></canvas></div>
 </div>
 
-{{-- Détaillée absences (2 listes seulement, comme demandé par le PDF) --}}
+{{-- Détaillée absences --}}
 <div class="row g-3 mb-4">
     <div class="col-md-6">
         <div class="card shadow-sm">
@@ -519,9 +509,7 @@
     </div>
 </div>
 
-{{-- ================================================================
-     5. ADMINISTRATEUR
-     ================================================================ --}}
+{{-- 5. Tableau de bord de l'Administrateur --}}
 @elseif($role === 'Administrateur')
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -570,8 +558,7 @@
         </div>
     </div>
 
-    {{-- Export Excel : boutons génériques par table.
-         NOTE : ces boutons pointent vers des routes admin.export.* qui
+    {{-- Export excel boutons génériques par table NB: ces boutons pointent vers des routes admin.export.* qui
          doivent encore être créées côté routes/web.php + un contrôleur
          d'export (voir message d'accompagnement). --}}
     <div class="col-md-8">
@@ -632,7 +619,7 @@
     </div>
 </div>
 
-{{-- Agents sans demande de congé, avec sélecteur d'année --}}
+{{-- Agents n'ayant fait aucune demaande de congé, avec sélecteur d'année --}}
 <div class="card shadow-sm mb-4">
     <div class="card-header card-header-anptic d-flex justify-content-between align-items-center">
         <span><i class="bi bi-exclamation-triangle me-2"></i> Agents sans demande de congé</span>

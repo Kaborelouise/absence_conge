@@ -55,6 +55,23 @@ class DemandeAbsenceController extends Controller
 
         $user = auth()->user();
 
+
+        // Ajouté un agent ne peut pas avoir 2 demandes d'absence en même temps
+        // en même temps. Tant qu'une demande n'a pas atteint un état final
+        // (validée, rejetée ou abandonnée), toute nouvelle demande est
+        // bloquée pour  évite de compliquer le suivi et le circuit d'avis avec
+        // plusieurs demandes ouvertes pour le meme agent
+
+        $demandeEnCours = DemandeAbsence::where('user_id', $user->id)
+            ->whereNotIn('statut', ['validee', 'rejetee', 'abandonnee'])
+            ->exists();
+
+        if ($demandeEnCours) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Vous avez déjà une demande d\'absence en cours de traitement. '
+                    . 'Vous devez attendre qu\'elle soit validée, rejetée ou abandonnée avant d\'en soumettre une nouvelle.');
+        }
+
         $session = SessionAdministrative::courante();
 
         if ($session === null || !$session->estOuvertePour('absence')) {
@@ -211,19 +228,6 @@ class DemandeAbsenceController extends Controller
             ->with('success', 'Demande abandonnée.');
     }
 
-    /**
-     * ====================================================================
-     * MODIFIÉ : le téléchargement clôture désormais le processus.
-     *
-     * Le workflow (PPTX, slide 1) décrit une seule action : "Télécharger la
-     * demande d'autorisation d'absence et clôturer le processus" — pas deux
-     * étapes séparées comme pour la jouissance (qui a un bouton "Clôturer"
-     * distinct après upload de 2 certificats). On clôture donc au moment du
-     * téléchargement, une seule fois : si l'agent retélécharge le PDF plus
-     * tard, cloturee_at n'est pas réécrit (peutEtreClotureePar sert de garde
-     * conceptuelle : estCloturee() ne doit passer à true qu'une fois).
-     * ====================================================================
-     */
     public function telecharger($id)
     {
         $demande = DemandeAbsence::with('user.departement.direction', 'avisAbsence')

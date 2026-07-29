@@ -50,6 +50,21 @@ class DemandeJouissanceController extends Controller
         ]);
 
         $user    = auth()->user();
+
+
+        // un agent ne peut pas avoir 2 demandes de jouissance actives en même temps
+
+        $demandeEnCours = DemandeJouissance::where('user_id', $user->id)
+            ->where('abandonnee', false)
+            ->whereNotIn('statut', ['validee', 'rejetee'])
+            ->exists();
+
+        if ($demandeEnCours) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Vous avez déjà une demande de jouissance en cours de traitement. '
+                    . 'Vous devez attendre qu\'elle soit validée, rejetée ou l\'abandonner avant d\'en soumettre une nouvelle.');
+        }
+
         $session = SessionAdministrative::courante();
 
         if ($session === null || !$session->estOuvertePour('jouissance')) {
@@ -75,7 +90,7 @@ class DemandeJouissanceController extends Controller
                 ->with('error', "Solde insuffisant : vous demandez {$jours} jour(s), il ne vous reste que {$user->solde_conge} jour(s).");
         }
 
-        // CORRECTION : capture dans $demande pour avoir l'id
+
         $demande = DemandeJouissance::create([
             'num_demande'               => time(),
             'date_debut'                => $request->date_debut,
@@ -88,7 +103,7 @@ class DemandeJouissanceController extends Controller
 
         $user->decrement('solde_conge', $jours);
 
-        // LOG : soumission demande jouissance
+        // LOG pour la soumission demande jouissance
         LogActivity::log(
             'create',
             'DemandeJouissance',
@@ -165,7 +180,7 @@ class DemandeJouissanceController extends Controller
 
         $user->update(['solde_conge' => $soldeDisponible - $nouveauxJours]);
 
-        // LOG : modification demande jouissance
+        // LOG pour la modification demande jouissance
         LogActivity::log(
             'update',
             'DemandeJouissance',
@@ -235,7 +250,7 @@ class DemandeJouissanceController extends Controller
                 ->with('error', 'Téléchargement non autorisé.');
         }
 
-        // LOG : téléchargement certificat cessation
+        // LOG de téléchargement pour le certificat de cessation
         LogActivity::log(
             'read',
             'DemandeJouissance',
@@ -261,7 +276,7 @@ class DemandeJouissanceController extends Controller
                     . $dateFin->copy()->subDays(2)->format('d/m/Y') . ').');
         }
 
-        // LOG : téléchargement certificat reprise
+        // LOG de téléchargement pour le certificat de reprise
         LogActivity::log(
             'read',
             'DemandeJouissance',

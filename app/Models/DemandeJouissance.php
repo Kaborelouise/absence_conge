@@ -17,17 +17,11 @@ class DemandeJouissance extends Model
         'certificat_cessation',
         'certificat_prise_service',
         'cloturee_at',
-        // AJOUTÉ : rattachement à la campagne annuelle.
-        'session_Administrateuristrative_id',
-        ];
+        'session_administrative_id',
+    ];
 
-    protected $cast = [
+    protected $casts = [
         'abandonnee' => 'boolean',
-        // CORRIGÉ : le champ en base s'appelle "cloturee_at" (voir $fillable et la
-        // migration), pas "cloture_at". Avec la faute de frappe, Laravel ne castait
-        // jamais ce champ en instance Carbon : $demande->cloturee_at restait une
-        // simple chaîne de caractères, ce qui aurait fait planter tout code appelant
-        // ->format() ou toute autre méthode Carbon dessus (ex: dans une vue Blade).
         'cloturee_at' => 'datetime',
     ];
 
@@ -59,11 +53,14 @@ class DemandeJouissance extends Model
     }
 
     /**
-     * NOUVEAU : session Administrateuristrative (campagne annuelle) de cette demande.
+     * CORRIGÉ : nom de méthode et clé étrangère alignés sur la vraie colonne
+     * "session_administrative_id". L'ancienne version pointait vers une colonne
+     * inexistante ("session_Administrateuristrative_id"), donc la relation
+     * n'aurait jamais pu fonctionner.
      */
-    public function sessionAdministrateuristrative()
+    public function sessionAdministrative()
     {
-        return $this->belongsTo(SessionAdministrateuristrative::class, 'session_Administrateuristrative_id');
+        return $this->belongsTo(SessionAdministrative::class, 'session_administrative_id');
     }
 
     public function avis()
