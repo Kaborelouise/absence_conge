@@ -22,15 +22,6 @@
                         </ul>
                     </div>
                 @endif
-
-                {{--
-                    MODIFIÉ : ajout de enctype="multipart/form-data", INDISPENSABLE
-                    pour que le champ de type "file" (certificat_prise_service) soit
-                    effectivement envoyé au serveur. Sans cet attribut, le formulaire
-                    soumettrait uniquement le NOM du fichier (une chaîne de texte),
-                    jamais son contenu — $request->file(...) serait toujours null
-                    côté contrôleur.
-                --}}
                 <form action="{{ route('utilisateurs.store') }}"
                       method="POST" id="formUser" enctype="multipart/form-data">
                     @csrf
@@ -119,28 +110,16 @@
                             </label>
                             <input type="password"
                                    name="password"
-                                   class="form-control @error('password') is-invalid @enderror"
-                                   required>
-                            @error('password')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                                   class="form-control">
                         </div>
 
-                        {{--
-                            AJOUTÉ (correctif) : champ de confirmation du mot de passe.
-                            La règle de validation 'confirmed' côté contrôleur exige un
-                            champ nommé exactement "password_confirmation". Sans ce
-                            champ, la validation échouait TOUJOURS (comparaison à null),
-                            ce qui empêchait toute création d'utilisateur.
-                        --}}
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">
-                                Confirmer le mot de passe <span class="text-danger">*</span>
-                            </label>
-                            <input type="password"
-                                   name="password_confirmation"
-                                   class="form-control"
-                                   required>
+                        <div class="col-md-12">
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-envelope-check me-1"></i>
+                                Aucun mot de passe à saisir ici : un email d'invitation
+                                sera envoyé à l'utilisateur afin qu'il définisse
+                                lui-même son mot de passe.
+                            </div>
                         </div>
 
                         {{-- Rôle principal --}}
@@ -165,11 +144,7 @@
                         </div>
 
                         {{--
-                            AJOUTÉ : rôles additionnels (multi-rôle). Un Agent peut
-                            cumuler plusieurs rôles (ex: "Agent" en principal, et
-                            aussi "Agent RH"). Vérifiés via User::hasRole() dans le
-                            code, en plus du rôle principal ci-dessus qui reste
-                            utilisé par toute la logique de circuit existante.
+                           un utilisateur peut avoir plusieurs rôles, mais un seul rôle principal. Le rôle principal est celui qui détermine les permissions principales de l'utilisateur. Les rôles additionnels sont optionnels et peuvent être attribués pour donner des permissions supplémentaires à l'utilisateur.
                         --}}
                         <!-- <div class="col-md-12">
                             <label class="form-label fw-bold">Rôles additionnels (optionnel)</label>
@@ -216,12 +191,7 @@
                         </div>
 
                         {{--
-                            AJOUTÉ : Date de prise de service. C'est à partir de cette
-                            date que sont calculées automatiquement la période ouvrant
-                            droit au congé (11 mois) et la période de jouissance (12e
-                            mois) — voir User::periodeOuvrantDroit() et
-                            User::periodeJouissance(). Obligatoire, ne peut pas être
-                            dans le futur (voir validation côté contrôleur).
+                          date prise de service : date à partir de laquelle l'utilisateur a commencé à travailler dans. Cette date est importante pour le calcul des droits aux congés et aux absences.
                         --}}
                         <div class="col-md-6">
                             <label class="form-label fw-bold">
@@ -237,11 +207,7 @@
                             @enderror
                         </div>
 
-                        {{--
-                            AJOUTÉ : Certificat / arrêté de prise de service, preuve
-                            justificative de la date déclarée ci-dessus. Obligatoire à
-                            la création (voir validation 'required|file' côté
-                            contrôleur), formats acceptés : PDF, JPG, PNG (5 Mo max).
+                        {{--certificat ou arreter d'intégration 
                         --}}
                         <div class="col-md-6">
                             <label class="form-label fw-bold">
@@ -292,13 +258,6 @@
                                     Chef de département
                                 </label>
                             </div>
-                            {{--
-                                CORRIGÉ : le name contenait un espace
-                                ("est_Responsable Direction"), ce qui ne correspondait
-                                pas au champ attendu par le contrôleur
-                                (est_responsable_direction). La checkbox n'était donc
-                                jamais prise en compte, quel que soit son état.
-                            --}}
                             <div class="form-check">
                                 <input type="checkbox"
                                        name="est_responsable_direction"

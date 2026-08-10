@@ -31,8 +31,6 @@
                     </div>
                 @endif
 
-                {{-- Formulaire action : où envoyer les données → POST /directions
-                     method="POST" : méthode HTTP --}}
                 <form action="{{ route('directions.store') }}"
                       method="POST"
                       id="formDirection">
@@ -101,11 +99,6 @@
                             </i> Annuler
                         </a>
                     </div>
-
-
-
-
-
                 </form>
             </div>
         </div>
@@ -130,9 +123,9 @@
 
         // Vérification libelle_court
         if (libelleCourt === '') {
-            // e.preventDefault() : Annule l'envoi du formulaire
+            // e.preventDefault() Annule l'envoi du formulaire
             e.preventDefault();
-            // classList.add('is-invalid') : bordure rouge Bootstrap
+            // classList.add('is-invalid') bordure rouge Bootstrap
             document.getElementById('libelle_court').classList.add('is-invalid');
             valide = false;
         }

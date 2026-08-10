@@ -52,12 +52,7 @@ class DemandeJouissance extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    /**
-     * CORRIGÉ : nom de méthode et clé étrangère alignés sur la vraie colonne
-     * "session_administrative_id". L'ancienne version pointait vers une colonne
-     * inexistante ("session_Administrateuristrative_id"), donc la relation
-     * n'aurait jamais pu fonctionner.
-     */
+  
     public function sessionAdministrative()
     {
         return $this->belongsTo(SessionAdministrative::class, 'session_administrative_id');
@@ -78,16 +73,6 @@ class DemandeJouissance extends Model
             return ['Agent RH', 'DG'];
         }
 
-        /**
-         * AJOUTÉ : cas manquant de l'Agent RH qui fait sa propre demande.
-         * Comme pour DemandeAbsence, l'Agent RH occupe normalement l'étape
-         * "Agent RH" (vérification) du circuit de tout le monde, mais ne peut pas
-         * se vérifier lui-même. Sans ce cas, sa demande tombait dans le cas par
-         * défaut "Agent simple" plus bas, ce qui l'aurait obligé à apparaître comme
-         * acteur de son propre circuit — incohérent. Par symétrie avec la règle
-         * validée pour DemandeAbsence, sa demande saute donc directement à l'avis
-         * du SG.
-         */
         if ($role === 'Agent RH') {
             return ['SG'];
         }
@@ -113,10 +98,7 @@ class DemandeJouissance extends Model
         return ['Chef de Département', 'Agent RH', 'Responsable Direction'];
     }
 
-    /**
- * L'auteur peut abandonner sa demande seulement si
- * elle n'est pas encore validée, rejetée ou abandonnée.
- */
+
      public function peutEtreAbandonneePar(User $user): bool
     {
           // Si déjà abandonnée

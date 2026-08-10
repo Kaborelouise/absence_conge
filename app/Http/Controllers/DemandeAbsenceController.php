@@ -13,12 +13,24 @@ class DemandeAbsenceController extends Controller
     {
         $user = auth()->user();
         $role = $user->role->libelle;
+        $sessions = SessionAdministrative::orderByDesc('annee')->get();
+        $sessionCourante = SessionAdministrative::courante();
+        $sessionSelectionnee = request(
+            'session_id',
+            $sessionCourante?->id
+        );
 
-        $demandes = DemandeAbsence::with('user.departement.direction', 'avisAbsence')
+            $demandes = DemandeAbsence::with('user.departement.direction', 'avisAbsence')
+
+            ->when($sessionSelectionnee, function ($q) use ($sessionSelectionnee) {
+                $q->where('session_administrative_id', $sessionSelectionnee);
+            })
+
             ->when($role === 'Agent', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             })
-            ->when($role === 'Responsable Département' || $user->est_responsable_departement, function ($q) use ($user) {
+
+            ->when($role === 'Chef de Département' || $user->est_responsable_departement, function ($q) use ($user) {
                 $q->whereHas('user', function ($q2) use ($user) {
                     $q2->where('departement_id', $user->departement_id);
                 });
@@ -29,11 +41,10 @@ class DemandeAbsenceController extends Controller
                     $q2->where('direction_id', $directionId);
                 });
             })
-            ->when(in_array($role, ['Administrateur', 'Agent RH', 'SG', 'DG', 'PCA']), function ($q) {})
             ->latest()
             ->get();
 
-        return view('demande_absences.index', compact('demandes'));
+        return view('demande_absences.index', compact('demandes', 'sessions', 'sessionSelectionnee'));
     }
 
     public function create()
@@ -56,11 +67,7 @@ class DemandeAbsenceController extends Controller
         $user = auth()->user();
 
 
-        // Ajouté un agent ne peut pas avoir 2 demandes d'absence en même temps
-        // en même temps. Tant qu'une demande n'a pas atteint un état final
-        // (validée, rejetée ou abandonnée), toute nouvelle demande est
-        // bloquée pour  évite de compliquer le suivi et le circuit d'avis avec
-        // plusieurs demandes ouvertes pour le meme agent
+        // un agent ne peut pas avoir 2 demandes d'absence en même temps
 
         $demandeEnCours = DemandeAbsence::where('user_id', $user->id)
             ->whereNotIn('statut', ['validee', 'rejetee', 'abandonnee'])
@@ -87,7 +94,7 @@ class DemandeAbsenceController extends Controller
                 ->with('error', "Solde insuffisant : vous demandez {$jours} jour(s), il ne vous reste que {$user->solde_absence} jour(s).");
         }
 
-        // CORRECTION : on capture le résultat dans $demande pour avoir l'id
+
         $demande = DemandeAbsence::create([
             'num_demande'                    => time(),
             'date_debut'                     => $request->date_debut,
@@ -100,8 +107,6 @@ class DemandeAbsenceController extends Controller
         ]);
 
         $user->decrement('solde_absence', $jours);
-
-
         LogActivity::log(
             'create',
             'DemandeAbsence',
@@ -216,7 +221,6 @@ class DemandeAbsenceController extends Controller
         $demande->user->increment('solde_absence', $demande->nombreJours());
         $demande->update(['statut' => 'abandonnee']);
 
-        // LOG : abandon demande absence
         LogActivity::log(
             'update',
             'DemandeAbsence',

@@ -18,14 +18,7 @@
                     <div class="alert alert-danger">{{ session('error') }}</div>
                 @endif
 
-                {{--
-                    RETIRÉ : bouton "Compiler" (déplacé vers l'index, action
-                    globale sur toute la liste — plus de sens d'avoir un bouton
-                    de compilation individuelle par demande) et section
-                    "historique" (les avis de compilation sont désormais
-                    consultables globalement, pas nécessaire de dupliquer un
-                    historique détaillé sur chaque demande individuelle).
-                --}}
+
 
                 <table class="table table-borderless">
                     <tr>
@@ -61,26 +54,19 @@
                         </td>
                     </tr>
 
-                    {{--
-                        AJOUTÉ : période de jouissance calculée à partir de la
-                        date de prise de service de l'Agent (voir
-                        User::periodeJouissance()). Affichée en gris et non
-                        modifiable : c'est une information calculée, pas un
-                        champ saisi par l'Agent.
-                    --}}
                     @php
                         $periode = $demande->user->periodeJouissance();
                     @endphp
                     <tr>
                         <th>Période de jouissance</th>
                         <td>
-                            @if($periode)
+                            @if($session)
                                 <span class="text-muted">
-                                    {{ $periode['debut']->format('d/m/Y') }} → {{ $periode['fin']->format('d/m/Y') }}
+                                    {{ $session['date_debut']->format('d/m/Y') }} au {{ $session['date_fin']->format('d/m/Y') }}
                                 </span>
                             @else
                                 <span class="text-muted fst-italic">
-                                    Non calculable (date de prise de service non renseignée)
+                                    Non calculable (Aucune session en cours)
                                 </span>
                             @endif
                         </td>

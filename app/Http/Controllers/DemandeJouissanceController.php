@@ -9,12 +9,23 @@ use App\Helpers\LogActivity;
 
 class DemandeJouissanceController extends Controller
 {
+   
+
+
     public function index()
     {
         $user = auth()->user();
         $role = $user->role->libelle;
 
+        // AJOUTÉ : filtre par session, comme pour les absences
+        $sessions            = SessionAdministrative::orderByDesc('annee')->get();
+        $sessionCourante     = SessionAdministrative::courante();
+        $sessionSelectionnee = request('session_id', $sessionCourante?->id);
+
         $demandes = DemandeJouissance::with('user.departement.direction', 'avis')
+            ->when($sessionSelectionnee, function ($q) use ($sessionSelectionnee) {
+                $q->where('session_administrative_id', $sessionSelectionnee);
+            })
             ->when($role === 'Agent', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             })
@@ -29,12 +40,21 @@ class DemandeJouissanceController extends Controller
                     $q2->where('direction_id', $directionId);
                 });
             })
-            ->when(in_array($role, ['Agent RH', 'SG', 'DG', 'PCA', 'Administrateur']), function ($q) {})
             ->latest()
             ->get();
 
-        return view('demande_jouissances.index', compact('demandes'));
+        return view('demande_jouissances.index', compact('demandes', 'sessions', 'sessionSelectionnee'));
     }
+
+
+
+
+
+
+
+
+
+
 
     public function create()
     {
@@ -52,7 +72,7 @@ class DemandeJouissanceController extends Controller
         $user    = auth()->user();
 
 
-        // un agent ne peut pas avoir 2 demandes de jouissance actives en même temps
+        // un agent ne peut pas avoir 2 demandes de jouissance active en même temps
 
         $demandeEnCours = DemandeJouissance::where('user_id', $user->id)
             ->where('abandonnee', false)
@@ -103,7 +123,7 @@ class DemandeJouissanceController extends Controller
 
         $user->decrement('solde_conge', $jours);
 
-        // LOG pour la soumission demande jouissance
+        // Log pour la soumission demande jouissance
         LogActivity::log(
             'create',
             'DemandeJouissance',
@@ -180,7 +200,7 @@ class DemandeJouissanceController extends Controller
 
         $user->update(['solde_conge' => $soldeDisponible - $nouveauxJours]);
 
-        // LOG pour la modification demande jouissance
+        // Log pour la modification demande jouissance
         LogActivity::log(
             'update',
             'DemandeJouissance',
@@ -203,7 +223,6 @@ class DemandeJouissanceController extends Controller
 
         $demande->user->increment('solde_conge', $demande->nombreJours());
 
-        // LOG : suppression AVANT delete()
         LogActivity::log(
             'delete',
             'DemandeJouissance',
@@ -276,7 +295,7 @@ class DemandeJouissanceController extends Controller
                     . $dateFin->copy()->subDays(2)->format('d/m/Y') . ').');
         }
 
-        // LOG de téléchargement pour le certificat de reprise
+        // Log de téléchargement pour le certificat de reprise
         LogActivity::log(
             'read',
             'DemandeJouissance',
@@ -304,7 +323,7 @@ class DemandeJouissanceController extends Controller
 
         $demande->update(['cloturee_at' => now()]);
 
-        // LOG : clôture demande jouissance
+        // Logde pour clôture demande jouissance
         LogActivity::log(
             'update',
             'DemandeJouissance',

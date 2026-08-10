@@ -9,14 +9,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sessions_demandes', function (Blueprint $table) {
-            $table->foreignId('created_by')->nullable()->change();
+            $table->boolean('ouverte')
+                  ->default(false)
+                  ->after('date_fin');
         });
     }
 
     public function down(): void
     {
         Schema::table('sessions_demandes', function (Blueprint $table) {
-            $table->foreignId('created_by')->nullable(false)->change();
+            $table->dropColumn('ouverte');
         });
     }
 };

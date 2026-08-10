@@ -9,18 +9,13 @@ use App\Helpers\LogActivity;
 
 class JustificatifAbsenceController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+   
     public function index()
     {
         $justificatifabsence = JustificatifAbsence::with('DemandeAbsence');
         return view('justificatifabsence.index', compact('justificatifabsences'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $demandes = DemandeAbsence::all();
@@ -28,9 +23,7 @@ class JustificatifAbsenceController extends Controller
     }
     
 
-    /**
-     * Store a newly created resource in storage.
-     */
+
     public function store(Request $request)
     {
          $request->validate([

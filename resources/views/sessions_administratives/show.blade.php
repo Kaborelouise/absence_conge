@@ -1,4 +1,4 @@
-@extends('layouts.app')
+<!-- @extends('layouts.app')
 @section('title', 'Détail session')
 @section('page-title', 'Sessions Administratives')
 
@@ -20,20 +20,12 @@
                         <td>{{ $session->date_debut->format('d/m/Y') }} → {{ $session->date_fin->format('d/m/Y') }}</td>
                     </tr>
                     <tr>
-                        <th>Demandes d'absence</th>
-                        <td>{!! $session->active_absence ? '<span class="text-success">Ouvertes</span>' : '<span class="text-danger">Fermées</span>' !!}</td>
-                    </tr>
-                    <tr>
                         <th>Demandes de congé</th>
                         <td>{!! $session->active_conge ? '<span class="text-success">Ouvertes</span>' : '<span class="text-danger">Fermées</span>' !!}</td>
                     </tr>
                     <tr>
-                        <th>Demandes de jouissance</th>
-                        <td>{!! $session->active_jouissance ? '<span class="text-success">Ouvertes</span>' : '<span class="text-danger">Fermées</span>' !!}</td>
-                    </tr>
-                    <tr>
                         <th>Créée par</th>
-                        <td>{{ $session->creePar->nom ?? '' }} {{ $session->creePar->prenom ?? '' }}</td>
+                        <td>{{ $session->creePar->nom ?? '—' }} {{ $session->creePar->prenom ?? '' }}</td>
                     </tr>
                 </table>
 
@@ -46,4 +38,4 @@
         </div>
     </div>
 </div>
-@endsection
+@endsection -->

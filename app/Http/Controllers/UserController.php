@@ -8,6 +8,10 @@ use App\Models\Departement;
 use App\Helpers\LogActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
+use App\Notifications\InvitationCompteNotification;
 
 class UserController extends Controller
 {
@@ -29,68 +33,48 @@ class UserController extends Controller
         return view('utilisateurs.create', compact('roles', 'departements'));
     }
 
-    public function store(Request $request)
+ public function store(Request $request)
     {
-        $request->validate([
-            'matricule'                   => 'required|integer|unique:users,matricule',
-            'nom'                         => 'required|string|max:255',
-            'prenom'                      => 'required|string|max:255',
-            'poste'                       => 'required|string|max:255',
-            'email'                       => 'required|email|unique:users,email',
-            'password'                    => 'required|string|min:8|confirmed',
-            'role_id'                     => 'required|exists:roles,id',
-            'departement_id'              => 'required|exists:departements,id',
-            'est_responsable_departement' => 'nullable|boolean',
-            'est_responsable_direction'   => 'nullable|boolean',
-            'solde_conge'                 => 'nullable|integer',
-            'solde_absence'               => 'nullable|integer',
-            'date_prise_service'          => 'required|date|before_or_equal:today',
-            'certificat_prise_service'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-        ], [
-            'password.required'                  => 'Le mot de passe est obligatoire.',
-            'password.min'                       => 'Le mot de passe doit contenir au moins 8 caractères.',
-            'password.confirmed'                 => 'Les mots de passe ne correspondent pas.',
-            'matricule.unique'                   => 'Ce matricule est déjà utilisé.',
-            'email.unique'                       => 'Cet email est déjà utilisé.',
-            'date_prise_service.required'        => 'La date de prise de service est obligatoire.',
-            'date_prise_service.before_or_equal' => 'La date de prise de service ne peut pas être dans le futur.',
+        
+        $validated = $request->validate([
+            'matricule'                     => 'required|numeric|unique:users,matricule',
+            'nom'                           => 'required|string|max:255',
+            'prenom'                        => 'required|string|max:255',
+            'poste'                         => 'required|string|max:255',
+            'email'                         => 'required|email|unique:users,email',
+            'role_id'                       => 'required|exists:roles,id',
+            'departement_id'                => 'required|exists:departements,id',
+            'date_prise_service'            => 'required|date|before_or_equal:today',
+            'certificat_prise_service'      => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'solde_conge'                   => 'nullable|numeric',
+            'solde_absence'                 => 'nullable|numeric',
+            'est_responsable_departement'   => 'nullable|boolean',
+            'est_responsable_direction'     => 'nullable|boolean',
         ]);
 
-        // Upload du certificat si fourni
-        $cheminCertificat = null;
+        if ($request->password) {
+            $validated['password'] = Hash::make($request->password);
+        }
+        else {
+            // Mot de passe temporaire et inutilisable  l'utilisateur définira
+            $validated['password'] = Hash::make(Str::random(32));
+        }
+        
+
         if ($request->hasFile('certificat_prise_service')) {
-            $cheminCertificat = Storage::disk('public')->putFile(
-                'certificats_prise_service',
-                $request->file('certificat_prise_service')
-            );
+            $validated['certificat_prise_service'] = $request->file('certificat_prise_service')
+                ->store('certificats', 'public');
         }
 
-        $user = User::create([
-            'matricule'                   => $request->matricule,
-            'nom'                         => strtoupper($request->nom),
-            'prenom'                      => $request->prenom,
-            'poste'                       => $request->poste,
-            'email'                       => $request->email,
-            //bcrypt() pour hasher le mot de passe
-            'password'                    => bcrypt($request->password),
-            'est_responsable_departement' => $request->boolean('est_responsable_departement'),
-            'est_responsable_direction'   => $request->boolean('est_responsable_direction'),
-            'solde_conge'                 => $request->solde_conge ?? 30,
-            'solde_absence'               => $request->solde_absence ?? 10,
-            'role_id'                     => $request->role_id,
-            'departement_id'              => $request->departement_id,
-            'date_prise_service'          => $request->date_prise_service,
-            'certificat_prise_service'    => $cheminCertificat,
-        ]);
+        $user = User::create($validated);
 
-        LogActivity::log(
-            'create', 'User', $user->id,
-            "Création utilisateur {$user->nom} {$user->prenom} (matricule: {$user->matricule})"
-        );
+        // Génère un token de réinitialisation 
+        // et envoie l'email d'invitation contenant le lien
+        $token = Password::createToken($user);
+        $user->notify(new InvitationCompteNotification($token));
 
-        return redirect()
-            ->route('utilisateurs.index')
-            ->with('success', 'Utilisateur créé avec succès.');
+        return redirect()->route('utilisateurs.index')
+            ->with('success', "Utilisateur créé. Un email d'invitation a été envoyé à {$user->email} pour qu'il définisse son mot de passe.");
     }
 
     public function show($id)
@@ -120,7 +104,7 @@ class UserController extends Controller
             'poste'                       => 'required|string|max:255',
             'email'                       => 'required|email|unique:users,email,'.$id,
             
-            'password'                    => 'nullable|string|min:8|confirmed',
+            // 'password'                    => 'nullable|string|min:8|confirmed',
             'role_id'                     => 'required|exists:roles,id',
             'departement_id'              => 'required|exists:departements,id',
             'est_responsable_departement' => 'nullable|boolean',
@@ -130,8 +114,8 @@ class UserController extends Controller
             'date_prise_service'          => 'required|date|before_or_equal:today',
             'certificat_prise_service'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ], [
-            'password.min'                       => 'Le mot de passe doit contenir au moins 8 caractères.',
-            'password.confirmed'                 => 'Les mots de passe ne correspondent pas.',
+            // 'password.min'                       => 'Le mot de passe doit contenir au moins 8 caractères.',
+            // 'password.confirmed'                 => 'Les mots de passe ne correspondent pas.',
             'date_prise_service.required'        => 'La date de prise de service est obligatoire.',
             'date_prise_service.before_or_equal' => 'La date de prise de service ne peut pas être dans le futur.',
         ]);
@@ -198,5 +182,12 @@ class UserController extends Controller
             ->route('utilisateurs.index')
             ->with('success', 'Utilisateur supprimé.');
     }
-}
 
+    public function renvoyerInvitation(User $utilisateur)
+    {
+        $token = Password::createToken($utilisateur);
+        $utilisateur->notify(new InvitationCompteNotification($token));
+
+        return back()->with('success', "Email d'invitation renvoyé à {$utilisateur->email}.");
+    }
+}

@@ -15,43 +15,6 @@ use Illuminate\Support\Collection;
 
 class DashboardController extends Controller
 {
-    /**
-     * ================================================================
-     * NOTE IMPORTANTE SUR LES HYPOTHÈSES PRISES (à valider) :
-     *
-     * 1) Section "Agent" du PDF : le texte dit littéralement "Demandes de
-     *    congé" (pas "jouissance"), contrairement aux sections 2/3/4 qui
-     *    parlent explicitement de "jouissance de congé". On respecte donc
-     *    le PDF au pied de la lettre : le bloc congé de l'Agent utilise
-     *    DemandeConge, pas DemandeJouissance.
-     *
-     * 2) DemandeConge n'a pas de circuit d'avis (juste une compilation par
-     *    l'Agent RH, cf. workflow slide 6 : pas de "rejet" prévu). Donc :
-     *      - "validées"  = estCompilee() === true
-     *      - "en cours"  = !estCompilee() && !abandonnee
-     *      - "rejetées"  = statut === 'rejetee' (0 dans la pratique tant que
-     *                       personne ne fixe ce statut ; gardé pour rester
-     *                       fidèle au PDF sans casser si un rejet est ajouté
-     *                       plus tard)
-     *
-     * 3) "Clôturées" pour les absences : ajouté via la nouvelle colonne
-     *    cloturee_at (cf. migration add_cloturee_at_to_demande_absences_table
-     *    et DemandeAbsence::estCloturee()), confirmé par le workflow PPTX
-     *    (étape "Clôture" existe bien pour les absences).
-     *
-     * 4) "Calendrier ou diagramme de Gantt" est rendu comme un diagramme de
-     *    Gantt (barres horizontales par date, via Chart.js) pour tous les
-     *    rôles concernés (Chef Dpt, Resp. Direction, RH/SG/DG/PCA) — c'est
-     *    la lecture la plus fidèle de "calendrier" pour des demandes ayant
-     *    une date de début et une date de fin.
-     *
-     * 5) Administrateur / "statut confirmé" : faute de précision dans le
-     *    PDF, on utilise : jamais connecté = last_login_at === null,
-     *    confirmé = last_login_at !== null (l'utilisateur s'est déjà
-     *    authentifié au moins une fois).
-     * ================================================================
-     */
-
     public function index(Request $request)
     {
         $user = auth()->user();
@@ -80,17 +43,13 @@ class DashboardController extends Controller
         return view('dashboard', compact('role', 'user'));
     }
 
-    /**
-     * ================================================================
-     * 1. TABLEAU DE BORD AGENT
-     * ================================================================
-     */
+    // tableau de bord d'un agent
     private function dashboardAgent(User $user)
     {
         $role = $user->role->libelle;
 
         // Solde de jours d'absence : on retire les jours déjà validés
-        // cette année du quota annuel (10 jours, valeur métier existante).
+        // cette année du quota annuel
         $joursAbsenceUtilises = DemandeAbsence::where('user_id', $user->id)
             ->where('statut', 'validee')
             ->whereYear('date_debut', now()->year)
@@ -99,9 +58,6 @@ class DashboardController extends Controller
 
         $soldeAbsence = max(0, 10 - $joursAbsenceUtilises);
         $soldeConge   = $user->solde_conge ?? 30;
-
-        // Demandes de congé de l'agent (DemandeConge — voir note 1 en haut
-        // du fichier sur le choix du modèle).
         $mesConges = DemandeConge::where('user_id', $user->id)->get();
 
         $congeTotal    = $mesConges->count();
@@ -126,11 +82,7 @@ class DashboardController extends Controller
         ));
     }
 
-    /**
-     * ================================================================
-     * 2. TABLEAU DE BORD CHEF DE DÉPARTEMENT
-     * ================================================================
-     */
+    //  tableau de bord chef de département
     private function dashboardChefDepartement(User $user)
     {
         $role          = $user->role->libelle;
@@ -138,7 +90,7 @@ class DashboardController extends Controller
 
         $nbAgents = User::where('departement_id', $departementId)->count();
 
-        // --- Congé (DemandeJouissance) -----------------------------------
+        //  Congé (DemandeJouissance) 
         $congesDept = DemandeJouissance::whereHas('user', fn($q) =>
                 $q->where('departement_id', $departementId))
             ->with(['user', 'avis'])
@@ -146,8 +98,7 @@ class DashboardController extends Controller
 
         $congeStats = $this->statsGenerales($congesDept);
 
-        // Suivi : agents actuellement en congé (comptage d'agents distincts,
-        // pas de demandes, au cas où un agent aurait plusieurs lignes).
+        // Suivi agents actuellement en congé 
         $agentsEnCongeListe = $congesDept->filter(fn($d) =>
             $d->statut === 'validee'
             && Carbon::parse($d->date_debut)->lte(now())
@@ -155,8 +106,7 @@ class DashboardController extends Controller
         );
         $nbAgentsEnConge = $agentsEnCongeListe->pluck('user_id')->unique()->count();
 
-        // Alerte : demandes en attente d'avis PAR LE CHEF DE DÉPARTEMENT
-        // précisément (pas juste "en attente" au sens large).
+        // Alerte demandes en attente d'avis PAR LE CHEF DE DÉPARTEMENT
         $alerteConge = $congesDept->filter(fn($d) =>
             !in_array($d->statut, ['validee', 'rejetee'])
             && $d->prochainActeur() === 'Chef de Département'
@@ -166,7 +116,7 @@ class DashboardController extends Controller
         $congeParAgent     = $this->parAgent($congesDept);
         $congeParAnnee     = $this->parAnnee($congesDept);
 
-        // --- Absence (DemandeAbsence) ------------------------------------
+        //  Absence (DemandeAbsence) 
         $absencesDept = DemandeAbsence::whereHas('user', fn($q) =>
                 $q->where('departement_id', $departementId))
             ->with(['user', 'avisAbsence'])
@@ -199,12 +149,8 @@ class DashboardController extends Controller
         ));
     }
 
-    /**
-     * ================================================================
-     * 3. TABLEAU DE BORD RESPONSABLE DE DIRECTION
-     * (même structure que Chef de Département, mais à l'échelle direction)
-     * ================================================================
-     */
+
+    // Tableau de bord d'un responsable de direction
     private function dashboardResponsableDirection(User $user)
     {
         $role       = $user->role->libelle;
@@ -213,7 +159,7 @@ class DashboardController extends Controller
         $nbAgents = User::whereHas('departement', fn($q) =>
             $q->where('direction_id', $directionId))->count();
 
-        // --- Congé ---------------------------------------------------------
+        //  Congé 
         $congesDir = DemandeJouissance::whereHas('user.departement', fn($q) =>
                 $q->where('direction_id', $directionId))
             ->with(['user', 'avis'])
@@ -236,7 +182,7 @@ class DashboardController extends Controller
         $congeParAgent   = $this->parAgent($congesDir);
         $congeParAnnee   = $this->parAnnee($congesDir);
 
-        // --- Absence ---------------------------------------------------------
+        //  Absence 
         $absencesDir = DemandeAbsence::whereHas('user.departement', fn($q) =>
                 $q->where('direction_id', $directionId))
             ->with(['user', 'avisAbsence'])
@@ -268,16 +214,14 @@ class DashboardController extends Controller
         ));
     }
 
-    /**
-     * ================================================================
-     * 4. TABLEAU DE BORD AGENT RH / SG / DG / PCA
-     * ================================================================
-     */
+    // TABLEAU DE BORD AGENT RH / SG / DG / PCA
+
+
     private function dashboardDirectionGenerale(User $user)
     {
         $role = $user->role->libelle;
 
-        // --- Globale ---------------------------------------------------------
+        // Globale 
         $nbAgents = User::whereHas('role', fn($q) =>
             $q->where('libelle', '!=', 'Administrateur'))->count();
 
@@ -288,7 +232,7 @@ class DashboardController extends Controller
             'count' => $d->nb_agents,
         ]);
 
-        // --- Congé (DemandeJouissance) ---------------------------------------
+        //  DemandeJouissance 
         $tousConges = DemandeJouissance::with('user.departement.direction', 'avis')->get();
 
         $agentsEnConge = $tousConges->filter(fn($d) =>
@@ -322,8 +266,7 @@ class DashboardController extends Controller
 
         $directions = Direction::with('departements')->get();
 
-        // Générale par direction : Total / Rejetées / En cours / Validées /
-        // Clôturées — les 5 diagrammes circulaires exigés par le PDF.
+        // Générale par direction  Total / Rejetées / En cours / Validées 
         $congesStatParDirection = $directions->map(function ($dir) use ($tousConges) {
             $sousEnsemble = $tousConges->filter(fn($d) =>
                 ($d->user->departement->direction_id ?? null) === $dir->id
@@ -345,7 +288,6 @@ class DashboardController extends Controller
         $congeParDirectionListe = $tousConges->groupBy(fn($d) =>
             $d->user->departement->direction->libelle_court ?? '—')->map->count();
 
-        // --- Absence (DemandeAbsence) -----------------------------------------
         $tousAbsences = DemandeAbsence::with('user.departement.direction', 'avisAbsence')->get();
 
         $agentsEnAbsence = $tousAbsences->filter(fn($d) =>
@@ -370,10 +312,6 @@ class DashboardController extends Controller
             && $d->prochainActeur() === 'dg'
         )->count();
 
-        // AVANT : nbAbsencesCloturees était figé à 0 avec un commentaire
-        // disant que les absences n'ont pas de clôture. C'était inexact
-        // (cf. workflow PPTX, étape "Clôture") — corrigé grâce à
-        // DemandeAbsence::estCloturee().
         $absenceStats = $this->statsGenerales($tousAbsences);
 
         $absenceCalendrier = $this->timelineData($tousAbsences, fn($d) => $d->nombreJours());
@@ -394,11 +332,9 @@ class DashboardController extends Controller
         ));
     }
 
-    /**
-     * ================================================================
-     * 5. TABLEAU DE BORD ADMINISTRATEUR
-     * ================================================================
-     */
+    //  TTableau de bord de l'administrateur
+
+
     private function dashboardAdministrateur(Request $request)
     {
         $role = 'Administrateur';
@@ -413,12 +349,6 @@ class DashboardController extends Controller
         $userParRole = User::with('role')->get()
             ->groupBy('role.libelle')->map->count();
 
-        // ------------------------------------------------------------------
-        // Liste des utilisateurs + statut + dernière authentification +
-        // filtre par direction (le filtre est appliqué côté JS dans la vue,
-        // pour éviter un aller-retour serveur ; on transmet tous les
-        // utilisateurs avec leur direction en attribut).
-        // ------------------------------------------------------------------
         $listeUtilisateurs = User::with('role', 'departement.direction')
             ->get()
             ->map(fn($u) => [
@@ -432,18 +362,8 @@ class DashboardController extends Controller
             ]);
 
         $toutesDirections = Direction::orderBy('libelle_court')->pluck('libelle_court');
-
-        // ------------------------------------------------------------------
-        // Agents sans demande de congé, PAR ANNÉE.
-        // AVANT : filtré uniquement sur l'année en cours. Le PDF demande une
-        // vraie ventilation par année, donc on accepte un paramètre ?annee=
-        // (menu déroulant dans la vue qui recharge la page avec ce filtre),
-        // par défaut l'année en cours.
-        // ------------------------------------------------------------------
         $anneeSelectionnee = (int) $request->query('annee', now()->year);
 
-        // Bornes raisonnables pour le sélecteur d'année : depuis la première
-        // demande de congé enregistrée jusqu'à l'année en cours.
         $premiereAnnee = DemandeConge::min('created_at');
         $anneeDebut    = $premiereAnnee ? Carbon::parse($premiereAnnee)->year : now()->year;
         $anneesDisponibles = range(now()->year, $anneeDebut);
@@ -455,7 +375,7 @@ class DashboardController extends Controller
             ->with('departement.direction')
             ->get();
 
-        // Journal d'audit : identifie déjà utilisateur / modèle / action CRUD.
+        // Journal d'audit identifie déjà utilisateur 
         $journalActions = ActivityLog::with('user')->latest()->take(20)->get();
 
         return view('dashboard', compact(
@@ -469,18 +389,7 @@ class DashboardController extends Controller
         ));
     }
 
-    // ====================================================================
-    // MÉTHODES PRIVÉES RÉUTILISABLES
-    // ====================================================================
 
-    /**
-     * Calcule les 5 compteurs "Générale" exigés par le PDF pour n'importe
-     * quelle collection de demandes (congé ou absence) : total, rejetées,
-     * en cours, validées, clôturées.
-     *
-     * Fonctionne aussi bien avec DemandeJouissance qu'avec DemandeAbsence
-     * car les deux exposent désormais estCloturee().
-     */
     private function statsGenerales(Collection $demandes): array
     {
         return [
@@ -491,18 +400,12 @@ class DashboardController extends Controller
             'cloturees' => $demandes->filter(fn($d) => $d->estCloturee())->count(),
         ];
     }
-
-    /**
-     * Regroupe une collection de demandes par agent (nom complet) → nombre.
-     */
     private function parAgent(Collection $demandes): Collection
     {
         return $demandes->groupBy(fn($d) => $d->user->nom . ' ' . $d->user->prenom)->map->count();
     }
 
-    /**
-     * Regroupe une collection de demandes par année de création → nombre.
-     */
+   
     private function parAnnee(Collection $demandes): Collection
     {
         return $demandes->groupBy(fn($d) => Carbon::parse($d->created_at)->year)
@@ -510,15 +413,6 @@ class DashboardController extends Controller
             ->map->count();
     }
 
-    /**
-     * Construit les données d'un diagramme de Gantt / calendrier :
-     * une ligne par demande (sauf rejetées, comme demandé par le PDF),
-     * avec date de début, date de fin, agent, direction et statut —
-     * exploitable directement par Chart.js (barres flottantes) côté vue.
-     *
-     * $dureeCallback n'est pas utilisé pour le tracé (les dates suffisent)
-     * mais est conservé pour un affichage de la durée en info-bulle.
-     */
     private function timelineData(Collection $demandes, ?callable $dureeCallback = null): array
     {
         return $demandes

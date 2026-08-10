@@ -22,9 +22,23 @@
 <div class="card shadow-sm">
     <div class="card-body">
 
-        <div class="mb-3">
-            <input type="text" id="recherche" class="form-control w-25" placeholder="Rechercher...">
-        </div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+    <input type="text" id="recherche" class="form-control w-25"
+           placeholder="Rechercher...">
+
+    <form method="GET" action="{{ route('demande_jouissances.index') }}" class="d-flex align-items-center">
+        <label class="me-2 fw-bold mb-0"></label>
+        <select name="session_id" class="form-select w-auto" onchange="this.form.submit()">
+            @foreach($sessions as $s)
+                <option value="{{ $s->id }}" {{ $sessionSelectionnee == $s->id ? 'selected' : '' }}>
+                    {{ $s->annee }}
+                </option>
+            @endforeach
+        </select>
+    </form>
+
+</div>
 
         <div class="table-responsive">
         <table class="table table-hover" id="tableJouissances">

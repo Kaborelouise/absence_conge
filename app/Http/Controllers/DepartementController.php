@@ -10,7 +10,7 @@ use App\Helpers\LogActivity;
 
 class DepartementController extends Controller
 {
-    // AJOUT : protection Administrateur sur toutes les méthodes
+
     public function __construct()
     {
         $this->middleware('Administrateur');

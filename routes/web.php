@@ -15,6 +15,8 @@ use App\Http\Controllers\DemandeJouissanceController;
 use App\Http\Controllers\AvisJouissanceController;
 use App\Http\Controllers\SessionAdministrativeController;
 use App\Http\Controllers\AdminExportController;
+use App\Http\Controllers\PasswordSetupController;
+
 
 
 // Auth routes générées par Breeze
@@ -24,10 +26,10 @@ require __DIR__.'/auth.php';
 Route::middleware('auth')->group(function () {
 
     // ACCUEIL
-  Route::redirect('/', '/dashboard')->name('accueil');
-    // ->name('accueil') : donne le nom 'accueil' à cette route
-    // Maintenant route('accueil') fonctionnera
-
+    Route::get('/', function () {
+        return view('Accueil');
+    })->name('accueil');
+});
     // DASHBOARD
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
@@ -73,7 +75,19 @@ Route::middleware('auth')->group(function () {
         ->name('demande_jouissances.abandonner');
  
     Route::resource('sessions_administratives', \App\Http\Controllers\SessionAdministrativeController::class)
-        ->only(['index', 'create', 'store', 'show']);
+            ->only(['index', 'create', 'store', 'show']);
+    Route::patch(
+        'sessions_administratives/{session}/ouvrir',
+        [SessionAdministrativeController::class, 'ouvrir']
+    )->name('sessions_administratives.ouvrir');
+
+    Route::patch(
+        'sessions_administratives/{session}/fermer',
+        [SessionAdministrativeController::class, 'fermer']
+    )->name('sessions_administratives.fermer');
+
+
+
 
     Route::post('sessions_Administratives/{id}/toggle-absence', 
         [SessionAdministrativeController::class, 'toggleAbsence'])
@@ -110,6 +124,26 @@ Route::middleware('auth')->group(function () {
     ->name('demande_conges.abandonner');
 
 
+    Route::delete(
+        '/sessions_Administratives/{session}',
+        [SessionAdministrativeController::class, 'destroy']
+    )->name('sessions_Administratives.destroy');
+
+
+
+    // Page où l'utilisateur invité définit son mot de passe
+    // Route::get('/definir-mot-de-passe/{token}', [PasswordSetupController::class, 'create'])
+    //     ->name('password.setup');
+
+    // Route::post('/definir-mot-de-passe', [PasswordSetupController::class, 'store'])
+    //     ->name('password.setup.store');
+
+        // Permet à l'admin de renvoyer l'email d'invitation depuis la page d'édition
+    // Route::post('/utilisateurs/{utilisateur}/renvoyer-invitation', [App\Http\Controllers\UtilisateurController::class, 'renvoyerInvitation'])
+
+        // ->middleware('auth')
+        // ->name('utilisateurs.renvoyer-invitation');
+
 
 
     Route::prefix('admin/export')->name('admin.export.')->group(function () {
@@ -118,7 +152,8 @@ Route::middleware('auth')->group(function () {
         Route::get('jouissances', [AdminExportController::class, 'jouissances'])->name('jouissances');
         Route::get('absences', [AdminExportController::class, 'absences'])->name('absences');
 
-});
 
-    
+
+
+      
 });

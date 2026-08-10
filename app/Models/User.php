@@ -75,7 +75,7 @@ class User extends Authenticatable
     public function datePeriodeJouissance(): ?Carbon
     {
         if (!$this->date_prise_service) return null;
-        return Carbon::parse($this->date_prise_service)->addMonths(12);
+        return Carbon::parse($this->date_prise_service)->addMonths(11);
     }
 
    
@@ -132,4 +132,28 @@ class User extends Authenticatable
                 'fin'   => $debut->copy()->addDays(30)
             ];
         }
+
+    public function estEligible(): bool
+    {
+        if (!$this->date_prise_service) return false;
+
+        $mois = (int) Carbon::parse($this->date_prise_service)
+            ->diffInMonths(Carbon::now());
+
+        if ($mois < 11) return false;
+        if ($mois > 11) return true;
+
+    }
+    public function periodeTravail(): array
+    {
+        if (!$this->date_prise_service) return ['debut' => null, 'fin' => null];
+
+        $debut = Carbon::parse($this->date_prise_service);
+        $fin   = $debut->copy()->addMonths(11)->subDay();
+
+        return [
+                'debut' => $debut,
+                'fin'   => $fin,
+            ];
+    }
 }

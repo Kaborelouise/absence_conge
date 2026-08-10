@@ -6,24 +6,11 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="mb-0 fw-bold">Liste des demandes de congé</h5>
-
-    {{--
-        - Rien compilé              → Compiler + Nouvelle demande
-        - Compilé                   → Décompiler + Télécharger décision
-        - Décision téléchargée      → Décompiler seulement
-        - Après décompilation       → retour à l'état initial (Compiler + Nouvelle demande)
-
-        On distingue "compilé mais pas encore téléchargé" de "décision déjà
-        téléchargée" via un flag en session (le téléchargement est un GET, pas
-        un POST, donc pas de redirection avec état possible autrement — une
-        session flag simple suffit ici, remise à zéro à chaque nouvelle
-        compilation/décompilation).
-    --}}
     <div class="d-flex gap-2">
         @if($peutCompiler)
             @if($compilationActive)
                 @if(session('decision_telechargee'))
-                    {{-- État "décision téléchargée" : seulement Décompiler --}}
+                    {{-- on télécharge la demande quand on es l'etat décompiler --}}
                     <form action="{{ route('demande_conges.decompiler') }}" method="POST" class="d-inline">
                         @csrf
                         <button type="submit" class="btn btn-warning btn-sm"
@@ -44,8 +31,9 @@
                         <i class="bi bi-download me-1"></i> Télécharger décision
                     </a>
                 @endif
+
             @else
-                {{-- État initial : rien compilé --}}
+                {{-- État initial  rien compilé --}}
                 <form action="{{ route('demande_conges.compiler') }}" method="POST" class="d-inline">
                     @csrf
                     <button type="submit" class="btn btn-success btn-sm"
@@ -53,30 +41,29 @@
                         <i class="bi bi-check2-circle me-1"></i> Compiler
                     </button>
                 </form>
-                <a href="{{ route('demande_conges.create') }}" class="btn btn-primary btn-sm">
-                    <i class="bi bi-plus-lg me-1"></i> Nouvelle demande
-                </a>
+                @if($peutSoumettre)
+                    @if($estEligibleAuConge === true)
+                        <a href="{{ route('demande_conges.create') }}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-plus-lg me-1"></i> Nouvelle demande
+                        </a>
+                    @endif 
+                @endif
             @endif
-        @else
-            {{--
-                CORRIGÉ : les agents non-RH affichaient "Nouvelle demande" en
-                permanence, sans jamais vérifier $compilationActive. Résultat :
-                le bouton restait visible même une fois la session compilée,
-                ce qui contredit la règle métier (une fois compilé, plus aucune
-                nouvelle demande tant que la RH n'a pas décompilé).
-                On applique donc la même condition que pour la RH.
-            --}}
-            @if(!$compilationActive)
-                <a href="{{ route('demande_conges.create') }}" class="btn btn-primary btn-sm">
-                    <i class="bi bi-plus-lg me-1"></i> Nouvelle demande
-                </a>
-            @else
-                <span class="text-muted fst-italic" style="font-size: 13px;">
-                    <i class="bi bi-lock me-1"></i>
-                    Les demandes sont compilées, dépôt de nouvelle demande impossible pour le moment.
-                </span>
-            @endif
+
+
+       @else
+    @if($peutSoumettre)
+        @if($estEligibleAuConge === true)
+            <a href="{{ route('demande_conges.create') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-lg me-1"></i> Nouvelle demande
+            </a>
         @endif
+    @else
+        <span class="text-muted" style="font-size:13px;">
+            <i class="bi bi-lock me-1"></i> Les demandes de congé sont compilées, aucune nouvelle soumission n'est possible actuellement.
+        </span>
+    @endif
+@endif
     </div>
 </div>
 
@@ -93,31 +80,27 @@
     </div>
 @endif
 
-@if($session)
-    <div class="alert alert-info alert-dismissible fade show">
-        <i class="bi bi-info-circle me-1"></i>
-        Session en cours : <strong>{{ $session->libelle }}</strong>
-        ({{ $session->date_debut->format('d/m/Y') }} → {{ $session->date_fin->format('d/m/Y') }})
-        — Demandes de congé : <strong>{{ $session->active_conge ? 'ouvertes' : 'fermées' }}</strong>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@else
-    <div class="alert alert-warning alert-dismissible fade show">
-        <i class="bi bi-exclamation-triangle me-1"></i>
-        Aucune session Administrateuristrative n'est actuellement ouverte. Les nouvelles demandes de congé sont impossibles.
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
-
 <div class="card shadow-sm">
     <div class="card-body">
+   <div class="d-flex justify-content-between align-items-center mb-3">
 
-        <div class="mb-3">
-            <input type="text" id="recherche" class="form-control w-25"
-                   placeholder="Rechercher...">
-        </div>
+    <input type="text" id="recherche" class="form-control w-25"
+           placeholder="Rechercher...">
 
-        <div class="table-responsive">
+    <form method="GET" action="{{ route('demande_conges.index') }}" class="d-flex align-items-center">
+        <label class="me-2 fw-bold mb-0"> </label>
+        <select name="session_id" class="form-select w-auto" onchange="this.form.submit()">
+            @foreach($sessions as $s)
+                <option value="{{ $s->id }}" {{ $sessionSelectionnee == $s->id ? 'selected' : '' }}>
+                    {{ $s->annee }}
+                    @if($s->active_conge) (Ouvert) @endif
+                </option>
+            @endforeach
+        </select>
+    </form>
+
+</div>
+     <div class="table-responsive">
         <table class="table table-hover" id="tableConges">
             <thead class="table-anptic-dark">
                 <tr>
@@ -141,11 +124,11 @@
                     <td>{{ $demande->user->departement->libelle_court ?? '—' }}</td>
                     <td>
                         @if($demande->abandonnee)
-                            <span class="baDGe-statut baDGe-rejetee">Abandonnée</span>
+                            <span class="badge-statut badge-rejetee">Abandonnée</span>
                         @elseif($demande->estCompilee())
-                            <span class="baDGe-statut baDGe-validee">Compilée</span>
+                            <span class="badge-statut badge-validee">Compilée</span>
                         @else
-                            <span class="baDGe-statut baDGe-en_attente">En attente</span>
+                            <span class="badge-statut badge-en_attente">En attente</span>
                         @endif
                     </td>
                     <td>

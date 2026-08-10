@@ -47,7 +47,7 @@
                 <tr>
                     <td>{{ ucfirst(str_replace('_', ' ', $role->libelle)) }}</td>
                     <td>
-                        <span class="baDGe bg-secondary">{{ $role->utilisateurs_count }}</span>
+                        <span class="">{{ $role->utilisateurs_count }}</span>
                     </td>
                     <td>
                         <a href="{{ route('roles.edit', $role->id) }}"

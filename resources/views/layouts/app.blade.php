@@ -261,44 +261,50 @@
                 <span>Demande de jouissance</span>
             </a>
 
+            @php
+              $role = auth()->user()->role->libelle ?? null;
+            @endphp
+
+
+            
+        @if($role === 'Administrateur')
+
             <div class="sidebar-section-title">Administration</div>
 
             <a href="{{ route('utilisateurs.index') }}"
-               class="sidebar-link {{ request()->routeIs('utilisateurs.*') ? 'active' : '' }}">
+            class="sidebar-link {{ request()->routeIs('utilisateurs.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i>
                 <span>Utilisateurs</span>
             </a>
 
             <a href="{{ route('roles.index') }}"
-               class="sidebar-link {{ request()->routeIs('roles.*') ? 'active' : '' }}">
-                <i class="bi bi-person-baDGe"></i>
+            class="sidebar-link {{ request()->routeIs('roles.*') ? 'active' : '' }}">
+                <i class="bi bi-person-badge"></i>
                 <span>Rôles</span>
             </a>
 
             <a href="{{ route('directions.index') }}"
-               class="sidebar-link {{ request()->routeIs('directions.*') ? 'active' : '' }}">
+            class="sidebar-link {{ request()->routeIs('directions.*') ? 'active' : '' }}">
                 <i class="bi bi-building"></i>
                 <span>Directions</span>
             </a>
 
             <a href="{{ route('departements.index') }}"
-               class="sidebar-link {{ request()->routeIs('departements.*') ? 'active' : '' }}">
+            class="sidebar-link {{ request()->routeIs('departements.*') ? 'active' : '' }}">
                 <i class="bi bi-diagram-3"></i>
                 <span>Départements</span>
             </a>
 
-                @php
-            $role = auth()->user()->role->libelle ?? null;
-        @endphp
-
+        @endif
         @if(in_array($role, ['Administrateur', 'Agent RH']))
-            <a href="{{ route('sessions_Administratives.index') }}"
-                class="sidebar-link {{ request()->routeIs('sessions_Administratives.*') ? 'active' : '' }}">
+
+            <a href="{{ route('sessions_administratives.index') }}"
+                class="sidebar-link {{ request()->routeIs('sessions_administratives.*') ? 'active' : '' }}">
                 <i class="bi bi-calendar-event"></i>
                 <span>Sessions Administratives</span>
             </a>
+
         @endif
-           
 
         </div>
         {{-- Contenu principal --}}

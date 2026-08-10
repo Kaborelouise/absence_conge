@@ -21,11 +21,39 @@
 
 <div class="card shadow-sm">
     <div class="card-body">
+         <div class="d-flex justify-content-between align-items-center mb-3">
+    <input type="text"
+           id="recherche"
+           class="form-control w-25"
+           placeholder="Rechercher...">
+    <form method="GET"
+          action="{{ route('demande_absences.index') }}"
+          class="d-flex align-items-center">
+        <label class="me-2 fw-bold mb-0"></label>
+        <select name="session_id"
+                class="form-select w-auto"
+                onchange="this.form.submit()">
 
-         <div class="mb-3">
-            <input type="text" id="recherche" class="form-control w-25"
-                   placeholder="Rechercher...">
-        </div>
+            @foreach($sessions as $session)
+
+                <option value="{{ $session->id }}"
+                    {{ $sessionSelectionnee == $session->id ? 'selected' : '' }}>
+
+                    {{ $session->annee }}
+
+                    @if($session->estOuverte())
+                        <!-- (Ouverte) -->
+                    @endif
+
+                </option>
+
+            @endforeach
+
+        </select>
+
+    </form>
+
+</div>
 
         <div class="table-responsive">
         <table class="table table-hover" id="tableAbsences">
@@ -76,7 +104,7 @@
                         @endif
                     </td>
                     <td>
-                        {{-- Bouton Voir : visible par tous --}}
+                        {{-- Bouton Voir  visible par tous --}}
                         <a href="{{ route('demande_absences.show', $demande->id) }}"
                            class="btn btn-sm btn-outline-primary btn-action">Voir
                         </a>
@@ -89,7 +117,7 @@
                         </a>
                         @endif
 
-                        {{-- Bouton Supprimer : auteur uniquement, demande en attente --}}
+                        {{-- Bouton Supprimer demandeur uniquement, demande en attente --}}
                         @if($peutSupprimer)
                         <form action="{{ route('demande_absences.destroy', $demande->id) }}"
                               method="POST" class="d-inline">

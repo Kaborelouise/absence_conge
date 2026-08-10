@@ -12,9 +12,11 @@ class DemandeConge extends Model
         'lieu_jouissance',
         'user_id',
         'abandonnee',
-        // AJOUTÉ : rattachement à la campagne annuelle.
-        'session_Administrateuristrative_id',
+        'session_administrative_id',
         'statut',
+        'date_debut',
+        'date_fin',
+        'date_effet',
                  ];
 
     protected $casts = [
@@ -28,12 +30,12 @@ class DemandeConge extends Model
     }
 
 
-    public function sessionAdministrateuristrative()
+    public function sessionAdministrative()
     {
-        return $this->belongsTo(SessionAdministrateuristrative::class, 'session_Administrateuristrative_id');
+        return $this->belongsTo(SessionAdministrative::class, 'session_administrative_id');
     }
 
-    // Une demande de congé peut avoir 0 ou 1 avis (compilation RH)
+    // Une demande de congé peut avoir 0 ou 1 avis
     public function avisConge()
     {
         return $this->hasOne(AvisConge::class);
@@ -52,7 +54,7 @@ class DemandeConge extends Model
         return $user->role->libelle === 'Agent RH';
     }
 
-    //un Agent peut abandonner sa demande si elle n'est pas encore compilée
+    //un agent peut abandonner sa demande si elle n'est pas encore compilé
     public function peutEtreAbandonneePar(User $user): bool
 
     {

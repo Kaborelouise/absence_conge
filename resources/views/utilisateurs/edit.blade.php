@@ -21,12 +21,6 @@
                         </ul>
                     </div>
                 @endif
-
-                {{--Modifié ajout de enctype="multipart/form-data", nécessaire pour
-                    permettre le remplacement optionnel du certificat de prise de
-                    service (voir champ plus bas). Sans ça, un nouveau fichier
-                    sélectionné ne serait jamais envoyé au serveur.
-                --}}
                 <form action="{{ route('utilisateurs.update', $user->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
@@ -71,36 +65,26 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+
+
                         <div class="col-md-6">
-                            <label class="form-label">
-                                Mot de passe
-                                <span class="text-muted fw-normal">(laisser vide pour ne pas changer)</span>
-                            </label>
+                            <label class="form-label">Mot de passe</label>
                             <input type="password" name="password"
-                                   class="form-control @error('password') is-invalid @enderror">
+                                class="form-control @error('password') is-invalid @enderror"
+                                placeholder="Laisser vide pour conserver l'ancien mot de passe">
+
                             @error('password')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                    </div>
 
-                    {{--
-                        AJOUTÉ (correctif) : champ de confirmation du mot de passe.
-                        La règle 'confirmed' côté contrôleur (update) exige un champ
-                        nommé exactement "password_confirmation" dès qu'un nouveau
-                        mot de passe est saisi. Sans ce champ, dès que l'admin
-                        essayait de changer le mot de passe, la validation échouait
-                        systématiquement (comparaison à null).
-                    --}}
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6 offset-md-6">
-                            <label class="form-label">
-                                Confirmer le nouveau mot de passe
-                                <span class="text-muted fw-normal">(si modifié ci-dessus)</span>
-                            </label>
-                            <input type="password" name="password_confirmation"
-                                   class="form-control">
-                        </div>
+
+
+
+
+
+
+                        
                     </div>
 
                     <div class="row g-3 mb-3">
@@ -166,7 +150,7 @@
                             @enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Certificat / arrêté de prise de service</label>
+                            <label class="form-label">Arrêter d'intégration ou certificat de prise de service</label>
                             @if($user->certificat_prise_service)
                                 <div class="mb-2">
                                     <a href="{{ Storage::url($user->certificat_prise_service) }}"
@@ -176,14 +160,14 @@
                                 </div>
                             @else
                                 <div class="mb-2 text-muted" style="font-size: 13px;">
-                                    Aucun certificat renseigné pour le moment.
+                                    Aucun arrêté renseigné pour le moment.
                                 </div>
                             @endif
                             <input type="file" name="certificat_prise_service"
                                    class="form-control @error('certificat_prise_service') is-invalid @enderror"
                                    accept=".pdf,.jpg,.jpeg,.png">
                             <small class="text-muted">Laisser vide pour conserver le certificat actuel. Formats acceptés : PDF, JPG, PNG (5 Mo max)</small>
-                            @error('certificat_prise_service')
+                            @error('arrêter_intégration')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
@@ -201,16 +185,6 @@
                             </div>
                         </div>
                         <div class="col-md-6">
-                            {{--
-                                CORRIGÉ : name et $user->est_Responsable_Direction
-                                utilisaient une casse différente de celle attendue par
-                                le contrôleur (est_responsable_direction, tout en
-                                minuscules). En PHP/Laravel, les noms de champs de
-                                requête et les attributs de modèle sont sensibles à la
-                                casse : le contrôleur ne lisait donc jamais cette
-                                checkbox, et elle ne pouvait pas non plus être
-                                pré-cochée correctement à l'ouverture du formulaire.
-                            --}}
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox"
                                        name="est_responsable_direction" value="1" id="est_resp_dir"
@@ -236,8 +210,7 @@
                     </div>
 
                     <div class="d-flex gap-2 justify-content-center gap-3">
-                        <button type="submit" class="btn btn-primary  px-4"> Enregistrer
-                        </button>
+                        <button type="submit" class="btn btn-primary  px-4"> Enregistrer</button>
                         <a href="{{ route('utilisateurs.index') }}" class="btn btn-secondary px-4">Annuler</a>
                     </div>
                 </form>

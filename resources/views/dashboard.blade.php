@@ -8,7 +8,7 @@
 
 @section('content')
 
-{{-- tableau de bord 1. AGENT--}}
+{{-- tableau de bord Agent--}}
 @if($role === 'Agent')
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -86,7 +86,7 @@
     </div>
 </div>
 
-{{-- 2 et 3. Chef de Département / Responsable Direction --}}
+{{-- Chef de Département / Responsable Direction --}}
 
 @elseif(in_array($role, ['Chef de Département', 'Responsable Direction']))
 
@@ -135,7 +135,7 @@
     <div class="col"><div class="card shadow-sm text-center p-3"><div class="fw-bold fs-4 text-secondary">{{ $congeStats['cloturees'] }}</div><div style="font-size:11px;">Clôturées</div></div></div>
 </div>
 
-{{-- Stratégique : calendrier des congés, sauf rejetées --}}
+
 <div class="card shadow-sm mb-3">
     <div class="card-header card-header-anptic">
         <i class="bi bi-calendar3-range me-2"></i> Répartition des demandes de congé (calendrier)
@@ -251,7 +251,7 @@
     </div>
 </div>
 
-{{--4. RH / SG / DG / PCA --}}
+{{-- RH / SG / DG / PCA --}}
 @elseif(in_array($role, ['Agent RH', 'SG', 'DG', 'PCA']))
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -509,14 +509,14 @@
     </div>
 </div>
 
-{{-- 5. Tableau de bord de l'Administrateur --}}
+{{--Tableau de bord de l'Administrateur --}}
 @elseif($role === 'Administrateur')
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="fw-bold mb-0">Tableau de bord Administrateur</h5>
 </div>
 
-<div class="row g-3 mb-4">
+<!-- <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="card shadow-sm text-center p-3">
             <i class="bi bi-people fs-3 text-primary mb-1"></i>
@@ -537,34 +537,21 @@
             <div class="fw-bold fs-3">{{ $jamaisConnectes }}</div>
             <div style="font-size:12px;">Jamais connectés</div>
         </div>
-    </div>
-    <div class="col-md-3">
+    </div> -->
+    <!-- <div class="col-md-3">
         <div class="card shadow-sm text-center p-3">
             <i class="bi bi-shield-check fs-3 text-warning mb-1"></i>
             <div class="fw-bold fs-3">{{ $totalAdministrateurs }}</div>
             <div style="font-size:12px;">Administrateurs</div>
         </div>
     </div>
-</div>
+</div> -->
 
-{{-- Utilisateurs par rôle --}}
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-header card-header-anptic">
-                <i class="bi bi-pie-chart me-2"></i> Utilisateurs par rôle
-            </div>
-            <div class="card-body"><canvas id="chartRoles" height="180"></canvas></div>
-        </div>
-    </div>
-
-    {{-- Export excel boutons génériques par table NB: ces boutons pointent vers des routes admin.export.* qui
-         doivent encore être créées côté routes/web.php + un contrôleur
-         d'export (voir message d'accompagnement). --}}
     <div class="col-md-8">
         <div class="card shadow-sm h-100">
             <div class="card-header card-header-anptic">
-                <i class="bi bi-file-earmark-excel me-2"></i> Export des données (Excel)
+                <i class="bi bi-file-earmark-excel me-2"></i> Exportation des données (Excel)
             </div>
             <div class="card-body d-flex flex-wrap gap-2 align-items-start">
                 <a href="{{ route('admin.export.users') }}" class="btn btn-sm btn-outline-success">
@@ -584,7 +571,7 @@
     </div>
 </div>
 
-{{-- Liste des utilisateurs : statut + dernière authentification + filtre direction --}}
+{{-- Liste des utilisateurs statut, derniere authentification et filtre par direction --}}
 <div class="card shadow-sm mb-4">
     <div class="card-header card-header-anptic d-flex justify-content-between align-items-center">
         <span><i class="bi bi-list-ul me-2"></i> Liste des utilisateurs</span>
@@ -595,8 +582,9 @@
             @endforeach
         </select>
     </div>
-    <div class="card-body p-0" style="max-height:320px;overflow-y:auto;">
-        <table class="table table-sm mb-0" id="tableUsers">
+    <div class="card-body p-0 pt-2" style="max-height:320px;overflow-y:auto;">
+    <div class="table-responsive">
+    <table class="table table-sm mb-0" id="tableUsers">
             <thead class="table-anptic-dark">
                 <tr><th class="ps-3">Nom</th><th>Rôle</th><th>Direction</th><th>Statut</th><th>Dernière connexion</th></tr>
             </thead>
@@ -619,7 +607,7 @@
     </div>
 </div>
 
-{{-- Agents n'ayant fait aucune demaande de congé, avec sélecteur d'année --}}
+{{-- Agents n'ayant fait aucune demande de congé --}}
 <div class="card shadow-sm mb-4">
     <div class="card-header card-header-anptic d-flex justify-content-between align-items-center">
         <span><i class="bi bi-exclamation-triangle me-2"></i> Agents sans demande de congé</span>
@@ -631,7 +619,7 @@
             </select>
         </form>
     </div>
-    <div class="card-body p-0">
+    <div class="card-body p-2">
         <div class="table-responsive" style="max-height:250px;overflow-y:auto;">
             <table class="table table-sm mb-0">
                 <thead class="table-anptic-dark">
@@ -657,8 +645,8 @@
     <div class="card-header card-header-anptic">
         <i class="bi bi-clock-history me-2"></i> Historique des actions
     </div>
-    <div class="card-body p-0">
-        <table class="table table-sm mb-0">
+    <div class="card-body pt-2 p-0">
+    <table class="table table-sm mb-0">
             <thead class="table-anptic-dark">
                 <tr><th class="ps-3">Date/Heure</th><th>Utilisateur</th><th>Action</th><th>Module</th><th>Description</th></tr>
             </thead>
@@ -695,24 +683,14 @@
 <script>
 const COLORS = ['#1B384F','#42A5F5','#198754','#dc3545','#ffc107','#6f42c1','#0dcaf0','#fd7e14','#20c997'];
 
-/**
- * Couleur d'une barre du Gantt selon le statut de la demande.
- */
+
 function couleurStatut(statut) {
     if (statut === 'validee') return '#198754';
     if (statut === 'rejetee') return '#dc3545';
     return '#42A5F5'; // en_attente / en_cours
 }
 
-/**
- * Diagramme de Gantt "maison" avec Chart.js : barres flottantes
- * horizontales (une par demande), l'axe X représente les jours écoulés
- * depuis la première date de la série. On évite ainsi de dépendre d'un
- * plugin d'adaptateur de dates non chargé sur cette page.
- *
- * items : tableau d'objets {agent, direction, debut, fin, statut}
- *         (format renvoyé par DashboardController::timelineData)
- */
+
 function renderGantt(canvasId, items) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return null;
@@ -786,7 +764,7 @@ new Chart(document.getElementById('chartCongesDir'), {
     options: { plugins:{ legend:{ position:'bottom', labels:{ font:{ size:10 } } } } }
 });
 
-// Les 5 diagrammes "Générale par direction" exigés par le PDF.
+
 const statDir = @json($congesStatParDirection);
 function pieParDirection(canvasId, champ) {
     new Chart(document.getElementById(canvasId), {
@@ -801,7 +779,7 @@ pieParDirection('chartCongesEnCours', 'en_cours');
 pieParDirection('chartCongesValides', 'valides');
 pieParDirection('chartCongesClotures', 'clotures');
 
-// Gantt avec filtre par direction (congé ET absence, comme demandé).
+// Gantt avec filtre par direction congé et absence
 const congeCalendrierData   = @json($congeCalendrier);
 const absenceCalendrierData = @json($absenceCalendrier);
 let ganttCongeChart   = renderGantt('ganttConge', congeCalendrierData);

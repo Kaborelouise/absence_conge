@@ -7,7 +7,7 @@
     <div class="col-md-7">
         <div class="card shadow-sm">
             <div class="card-header text-white text-center" style="background-color:#1B384F; padding: 20px;">
-                <h5 class="mb-0">Ouvrir une nouvelle session Administratives</h5>
+                <h5 class="mb-0">Créer une nouvelle session administratives</h5>
             </div>
             <div class="card-body p-4">
 
@@ -24,16 +24,14 @@
                     <div class="alert alert-danger">{{ session('error') }}</div>
                 @endif
 
-                <div class="alert alert-warning" style="font-size: 13px;">
-                    <i class="bi bi-exclamation-triangle me-1"></i>
-                    Ouvrir une session réinitialise automatiquement le solde de <strong>tous les Agents</strong>
-                    (10 jours d'absence, 30 jours de congé). La période ne doit pas chevaucher une session existante.
-                </div> 
-
-                <form action="{{ route('sessions_Administratives.store') }}" method="POST">
+                 <!-- <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Veuillez renseigner l'année, la date de début et la date de fin de la session administrative
+                </div> -->
+                <form action="{{ route('sessions_administratives.store') }}" method="POST">
                     @csrf
 
-                    <div class="mb-3">
+                    <!-- <div class="mb-3">
                         <label class="form-label">Libellé</label>
                         <input type="text" name="libelle"
                                class="form-control @error('libelle') is-invalid @enderror"
@@ -41,9 +39,9 @@
                         @error('libelle')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                    </div>
+                    </div> -->
 
-                    <div class="mb-3">
+                    <!-- <div class="mb-3">
                         <label class="form-label">Année</label>
                         <input type="number" name="annee"
                                class="form-control @error('annee') is-invalid @enderror"
@@ -51,7 +49,7 @@
                         @error('annee')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                    </div>
+                    </div> -->
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
@@ -75,8 +73,8 @@
                     </div>
 
                     <div class="d-flex justify-content-center gap-3">
-                        <button type="submit" class="btn btn-primary px-4">Ouvrir la session</button>
-                        <a href="{{ route('sessions_Administratives.index') }}" class="btn btn-secondary px-4">Annuler</a>
+                        <button type="submit" class="btn btn-primary px-4">Créer la session</button>
+                        <a href="{{ route('sessions_administratives.index') }}" class="btn btn-secondary px-4">Annuler</a>
                     </div>
                 </form>
             </div>

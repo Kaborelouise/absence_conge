@@ -8,11 +8,7 @@ use App\Exports\DemandeJouissancesExport;
 use App\Exports\DemandeAbsencesExport;
 use Maatwebsite\Excel\Facades\Excel;
 
-/**
- * Export Excel des principales tables, exigé par la section 5 du PDF
- * ("Export des données des tables sous format Excel") pour le rôle
- * Administrateur. Chaque méthode correspond à un bouton du dashboard.
- */
+
 class AdminExportController extends Controller
 {
     public function users()

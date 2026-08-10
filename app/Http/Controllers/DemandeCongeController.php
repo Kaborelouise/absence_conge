@@ -7,6 +7,7 @@ use App\Models\CompilationConge;
 use App\Models\SessionAdministrative;
 use Illuminate\Http\Request;
 use App\Helpers\LogActivity;
+use DateTime;
 
 class DemandeCongeController extends Controller
 {
@@ -15,26 +16,39 @@ class DemandeCongeController extends Controller
         $user = auth()->user();
         $role = $user->role->libelle;
 
-        $demandes = DemandeConge::with('user.departement.direction', 'avisConge')
-            ->when(!in_array($role, ['Agent RH', 'Administrateur']), function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
-            ->latest()
-            ->get();
+        $sessions            = SessionAdministrative::orderByDesc('annee')->get();
+        $session             = SessionAdministrative::courante();
+        $sessionSelectionnee = request('session_id', $session?->id);
+        $estEligibleAuConge = $user->estEligible();
+        // dd($estEligibleAuConge);
 
-        $session           = SessionAdministrative::courante();
+    $demandes = DemandeConge::with('user.departement.direction', 'avisConge')
+        ->when($sessionSelectionnee, function ($q) use ($sessionSelectionnee) {
+            $q->where('session_administrative_id', $sessionSelectionnee);
+        })
+        ->when(!in_array($role, ['Agent RH', 'Administrateur']), function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })
+        ->latest()
+        ->get();
+
         $compilationActive = $session ? CompilationConge::activeParSession($session->id) : null;
-        $peutCompiler      = $role === 'Agent RH';
+        $peutCompiler       = $role === 'Agent RH';
+        $peutSoumettre      = $session !== null && $session->estOuvertePour('conge');
 
+        
         return view('demande_conges.index', compact(
-            'demandes', 'compilationActive', 'peutCompiler', 'session'
+            'demandes', 'compilationActive', 'peutCompiler', 'session',
+            'sessions', 'sessionSelectionnee',
+            'peutSoumettre', 'estEligibleAuConge' // pour afficher le bouton Soumettre une demande
         ));
     }
 
     public function create()
     {
-        $user = auth()->user();
-        return view('demande_conges.create', compact('user'));
+        // $user = auth()->user();
+        $session = SessionAdministrative::courante();
+        return view('demande_conges.create', compact('session'));
     }
 
     public function store(Request $request)
@@ -50,13 +64,35 @@ class DemandeCongeController extends Controller
 
         $user    = auth()->user();
 
-        // ====================================================================
-        // AJOUTÉ : même règle que pour les absences — un agent ne peut pas
-        // avoir 2 demandes de congé actives en même temps. Ici, "en cours"
-        // signifie : pas encore compilée par l'Agent RH (estCompilee() ===
-        // false, cf. DemandeConge — pas de statut "rejetée" pour ce type de
-        // demande, juste "compilée" ou non) ET pas abandonnée.
-        // ====================================================================
+        $periode_travail = $user->periodeTravail();
+        $periode_travail_date_debut = $periode_travail['debut'] ?? null;
+        
+        $date_debut = $periode_travail['debut'] ?? null;
+        $annee_en_cours = sessionAdministrative::courante()->annee;
+
+        $periode_travail_date_debut = null;
+        $periode_travail_date_fin = null;
+        $periode_travail_date_effet = null;
+
+        if ($date_debut) {
+            $date = new DateTime($date_debut);
+            
+            $date->setDate($annee_en_cours, $date->format('m'), $date->format('d'));
+            
+            $periode_travail_date_debut = $date->format('d-m-Y');
+
+            $date_fin = clone $date;
+            
+            $date_fin->modify('+11 months -1 day'); // Ajoute 11 mois et retire 1 jour
+            $periode_travail_date_fin = $date_fin->format('d-m-Y');
+
+            $date_effet = clone $date_fin;
+            $date_effet->modify('+1 day');
+            $periode_travail_date_effet = $date_effet->format('d-m-Y');
+        }
+
+        // dd($periode_travail_date_debut, $periode_travail_date_fin, $periode_travail_date_effet);
+
         $demandeEnCours = DemandeConge::where('user_id', $user->id)
             ->where('abandonnee', false)
             ->whereDoesntHave('avisConge')
@@ -85,15 +121,18 @@ class DemandeCongeController extends Controller
                 ->with('error', "Vous n'êtes pas encore éligible au congé administratif. Vous le serez à partir du {$dateEligibilite}.");
         }
 
-        // CORRECTION : capture dans $demande pour avoir l'id
+        
+
         $demande = DemandeConge::create([
             'num_demande'                => time(),
             'lieu_jouissance'            => $request->lieu_jouissance,
             'user_id'                    => $user->id,
             'session_administrative_id'  => $session->id,
+            'date_debut'                 => $periode_travail_date_debut,
+            'date_fin'                   => $periode_travail_date_fin,
+            'date_effet'                 => $periode_travail_date_effet,
         ]);
 
-        // LOG : soumission demande congé
         LogActivity::log(
             'create',
             'DemandeConge',
@@ -113,8 +152,9 @@ class DemandeCongeController extends Controller
         $user           = auth()->user();
         $peutCompiler   = $demande->peutEtreCompileePar($user);
         $peutAbandonner = $demande->peutEtreAbandonneePar($user);
+        $session = SessionAdministrative::find($demande->session_administrative_id);
 
-        return view('demande_conges.show', compact('demande', 'peutCompiler', 'peutAbandonner'));
+        return view('demande_conges.show', compact('demande', 'peutCompiler', 'peutAbandonner', 'session'));
     }
 
     public function edit($id)
@@ -145,7 +185,6 @@ class DemandeCongeController extends Controller
 
         $demande->update($request->only(['lieu_jouissance']));
 
-        // LOG : modification demande congé
         LogActivity::log(
             'update',
             'DemandeConge',
@@ -166,7 +205,6 @@ class DemandeCongeController extends Controller
                 ->with('error', 'Suppression non autorisée.');
         }
 
-        // LOG : suppression AVANT delete()
         LogActivity::log(
             'delete',
             'DemandeConge',
@@ -191,7 +229,6 @@ class DemandeCongeController extends Controller
 
         $demande->update(['abandonnee' => true]);
 
-        // LOG : abandon demande congé
         LogActivity::log(
             'update',
             'DemandeConge',
@@ -250,7 +287,6 @@ class DemandeCongeController extends Controller
 
         $session->update(['active_conge' => false]);
 
-        // LOG : compilation congés
         LogActivity::log(
             'update',
             'DemandeConge',
@@ -289,7 +325,6 @@ class DemandeCongeController extends Controller
         $compilation->update(['decompilee_at' => now()]);
         $session->update(['active_conge' => true]);
 
-        // LOG : décompilation
         LogActivity::log(
             'update',
             'DemandeConge',
@@ -321,7 +356,6 @@ class DemandeCongeController extends Controller
             ->where('statut', 'compilee')
             ->get();
 
-        // LOG : téléchargement décision congé
         LogActivity::log(
             'read',
             'DemandeConge',

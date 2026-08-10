@@ -25,25 +25,13 @@
                     <div class="alert alert-danger">{{ session('error') }}</div>
                 @endif
 
-                {{--
-                    AJOUTÉ : période de jouissance calculée à partir de la date de
-                    prise de service de l'Agent connecté (User::periodeJouissance()).
-                    Affichée en gris, non modifiable : c'est une information calculée
-                    automatiquement, pas un champ que l'Agent saisit. Elle permet à
-                    l'Agent de savoir, avant même de soumettre sa demande, à quelle
-                    période il pourra effectivement jouir de son congé une fois
-                    celui-ci compilé par le RH.
-                --}}
-                @php
-                $periode = $user->datePeriodeJouissance()
-                    ? ['debut' => $user->datePeriodeJouissance(), 
-                    'fin'   => $user->datePeriodeJouissance()->addDays(30)]
-                    : null;
-                @endphp
+
+
                 <div class="mb-4">
                     <label class="form-label fw-bold">Période de jouissance</label>
+                    
                     <input type="text" class="form-control bg-light text-muted" readonly
-                           value="@if($periode){{ $periode['debut']->format('d/m/Y') }} → {{ $periode['fin']->format('d/m/Y') }}@else Non calculable (date de prise de service non renseignée) @endif">
+                        value="@if($session){{ $session['date_debut']->format('d/m/Y') }} au {{ $session['date_fin']->format('d/m/Y') }}@else Non calculable (Aucune session en cours) @endif">
                     <small class="text-muted">Calculée automatiquement à partir de votre date de prise de service.</small>
                 </div>
 

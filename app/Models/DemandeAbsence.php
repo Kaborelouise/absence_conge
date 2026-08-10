@@ -47,11 +47,9 @@ class DemandeAbsence extends Model
         return $this->cloturee_at !== null;
     }
 
-
     // seul l'agent initiateur peut clôturer, et seulement une fois la
-    //  demande validée (par le SG ou le DG selon la durée) — pas avant,
-    //  pas s'il l'a déjà fait.
-
+    // demande validée (par le SG ou le DG selon la durée) — pas avant,
+    // pas s'il l'a déjà fait.
     public function peutEtreClotureePar(User $user): bool
     {
         return $this->statut === 'validee'
@@ -59,46 +57,52 @@ class DemandeAbsence extends Model
             && $this->user_id === $user->id;
     }
 
- 
+  
     public function circuitAttendu(): array
     {
         $user  = $this->user;
         $role  = $user->role->libelle;
         $jours = $this->nombreJours();
 
-        $validateurFinal = $jours > 5 ? 'dg' : 'sg';
-
-        // SG → validé uniquement par DG (peu importe la durée)
-        if ($role === 'SG') {
-            return ['agent_rh', 'dg'];
-        }
-
-        // DG → validé uniquement par PCA
+        // DG est toujours validé par PCA
         if ($role === 'DG') {
             return ['agent_rh', 'pca'];
         }
 
-        // Responsable de direction (rôle explicite)
-        // → saute chef département ET responsable direction
-        if ($role === 'Responsable Direction') {
-            return ['agent_rh', $validateurFinal];
+        // SG → toujours validé par DG
+        if ($role === 'SG') {
+            return ['agent_rh', 'dg'];
         }
 
-        // Chef de département :
-        // - soit rôle explicite "Responsable Département"
-        // - soit est_responsable_departement = true (agent promu chef)
-        // → saute l'étape chef département, commence à responsable direction
-        if ($role === 'Responsable Département' || $user->est_responsable_departement) {
-            return ['responsable_direction', 'agent_rh', $validateurFinal];
+        if ($role === 'Agent RH') {
+            return ['sg'];
+        }
+
+      
+        $validateurFinal = match (true) {
+            $jours < 2  => null,   
+            $jours <= 5 => 'sg',
+            default     => 'dg',
+        };
+
+
+        $etapesFinales = array_values(array_filter(['agent_rh', $validateurFinal]));
+
+
+        if ($role === 'Responsable Direction') {
+            return $etapesFinales;
+        }
+
+
+        if ($role === 'Chef de Département' || $user->est_responsable_departement) {
+            return array_merge(['responsable_direction'], $etapesFinales);
         }
 
         // Agent simple → circuit complet
-        return ['chef_departement', 'responsable_direction', 'agent_rh', $validateurFinal];
+        return array_merge(['chef_departement', 'responsable_direction'], $etapesFinales);
     }
 
-
     // Retourne la prochaine étape du circuit = première étape sans avis favorable
-
     public function prochainActeur(): ?string
     {
         $circuit = $this->circuitAttendu();
@@ -117,7 +121,6 @@ class DemandeAbsence extends Model
         return null;
     }
 
-
     public function peutDonnerAvis(User $user): bool
     {
         // Condition 1 : demande non terminée
@@ -125,32 +128,36 @@ class DemandeAbsence extends Model
             return false;
         }
 
+        if ($user->id === $this->user_id) {
+            return false;
+        }
+
         $role     = $user->role->libelle;
         $prochain = $this->prochainActeur();
 
         // Détermine le type d'avis que cet utilisateur pourrait donner
-        $typeAvis = match(true) {
-            $role === 'Responsable Département' || $user->est_responsable_departement => 'chef_departement',
-            $role === 'Responsable Direction'                                          => 'responsable_direction',
-            $role === 'Agent RH'                                                       => 'agent_rh',
-            $role === 'SG'                                                             => 'sg',
-            $role === 'DG'                                                             => 'dg',
-            $role === 'PCA'                                                            => 'pca',
-            default                                                                    => null,
+        $typeAvis = match (true) {
+            $role === 'Chef de Département' || $user->est_responsable_departement => 'chef_departement',
+            $role === 'Responsable Direction'                                     => 'responsable_direction',
+            $role === 'Agent RH'                                                  => 'agent_rh',
+            $role === 'SG'                                                        => 'sg',
+            $role === 'DG'                                                        => 'dg',
+            $role === 'PCA'                                                       => 'pca',
+            default                                                               => null,
         };
 
         if ($typeAvis === null) return false;
 
         if ($prochain !== $typeAvis) return false;
 
-        // Condition 3 : il n'a pas déjà donné son avis
-        $aDejaGive = $this->avisAbsence
-            ->where('user_id', $user->id)
+
+        $etapeDejaTraitee = $this->avisAbsence
+            ->where('type', $typeAvis)
             ->isNotEmpty();
 
-        if ($aDejaGive) return false;
+        if ($etapeDejaTraitee) return false;
 
-        // Condition 4 : vérification périmètre géographique
+
         // Le chef de département ne peut agir que sur son propre département
         if ($typeAvis === 'chef_departement') {
             return $user->departement_id === $this->user->departement_id;
@@ -166,7 +173,6 @@ class DemandeAbsence extends Model
         // Agent RH, SG, DG, PCA → portée globale (toute l'organisation)
         return true;
     }
-
 
     public function peutEtreAbandonneePar(User $user): bool
     {

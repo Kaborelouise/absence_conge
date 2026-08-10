@@ -47,7 +47,7 @@
                 <tr>
                     <td>
                         {{-- baDGe bg-secondary : pastille grise pour le code court --}}
-                        <span class="baDGe bg-secondary">
+                        <span class="">
                             {{ $direction->libelle_court }}
                         </span>
                     </td>
@@ -58,7 +58,7 @@
                         {{-- $direction->departements vient de with('departements')
                              .count() : compte le nombre de départements
                              C'est plus efficace que de faire une requête séparée --}}
-                        <span class="baDGe bg-info text-dark">
+                        <span class="">
                             {{ $direction->departements->count() }} département(s)
                         </span>
                     </td>
