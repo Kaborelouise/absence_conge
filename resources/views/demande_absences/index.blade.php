@@ -110,7 +110,7 @@
                         </a>
 
                         {{-- Bouton Modifier : auteur uniquement, demande en attente --}}
-                        @if($peutSupprimer || $peutAbandonner)
+                        @if($peutSupprimer )
                         <a href="{{ route('demande_absences.edit', $demande->id) }}"
                             class="btn btn-sm btn-warning btn-action">
                             Modifier

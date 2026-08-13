@@ -29,7 +29,7 @@ class AvisJouissanceController extends Controller
 
         $user = auth()->user();
 
-        // Sécurité vérifier que c'est bien le tour de cet utilisateur
+        // pour la Sécurité vérifier que c'est bien le tour de cet utilisateur
         if (!$demande->peutDonnerAvis($user)) {
             return redirect()
                 ->route('demande_jouissances.show', $demande->id)
@@ -38,26 +38,26 @@ class AvisJouissanceController extends Controller
 
         $role = $user->role->libelle;
 
-        // Le type d'avis est déduit du rôle connecté jamais du formulaire
+        // Le type d'avis est déduit du rôle connecté 
         // pour éviter qu'un utilisateur se fasse passer pour un autre acteur
         $typeAvis = match(true) {
-        $role === 'Chef de Département' || $user->est_responsable_departement 
-            => 'Chef de Département',
+       $role === 'Chef de Département' || $user->est_responsable_departement
+            => 'chef_departement',
 
         $role === 'Agent RH'
-            => 'Agent RH',
+            => 'agent_rh',
 
         $role === 'Responsable Direction'
-            => 'Responsable Direction',
+            => 'responsable_direction',
 
         $role === 'SG'
-            => 'SG',
+            => 'sg',
 
         $role === 'DG'
-            => 'DG',
+            => 'dg',
 
         $role === 'PCA'
-            => 'PCA',
+            => 'pca',
 
         default => strtolower($role),
     };
@@ -80,7 +80,7 @@ class AvisJouissanceController extends Controller
                 ->with('success', 'Avis défavorable enregistré. La demande est rejetée.');
         }
 
-        // Avis favorable : on recharge les avis pour recalculer
+        // Avis favorable on recharge les avis pour recalculer
         // le prochain acteur avec les nouvelles données
         $demande->load('avis');
         $prochainActeur = $demande->prochainActeur();
@@ -94,7 +94,7 @@ class AvisJouissanceController extends Controller
                 ->with('success', 'Demande validée avec succès.');
         }
 
-        // Il reste des étapes → en_cours
+        // Il reste des étapes en_cours
         $demande->update(['statut' => 'en_cours']);
 
         return redirect()

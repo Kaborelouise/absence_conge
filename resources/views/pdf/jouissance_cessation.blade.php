@@ -43,25 +43,44 @@
         <strong>{{ strtoupper($demande->user->nom) }} {{ $demande->user->prenom }}</strong>
         matricule <strong>{{ $demande->user->matricule }}</strong>,
         {{ $demande->user->poste }},
-        bénéficiaire d'un congé Administrateuristratif de {{ date('Y') }}
-        pour la période du
-        <strong>{{ \Carbon\Carbon::parse($demande->date_debut)->locale('fr')->isoFormat('dddd D MMMM YYYY') }}</strong>
+        {{-- MODIFIÉ : clause complète sur la décision annuelle, tirée de la
+             session administrative liée à la demande. 'Administrateuristratif'
+             corrigé en 'administratif'. --}}
+        bénéficiaire d'un congé administratif obtenu suivant la décision
+        N°<strong>{{ $demande->sessionAdministrative->numero_decision ?? '____________' }}</strong>
+        du <strong>{{ $demande->sessionAdministrative->date_decision
+            ? $demande->sessionAdministrative->date_decision->locale('fr')->isoFormat('D MMMM YYYY')
+            : '____________' }}</strong>
+        accordant un congé administratif aux agents de l'ANPTIC, autorisé à jouir
+        de son congé annuel de <strong>{{ \Carbon\Carbon::parse($demande->date_debut)->year }}</strong>
+        pour compter du
+        <strong>{{ \Carbon\Carbon::parse($demande->date_debut)->locale('fr')->isoFormat('dddd DD MMMM YYYY') }}</strong>
         au
-        <strong>{{ \Carbon\Carbon::parse($demande->date_fin)->locale('fr')->isoFormat('dddd D MMMM YYYY') }} inclus</strong>,
+        <strong>{{ \Carbon\Carbon::parse($demande->date_fin)->locale('fr')->isoFormat('dddd DD MMMM YYYY') }} inclus</strong>,
         soit <strong>{{ $demande->nombre_jour }} jours</strong>,
         a cessé service le
-        <strong>{{ \Carbon\Carbon::parse($demande->date_debut)->subDay()->locale('fr')->isoFormat('dddd D MMMM YYYY') }}</strong>.
+        <strong>{{ \Carbon\Carbon::parse($demande->date_debut)->subDay()->locale('fr')->isoFormat('dddd DD MMMM YYYY') }}</strong>.
     </p>
     <p>
         L'intéressé(e) reprendra service le
-        <strong>{{ \Carbon\Carbon::parse($demande->date_fin)->addDay()->locale('fr')->isoFormat('dddd D MMMM YYYY') }}</strong>.
+        <strong>{{ \Carbon\Carbon::parse($demande->date_fin)->addDay()->locale('fr')->isoFormat('dddd DD MMMM YYYY') }}</strong>.
     </p>
     <p>En foi de quoi, le présent certificat est établi pour servir et valoir ce que de droit.</p>
 </div>
 <div class="signature-bloc">
-    Pour le Secrétaire Général,<br>
-    Le Directeur des Ressources Humaines<br><br><br><br>
-    ________________________________
+    {{-- MODIFIÉ : signataire tiré de la session administrative au lieu d'un
+         texte fixe. Repli sur formule neutre si non renseigné. --}}
+    @if($demande->sessionAdministrative->signataire_titre)
+        {{ $demande->sessionAdministrative->signataire_titre }}<br><br><br><br>
+        @if($demande->sessionAdministrative->signataire_nom)
+            <strong>{{ $demande->sessionAdministrative->signataire_nom }}</strong>
+        @else
+            ________________________________
+        @endif
+    @else
+        Pour le Secrétaire Général<br><br><br><br>
+        ________________________________
+    @endif
 </div>
 <div class="ampliations">
     <strong>Ampliations :</strong>

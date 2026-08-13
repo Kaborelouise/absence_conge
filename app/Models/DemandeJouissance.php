@@ -70,32 +70,31 @@ class DemandeJouissance extends Model
 
         // Cas du SG d'abord RH vérifie puis DG décide 
         if ($role === 'SG') {
-            return ['Agent RH', 'DG'];
+            return ['agent_rh', 'dg'];
         }
 
         if ($role === 'Agent RH') {
-            return ['SG'];
+            return ['sg'];
         }
 
         // Cas du DG, RH puis PCA décide
         if ($role === 'DG') {
-            return ['Agent RH', 'PCA'];
+            return ['agent_rh', 'pca'];
         }
 
         // Cas Responsable de direction, RH puis SG décide
         if ($role === 'Responsable Direction') {
-            return ['Agent RH', 'SG'];
+            return ['agent_rh', 'sg'];
         }
 
         // Cas Agent de direction ou Chef de département :
         // RH puis Responsable de direction décide — INCHANGÉ
         if ($role === 'Chef de Département' || $user->est_responsable_departement) {
-            return ['Agent RH', 'Responsable Direction'];
+            return ['agent_rh', 'responsable_direction'];
         }
 
-        // Cas Agent simple d'un département :
-        // Chef Dpt → RH → Responsable de direction — INCHANGÉ
-        return ['Chef de Département', 'Agent RH', 'Responsable Direction'];
+        // Cas Agent simple d'un département 
+        return ['chef_departement', 'agent_rh', 'responsable_direction'];
     }
 
 
@@ -141,27 +140,40 @@ class DemandeJouissance extends Model
             return false;
         }
 
+        if ($user->id === $this->user_id) {
+            return false;
+        }
+
         $role     = $user->role->libelle;
         $prochain = $this->prochainActeur();
 
+        if ($prochain === null) {
+            return false;
+        }
+
+        $etapeDejaTraitee = $this->avis->where('type', $prochain)->isNotEmpty();
+        if ($etapeDejaTraitee) {
+            return false;
+        }
+
         if (in_array($role, ['SG', 'DG', 'PCA'])) {
-            return $prochain === $role;
+            return $prochain === strtolower($role);
         }
 
         if ($role === 'Responsable Direction') {
             $dirUser  = $user->departement->direction_id ?? null;
             $dirAgent = $this->user->departement->direction_id ?? null;
-            return $prochain === 'Responsable Direction'
-                && $dirUser === $dirAgent;
+            return $prochain === 'responsable_direction'
+                && $dirUser !== null && $dirUser === $dirAgent;
         }
 
         if ($role === 'Chef de Département' || $user->est_responsable_departement) {
-            return $prochain === 'Chef de Département'
+            return $prochain === 'chef_departement'
                 && $user->departement_id === $this->user->departement_id;
         }
 
         if ($role === 'Agent RH') {
-            return $prochain === 'Agent RH';
+            return $prochain === 'agent_rh';
         }
 
         return false;

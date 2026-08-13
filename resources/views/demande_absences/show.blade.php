@@ -45,7 +45,7 @@ $etapeSuivante = ($indexActuel !== false && isset($circuit[$indexActuel + 1]))
 
 <div class="row g-3">
 
-    {{-- Colonne gauche : infos demande --}}
+    {{-- infos demande --}}
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
             <div class="card-header card-header-anptic text-center">
@@ -106,13 +106,7 @@ $etapeSuivante = ($indexActuel !== false && isset($circuit[$indexActuel + 1]))
                         <th class="ps-3">Retenue salaire</th>
                         <td>{{ $demande->retenue_salaire ? 'Oui' : 'Non' }}</td>
                     </tr>
-                    {{-- ============================================================
-                         CORRIGÉ : "Étape actuelle" affiche désormais UNIQUEMENT
-                         l'étape à laquelle la demande se trouve réellement en ce
-                         moment (qui doit agir MAINTENANT), sans le préfixe
-                         "Initiation — en attente de" qui dupliquait l'information
-                         déjà présente dans le bloc Historique à droite.
-                         ============================================================ --}}
+                    
                     <tr>
                         <th class="ps-3">Étape actuelle</th>
                         <td>
@@ -122,21 +116,22 @@ $etapeSuivante = ($indexActuel !== false && isset($circuit[$indexActuel + 1]))
                                 <span class="badge-statut badge-rejetee">Rejetée</span>
                             @elseif($demande->statut === 'abandonnee')
                                 <span class="badge-statut badge-rejetee">Abandonnée</span>
-                            @elseif($prochainActeur)
-                                <span class="badge-statut badge-en_cours">
-                                    {{ $etapeLabels[$prochainActeur] ?? $prochainActeur }}
-                                </span>
+                            @elseif($demande->avisAbsence->isEmpty())
+                                <span class="badge-statut badge-en_attente">Nouveau</span>
                             @else
-                                <span class="badge-statut badge-en_cours">En cours de traitement</span>
+                                <span class="badge-statut badge-en_cours">
+                                    {{ $etapeLabels[$derniereEtape] ?? $derniereEtape }}
+                                </span>
                             @endif
                         </td>
                     </tr>
+
                 </table>
             </div>
         </div>
     </div>
 
-    {{-- Colonne droite : circuit --}}
+    {{-- Colonne de droite circuit --}}
     <div class="col-md-6">
 
         <div class="card shadow-sm mb-3">
@@ -149,7 +144,7 @@ $etapeSuivante = ($indexActuel !== false && isset($circuit[$indexActuel + 1]))
                 <div class="d-flex align-items-start gap-3 mb-3 pb-3 border-bottom">
                     <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
                          style="width:38px;height:38px;background:#1B384F;color:white;font-size:10px;font-weight:bold;">
-                        {{ strtoupper(substr($etapeLabels[$avis->type] ?? $avis->type, 0, 2)) }}
+                        {{ strtoupper(mb_substr($etapeLabels[$avis->type] ?? $avis->type, 0, 2)) }}
                     </div>
                     <div class="flex-grow-1">
                         <div class="fw-bold" style="font-size:13px;">
@@ -175,20 +170,13 @@ $etapeSuivante = ($indexActuel !== false && isset($circuit[$indexActuel + 1]))
                     </p>
                 @endforelse
 
-                {{-- ========================================================
-                     CORRIGÉ : n'affiche plus "en attente de : <étape actuelle>"
-                     (déjà visible dans la cellule "Étape actuelle" à gauche),
-                     mais l'ÉTAPE SUIVANTE (étape+1) dans le circuit — c.-à-d.
-                     ce qui se passera APRÈS que l'étape en cours ait donné
-                     son avis favorable.
-                     ======================================================== --}}
+                
                 @if(!in_array($demande->statut, ['validee', 'rejetee', 'abandonnee']))
-                    @if($etapeSuivante)
+                    @if($prochainActeur)
                         <div class="alert alert-info mb-0 mt-2 py-2" style="font-size:12px;">
                             <i class="bi bi-arrow-right-circle me-1"></i>
-                            Étape suivante après avis de
-                            <strong>{{ $etapeLabels[$prochainActeur] ?? $prochainActeur }}</strong> :
-                            <strong>{{ $etapeLabels[$etapeSuivante] ?? $etapeSuivante }}</strong>
+                            Étape suivante :
+                            <strong>{{ $etapeLabels[$prochainActeur] ?? $prochainActeur }}</strong>
                         </div>
                     @else
                         <div class="alert alert-success mb-0 mt-2 py-2" style="font-size:12px;">

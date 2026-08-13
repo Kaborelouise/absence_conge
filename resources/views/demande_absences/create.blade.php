@@ -76,7 +76,9 @@
                             <select name="motif" id="motif"
                                     class="form-select @error('motif') is-invalid @enderror"
                                     required onchange="toggleAutreMotif()">
-                                <option value="">Motif de l'absence</option>
+                                <option value="" disabled {{ old('motif') ? '' : 'selected' }}>
+                                     Sélectionnez un motif 
+                                </option>
                                 <option value="evenement_familliaux"
                                     {{ old('motif') === 'evenement_familliaux' ? 'selected' : '' }}>
                                     Évènements familiaux (décès)

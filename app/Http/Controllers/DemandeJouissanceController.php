@@ -17,7 +17,7 @@ class DemandeJouissanceController extends Controller
         $user = auth()->user();
         $role = $user->role->libelle;
 
-        // AJOUTÉ : filtre par session, comme pour les absences
+       
         $sessions            = SessionAdministrative::orderByDesc('annee')->get();
         $sessionCourante     = SessionAdministrative::courante();
         $sessionSelectionnee = request('session_id', $sessionCourante?->id);
@@ -48,14 +48,6 @@ class DemandeJouissanceController extends Controller
 
 
 
-
-
-
-
-
-
-
-
     public function create()
     {
         $user = auth()->user();
@@ -64,15 +56,22 @@ class DemandeJouissanceController extends Controller
 
     public function store(Request $request)
     {
+       
         $request->validate([
-            'date_debut'  => 'required|date',
+            'date_debut'  => 'required|date|after_or_equal:today',
             'date_fin'    => 'required|date|after_or_equal:date_debut',
+        ], [
+            'date_debut.required'     => 'La date de début est obligatoire.',
+            'date_debut.after_or_equal' => 'La date de début ne peut pas être inférieue à aujourd\'hui.',//ajouté pour ne pas permettre la soumission d'une demande dont la date de debut est derrière
+            'date_fin.required'       => 'La date de fin est obligatoire.', 
+            'date_fin.after_or_equal' => 'La date de fin doit être supérieure ou égale à la date de début.', // after_or_equal est une regle native de laravel 
         ]);
+
 
         $user    = auth()->user();
 
 
-        // un agent ne peut pas avoir 2 demandes de jouissance active en même temps
+        // un agent ne peut pas avoir 2 demandes de jouissance  en même temps
 
         $demandeEnCours = DemandeJouissance::where('user_id', $user->id)
             ->where('abandonnee', false)
@@ -123,7 +122,7 @@ class DemandeJouissanceController extends Controller
 
         $user->decrement('solde_conge', $jours);
 
-        // Log pour la soumission demande jouissance
+        // Log pour la soumission demande jouissance 
         LogActivity::log(
             'create',
             'DemandeJouissance',
@@ -176,9 +175,14 @@ class DemandeJouissanceController extends Controller
                 ->with('error', 'Modification non autorisée.');
         }
 
-        $request->validate([
+            $request->validate([
             'date_debut' => 'required|date',
             'date_fin'   => 'required|date|after_or_equal:date_debut',
+        ], [
+            'date_debut.required'     => 'La date de début est obligatoire.',
+            'date_debut.after_or_equal' => 'La date de début ne peut pas être inférieure à aujourd\'hui.',
+            'date_fin.required'       => 'La date de fin est obligatoire.',
+            'date_fin.after_or_equal' => 'La date de fin doit être postérieure ou égale à la date de début.',
         ]);
 
         $user            = $demande->user;
@@ -248,7 +252,7 @@ class DemandeJouissanceController extends Controller
         $demande->user->increment('solde_conge', $demande->nombreJours());
         $demande->update(['abandonnee' => true]);
 
-        // LOG : abandon demande jouissance
+        // LOG abandon demande jouissance
         LogActivity::log(
             'update',
             'DemandeJouissance',
@@ -261,51 +265,54 @@ class DemandeJouissanceController extends Controller
     }
 
     public function telechargerCessation($id)
-    {
-        $demande = DemandeJouissance::with('user.departement.direction', 'avis')->findOrFail($id);
+        {
+            $demande = DemandeJouissance::with('user.departement.direction', 'avis')->findOrFail($id);
 
-        if ($demande->user_id !== auth()->id() || $demande->statut !== 'validee') {
-            return redirect()->route('demande_jouissances.show', $id)
-                ->with('error', 'Téléchargement non autorisé.');
+            $user       = auth()->user();
+            $estAuteur  = $demande->user_id === $user->id;
+            $estAgentRH = $user->role->libelle === 'Agent RH';
+
+            if ((!$estAuteur && !$estAgentRH) || $demande->statut !== 'validee') {
+                return redirect()->route('demande_jouissances.show', $id)
+                    ->with('error', 'Téléchargement non autorisé.');
+            }
+
+            // LOG de téléchargement pour le certificat de cessation
+            LogActivity::log(
+                'read',
+                'DemandeJouissance',
+                $demande->id,
+                "Téléchargement certificat cessation #{$demande->num_demande}"
+            );
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.jouissance_cessation', compact('demande'));
+            return $pdf->download("cessation_service_{$demande->num_demande}.pdf");
         }
-
-        // LOG de téléchargement pour le certificat de cessation
-        LogActivity::log(
-            'read',
-            'DemandeJouissance',
-            $demande->id,
-            "Téléchargement certificat cessation #{$demande->num_demande}"
-        );
-
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.jouissance_cessation', compact('demande'));
-        return $pdf->download("cessation_service_{$demande->num_demande}.pdf");
-    }
 
     public function telechargerReprise($id)
-    {
-        $demande    = DemandeJouissance::with('user.departement.direction', 'avis')->findOrFail($id);
-        $dateFin    = \Carbon\Carbon::parse($demande->date_fin);
-        $aujourdhui = \Carbon\Carbon::today();
+        {
+            $demande    = DemandeJouissance::with('user.departement.direction', 'avis')->findOrFail($id);
+            $dateFin    = \Carbon\Carbon::parse($demande->date_fin);
+            $aujourdhui = \Carbon\Carbon::today();
+            $user       = auth()->user();                                
+            $estAuteur  = $demande->user_id === $user->id;                
+            $estAgentRH = $user->role->libelle === 'Agent RH';            
 
-        if ($demande->user_id !== auth()->id()
-            || $demande->statut !== 'validee'
-            || $aujourdhui->lt($dateFin->copy()->subDays(2))) {
-            return redirect()->route('demande_jouissances.show', $id)
-                ->with('error', 'Le certificat de reprise sera disponible 2 jours avant votre retour ('
-                    . $dateFin->copy()->subDays(2)->format('d/m/Y') . ').');
+            // $bloqueParDelai = !$estAgentRH && $aujourdhui->lt($dateFin->copy()->subDays(2)); 
+
+            if ((!$estAuteur && !$estAgentRH)                              
+                || $demande->statut !== 'validee'
+                || $bloqueParDelai) {                                     
+                return redirect()->route('demande_jouissances.show', $id)
+                    ->with('error', 'Le certificat de reprise sera disponible 2 jours avant le retour');
+            }
+
+            LogActivity::log('read', 'DemandeJouissance', $demande->id,
+                "Téléchargement certificat reprise #{$demande->num_demande}");   
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.jouissance_reprise', compact('demande'));
+            return $pdf->download("reprise_service_{$demande->num_demande}.pdf");  
         }
-
-        // Log de téléchargement pour le certificat de reprise
-        LogActivity::log(
-            'read',
-            'DemandeJouissance',
-            $demande->id,
-            "Téléchargement certificat reprise #{$demande->num_demande}"
-        );
-
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.jouissance_reprise', compact('demande'));
-        return $pdf->download("reprise_service_{$demande->num_demande}.pdf");
-    }
 
     public function cloturer($id)
     {
@@ -323,7 +330,7 @@ class DemandeJouissanceController extends Controller
 
         $demande->update(['cloturee_at' => now()]);
 
-        // Logde pour clôture demande jouissance
+        // Log pour la clôture demande jouissance
         LogActivity::log(
             'update',
             'DemandeJouissance',

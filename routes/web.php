@@ -29,7 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/', function () {
         return view('Accueil');
     })->name('accueil');
-});
+// });
     // DASHBOARD
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
@@ -156,4 +156,5 @@ Route::middleware('auth')->group(function () {
 
 
       
+    });
 });

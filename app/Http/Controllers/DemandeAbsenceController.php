@@ -6,6 +6,7 @@ use App\Models\DemandeAbsence;
 use App\Models\SessionAdministrative;
 use Illuminate\Http\Request;
 use App\Helpers\LogActivity;
+use App\Models\User;
 
 class DemandeAbsenceController extends Controller
 {
@@ -16,8 +17,8 @@ class DemandeAbsenceController extends Controller
         $sessions = SessionAdministrative::orderByDesc('annee')->get();
         $sessionCourante = SessionAdministrative::courante();
         $sessionSelectionnee = request(
-            'session_id',
-            $sessionCourante?->id
+        'session_id',
+        $sessionCourante?->id
         );
 
             $demandes = DemandeAbsence::with('user.departement.direction', 'avisAbsence')
@@ -60,9 +61,13 @@ class DemandeAbsenceController extends Controller
         $request->validate([
             'date_debut'  => 'required|date',
             'date_fin'    => 'required|date|after_or_equal:date_debut',
-            'motif'       => 'required|string|max:500',
+            'motif'   => 'required|string|in:evenement_familliaux,jouissance_de_reliquat_de_congé_paye,convenances_personnelles,autre',
+            'motif_autre' => 'required_if:motif,autre|nullable|string|max:255',
             'interimaire' => 'nullable|string|max:255',
-        ]);
+            ], [
+            'motif_autre.required_if' => 'Veuillez préciser le motif.',
+    ]);
+
 
         $user = auth()->user();
 
@@ -87,7 +92,7 @@ class DemandeAbsenceController extends Controller
         }
 
         $jours = \Carbon\Carbon::parse($request->date_debut)
-    ->diffInDays(\Carbon\Carbon::parse($request->date_fin)) + 1;
+        ->diffInDays(\Carbon\Carbon::parse($request->date_fin)) + 1;
 
         if ($jours > $user->solde_absence) {
             return redirect()->back()->withInput()
@@ -101,6 +106,7 @@ class DemandeAbsenceController extends Controller
             'date_fin'                       => $request->date_fin,
             'motif'                          => $request->motif,
             'interimaire'                    => $request->interimaire,
+            'motif_autre'                   => $request->motif === 'autre' ? $request->motif_autre : null,
             'user_id'                        => $user->id,
             'statut'                         => 'en_attente',
             'session_administrative_id'      => $session->id,
@@ -150,12 +156,15 @@ class DemandeAbsenceController extends Controller
                 ->with('error', 'Modification non autorisée.');
         }
 
-        $request->validate([
-            'date_debut'  => 'required|date',
-            'date_fin'    => 'required|date|after_or_equal:date_debut',
-            'motif'       => 'required|string|max:500',
-            'interimaire' => 'nullable|string|max:255',
-        ]);
+         $request->validate([
+        'date_debut'  => 'required|date',
+        'date_fin'    => 'required|date|after_or_equal:date_debut',
+        'motif'       => 'required|string|in:evenement_familliaux,jouissance_de_reliquat_de_congé_paye,convenances_personnelles,autre',
+        'motif_autre' => 'required_if:motif,autre|nullable|string|max:255',
+        'interimaire' => 'nullable|string|max:255',
+    ], [
+        'motif_autre.required_if' => 'Veuillez préciser le motif.',
+    ]);
 
         $user          = $demande->user;
         $ancienJours   = $demande->nombreJours();
@@ -168,7 +177,13 @@ class DemandeAbsenceController extends Controller
                 ->with('error', "Solde insuffisant : vous demandez {$nouveauxJours} jour(s), il ne vous reste que {$soldeDisponible} jour(s).");
         }
 
-        $demande->update($request->only(['date_debut', 'date_fin', 'motif', 'interimaire']));
+        $demande->update([
+            'date_debut'  => $request->date_debut,
+            'date_fin'    => $request->date_fin,
+            'motif'       => $request->motif,
+            'motif_autre' => $request->motif === 'autre' ? $request->motif_autre : null,
+            'interimaire' => $request->interimaire,
+        ]);
         $user->update(['solde_absence' => $soldeDisponible - $nouveauxJours]);
 
 
@@ -176,6 +191,7 @@ class DemandeAbsenceController extends Controller
             'update',
             'DemandeAbsence',
             $demande->id,
+            
             "Modification demande absence du {$request->date_debut} au {$request->date_fin}"
         );
 
@@ -268,7 +284,7 @@ class DemandeAbsenceController extends Controller
     {
         $demande = DemandeAbsence::findOrFail($id);
 
-        // Sécurité : seul le propriétaire peut modifier
+        // seul le propriétaire peut modifier
         if ($demande->user_id !== auth()->id()
             || $demande->statut !== 'en_attente'
             || $demande->avisAbsence()->exists()) {
@@ -277,6 +293,21 @@ class DemandeAbsenceController extends Controller
                 ->with('error', 'Modification non autorisée.');
         }
 
-        return view('demande_absences.edit', compact('demande'));
+
+        $user = auth()->user();
+        $AgentsMemeDepartement = \App\Models\User::where('departement_id', $user->departement_id)
+            ->where('id', '!=', $user->id)->get();
+        return view('demande_absences.edit', compact('user', 'AgentsMemeDepartement', 'demande'));
+    
+        //  // //récupération des agents du meme département
+        // $AgentsMemeDepartement = User::where('departement_id',
+        // auth()->user()->departement_id)
+        // ->where('id', "!=", auth()->id())
+        // ->get();
+        // return view('demande_absences.edit', compact('demande', 'AgentsMemeDepartement'));
+
+        
     }
+
+
 }

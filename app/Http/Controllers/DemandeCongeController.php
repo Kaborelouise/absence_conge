@@ -356,6 +356,22 @@ class DemandeCongeController extends Controller
             ->where('statut', 'compilee')
             ->get();
 
+        $date_debut = null;
+        $date_fin   = null;
+        $date_effet = null;
+
+        $date_debut = $demandes->first()?->date_debut;
+        $date_fin   = $demandes->first()?->date_fin;
+        $date_effet = $demandes->first()?->date_effet;
+
+        $date_debut_format = new DateTime($date_debut);
+        $date_fin_format   = new DateTime($date_fin);
+        $date_effet_format = new DateTime($date_effet);
+
+        $date_debut = $date_debut_format->format('d/m/Y');
+        $date_fin   = $date_fin_format->format('d/m/Y');
+        $date_effet = $date_effet_format->format('d/m/Y');
+
         LogActivity::log(
             'read',
             'DemandeConge',
@@ -365,7 +381,7 @@ class DemandeCongeController extends Controller
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
             'pdf.decision_conge',
-            compact('demandes', 'session', 'compilation')
+            compact('demandes', 'session', 'compilation', 'date_debut', 'date_fin', 'date_effet')
         )->setPaper('A4', 'portrait');
 
         return $pdf->download("decision_conge_{$session->annee}.pdf");

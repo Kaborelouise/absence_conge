@@ -19,6 +19,14 @@
                         </ul>
                     </div>
                 @endif
+
+                <!-- message  -->
+                @if(session('error'))
+                    <div class="alert alert-danger">{{ session('error') }}</div>
+                @endif
+                
+
+
                 <form action="{{ route('demande_jouissances.store') }}" method="POST">
                     @csrf
 
@@ -45,7 +53,7 @@
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <label class="form-label">Nombre de jours</label>
-                            <input type="number" name="nombre_jour" id="nombre_jour"
+                            <input type="number" readonly name="nombre_jour" id="nombre_jour"
                                    class="form-control @error('nombre_jour') is-invalid @enderror"
                                    value="{{ old('nombre_jour') }}" min="1" required>
                             @error('nombre_jour')
@@ -77,16 +85,28 @@
 
 @section('scripts')
 <script>
-    function calculerJours() {
-        const debut = document.getElementById('date_debut').value;
-        const fin   = document.getElementById('date_fin').value;
-        if (debut && fin) {
-            const diff = Math.ceil((new Date(fin) - new Date(debut)) / (1000 * 60 * 60 * 24));
-            if (diff > 0) {
-                document.getElementById('nombre_jour').value = diff;
+   function calculerJours() {
+    const debut = document.getElementById('date_debut').value;
+    const fin   = document.getElementById('date_fin').value;
+    const solde = {{ auth()->user()->solde_conge }};
+    const alerteDiv = document.getElementById('alerte-solde-jouissance');
+
+    if (debut && fin) {
+        const diff = Math.ceil((new Date(fin) - new Date(debut)) / (1000 * 60 * 60 * 24)) + 1;
+        if (diff > 0) {
+            document.getElementById('nombre_jour').value = diff;
+
+            if (diff > solde) {
+                alerteDiv.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i>
+                    Vous demandez <strong>${diff}</strong> jour(s), mais votre solde disponible
+                    n'est que de <strong>${solde}</strong> jour(s). Réduisez la période.`;
+                alerteDiv.classList.remove('d-none');
+            } else {
+                alerteDiv.classList.add('d-none');
             }
         }
     }
+}
     document.getElementById('date_debut').addEventListener('change', calculerJours);
     document.getElementById('date_fin').addEventListener('change', calculerJours);
 </script>

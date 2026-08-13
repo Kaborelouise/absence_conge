@@ -47,9 +47,7 @@ class DemandeAbsence extends Model
         return $this->cloturee_at !== null;
     }
 
-    // seul l'agent initiateur peut clôturer, et seulement une fois la
-    // demande validée (par le SG ou le DG selon la durée) — pas avant,
-    // pas s'il l'a déjà fait.
+   
     public function peutEtreClotureePar(User $user): bool
     {
         return $this->statut === 'validee'
@@ -102,7 +100,7 @@ class DemandeAbsence extends Model
         return array_merge(['chef_departement', 'responsable_direction'], $etapesFinales);
     }
 
-    // Retourne la prochaine étape du circuit = première étape sans avis favorable
+    // Retourne la prochaine étape du circuit égale première étape sans avis favorable
     public function prochainActeur(): ?string
     {
         $circuit = $this->circuitAttendu();
@@ -176,9 +174,8 @@ class DemandeAbsence extends Model
 
     public function peutEtreAbandonneePar(User $user): bool
     {
-        if ($this->abandonnee ?? false) return false;
-        if (in_array($this->statut, ['validee', 'rejetee'])) return false;
-        if ($this->avisAbsence->isEmpty()) return false;
+        if (in_array($this->statut, ['validee', 'rejetee', 'abandonnee'])) return false;
+        if ($this->avisAbsence->isNotEmpty()) return false;
         return $this->user_id === $user->id;
     }
 }

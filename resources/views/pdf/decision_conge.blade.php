@@ -134,8 +134,8 @@
                     <td>{{ $demande->user->poste }}</td>
                     <td>{{ $demande->user->departement->direction->libelle_court ?? '—' }}</td>
 
-                    <td class="center">{{ $demande->date_debut }} au {{ $demande->date_fin }}</td>
-                    <td class="center">{{ $demande->date_effet }}</td>
+                    <td class="center">{{ $date_debut }} au {{ $date_fin }}</td>
+                    <td class="center">{{ $date_effet }}</td>
                     <td>{{ implode(', ', $demande->lieu_jouissance ?? []) }}</td>
                 </tr>
             @endforeach

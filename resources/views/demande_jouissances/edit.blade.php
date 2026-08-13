@@ -50,11 +50,12 @@
                             <label class="form-label fw-bold">Nombre de jours</label>
                             <input type="number" name="nombre_jour" id="nombre_jour"
                                    class="form-control @error('nombre_jour') is-invalid @enderror"
-                                   value="{{ old('nombre_jour', $demande->nombre_jour) }}" min="1" required>
+                                   value="{{ old('nombre_jour', $demande->nombre_jour) }}" min="1" >
                             @error('nombre_jour')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                        </div>
+                        <div id="alerte-solde-jouissance" class="alert alert-danger mt-2 py-2 d-none" style="font-size:13px;"></div>
+                    </div>
                     </div>
 
                     <div class="d-flex gap-2 mt-4">
@@ -72,17 +73,29 @@
 
 @section('scripts')
 <script>
-    function calculerJours() {
-        const debut = document.getElementById('date_debut').value;
-        const fin   = document.getElementById('date_fin').value;
-        if (debut && fin) {
-            const diff = Math.ceil((new Date(fin) - new Date(debut)) / 86400000);
-            if (diff > 0) {
-                document.getElementById('nombre_jour').value = diff;
+  function calculerJours() {
+    const debut = document.getElementById('date_debut').value;
+    const fin   = document.getElementById('date_fin').value;
+    const solde = {{ auth()->user()->solde_conge }};
+    const alerteDiv = document.getElementById('alerte-solde-jouissance');
+
+    if (debut && fin) {
+        const diff = Math.ceil((new Date(fin) - new Date(debut)) / 86400000) + 1;
+        if (diff > 0) {
+            document.getElementById('nombre_jour').value = diff;
+
+            if (diff > solde) {
+                alerteDiv.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i>
+                    Vous demandez <strong>${diff}</strong> jour(s), mais votre solde disponible
+                    n'est que de <strong>${solde}</strong> jour(s). Réduisez la période.`;
+                alerteDiv.classList.remove('d-none');
+            } else {
+                alerteDiv.classList.add('d-none');
             }
         }
     }
-    document.getElementById('date_debut').addEventListener('change', calculerJours);
-    document.getElementById('date_fin').addEventListener('change', calculerJours);
+}
+document.getElementById('date_debut').addEventListener('change', calculerJours);
+document.getElementById('date_fin').addEventListener('change', calculerJours);
 </script>
 @endsection

@@ -34,25 +34,27 @@
 
 @php
     $etapeLabels = [
-        'Chef de Département'      => 'Avis Chef de département',
-        'Agent RH'              => 'Avis Agent RH',
-        'Responsable Direction' => 'Décision Responsable de direction',
-        'SG'                    => 'Décision Secrétaire Général',
-        'DG'                    => 'Décision Directeur Général',
-        'PCA'                   => 'Décision PCA',
+        'chef_departement'      => 'Avis Chef de département',
+        'agent_rh'              => 'Avis Agent RH',
+        'responsable_direction' => 'Décision Responsable de direction',
+        'sg'                    => 'Décision Secrétaire Général',
+        'dg'                    => 'Décision Directeur Général',
+        'pca'                   => 'Décision PCA',
     ];
 
     // Calculs de dates pour les conditions de téléchargement
     $aujourdhui        = \Carbon\Carbon::today();
     $dateFin           = \Carbon\Carbon::parse($demande->date_fin);
     $dateDebut         = \Carbon\Carbon::parse($demande->date_debut);
+    $estAuteur  = $demande->user_id === auth()->id();
+    $estAgentRH = auth()->user()->role->libelle === 'Agent RH';
 
     // Certificat cessation téléchargeable dès validation
     $peutTelechargerCessation = $demande->statut === 'validee';
 
     // Certificat prise de service téléchargeable 2 jours avant la fin
-    $peutTelechargerReprise = $demande->statut === 'validee'
-        && $aujourdhui->gte($dateFin->copy()->subDays(2));
+$peutTelechargerReprise = $demande->statut === 'validee'
+        && ($estAgentRH || $aujourdhui->gte($dateFin->copy()->subDays(2)));
 
     // Clôture disponible après la date de fin
     $peutCloturer = $demande->statut === 'validee'
@@ -200,14 +202,17 @@
         @endif --}}
 
         {{-- Section clôture visible par l'auteur si la demande est validée--}}
-        @if($demande->statut === 'validee' && $estAuteur)
+        @php
+        $estAgentRH = auth()->user()->role->libelle === 'Agent RH';
+    @endphp
+    @if($demande->statut === 'validee' && ($estAuteur || $estAgentRH))
         <div class="card shadow-sm border-success">
-            <div class="card-header text-white" style="background:#198754;">
-                <i class="bi bi-check-circle me-2"></i>
+            <div class="card-header text-white " style="background:#198754;">
+                <!-- <i class="bi bi-check-circle me-2"></i> -->
                 @if($demande->estCloturee())
                     Demande clôturée
                 @else
-                    Demande validée — Actions
+                    Demande validée  
                 @endif
             </div>
             <div class="card-body">
@@ -224,7 +229,7 @@
                     {{-- étape 1, Certificat de cessation disponible dès que la demande est validée--}}
                     <div class="mb-3">
                         <h6 class="fw-bold">
-                            <span class="baDGe bg-primary me-2">1</span>
+                            <span class="baDGe  me-2"></span>
                             Certificat de cessation de service
                         </h6>
                         <p class="text-muted" style="font-size:12px;">
@@ -244,7 +249,7 @@
                     {{-- Étape 2 Certificat prise de service disponible 2jours avant la fin du congé --}}
                     <div class="mb-3">
                         <h6 class="fw-bold">
-                            <span class="baDGe {{ $peutTelechargerReprise ? 'bg-primary' : 'bg-secondary' }} me-2">2</span>
+                            <span class="baDGe {{ $peutTelechargerReprise ? '' : 'bg-secondary' }} me-2"></span>
                             Certificat de prise de service
                         </h6>
                         @if($peutTelechargerReprise)
@@ -273,14 +278,14 @@
                     <hr>
 
                     {{-- Étape 3 Clôturer disponible après la date de fin --}}
+                    @if($estAuteur)
                     <div>
                         <h6 class="fw-bold">
-                            <span class="baDGe {{ $peutCloturer ? 'bg-success' : 'bg-secondary' }} me-2">3</span>
+                            <span class="baDGe {{ $peutCloturer ? 'bg-success' : 'bg-secondary' }} me-2"></span>
                             Clôturer la demande
                         </h6>
                         @if($peutCloturer)
-                            <p class="text-muted" style="font-size:12px;">
-                                Vous êtes de retour. Clôturez officiellement votre demande.
+                            <p class="text-muted" style="font-size:12px;"> Clôturez officiellement votre demande.
                             </p>
                             <form action="{{ route('demande_jouissances.cloturer', $demande->id) }}" method="POST">
                                 @csrf
@@ -302,6 +307,7 @@
                     </div>
                 @endif
 
+            @endif
             </div>
         </div>
         @endif
