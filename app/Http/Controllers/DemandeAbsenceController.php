@@ -51,9 +51,10 @@ class DemandeAbsenceController extends Controller
     public function create()
     {
         $user = auth()->user();
-        $AgentsMemeDepartement = \App\Models\User::where('departement_id', $user->departement_id)
-            ->where('id', '!=', $user->id)->get();
-        return view('demande_absences.create', compact('user', 'AgentsMemeDepartement'));
+
+        $AgentsMemeDepartement = $this->agentsPourInterimaire($user);
+        $estResponsable        = $this->estResponsable($user);
+        return view('demande_absences.create', compact('user', 'AgentsMemeDepartement', 'estResponsable'));
     }
 
     public function store(Request $request)
@@ -63,7 +64,7 @@ class DemandeAbsenceController extends Controller
             'date_fin'    => 'required|date|after_or_equal:date_debut',
             'motif'   => 'required|string|in:evenement_familliaux,jouissance_de_reliquat_de_congé_paye,convenances_personnelles,autre',
             'motif_autre' => 'required_if:motif,autre|nullable|string|max:255',
-            'interimaire' => 'nullable|string|max:255',
+            'interimaire' => 'nullable|exists:users,id',
             ], [
             'motif_autre.required_if' => 'Veuillez préciser le motif.',
     ]);
@@ -105,7 +106,7 @@ class DemandeAbsenceController extends Controller
             'date_debut'                     => $request->date_debut,
             'date_fin'                       => $request->date_fin,
             'motif'                          => $request->motif,
-            'interimaire'                    => $request->interimaire,
+            'interimaire_id'  => $request->interimaire,
             'motif_autre'                   => $request->motif === 'autre' ? $request->motif_autre : null,
             'user_id'                        => $user->id,
             'statut'                         => 'en_attente',
@@ -124,10 +125,10 @@ class DemandeAbsenceController extends Controller
             ->with('success', "Demande soumise avec succès. {$jours} jour(s) réservé(s) sur votre solde.");
     }
 
-    public function show($id)
+   public function show($id)
     {
         $demande = DemandeAbsence::with(
-            'user.departement.direction', 'justificatifAbsence', 'avisAbsence'
+            'user.departement.direction', 'interimaire', 'justificatifAbsence', 'avisAbsence'
         )->findOrFail($id);
 
         $user           = auth()->user();
@@ -136,14 +137,28 @@ class DemandeAbsenceController extends Controller
         $derniereEtape  = $demande->avisAbsence->last()?->type;
         $peutAbandonner = $demande->peutEtreAbandonneePar($user);
 
-        $agentsMemeDepartement = \App\Models\User::where('departement_id', $demande->user->departement_id)
-            ->where('id', '!=', $demande->user_id)->get();
+        //liste les intérimaires possible pour l'agent de la demande
+        $agentsMemeDepartement = $this->agentsPourInterimaire($demande->user);
+        // est-ce ce que la personne qui donne l'avis est un responsable et doit donc voir le champ intérimaire dans le popup 
+        $donneurAvisEstResponsable = $this->estResponsable($user);
+
+        $peutTelechargerAutorisation = $demande->statut === 'validee'
+             && $demande->peutTelechargerDocuments($user);
+    
+        $peutTelechargerNoteInterim = $demande->statut === 'validee'
+            && $demande->necessiteNoteInterim()
+            && $demande->peutTelechargerDocuments($user);
 
         return view('demande_absences.show', compact(
             'demande', 'peutAgir', 'prochainActeur',
-            'derniereEtape', 'peutAbandonner', 'agentsMemeDepartement'
+            'derniereEtape', 'peutAbandonner', 'agentsMemeDepartement',
+            'donneurAvisEstResponsable', 'peutTelechargerNoteInterim',
+            'peutTelechargerAutorisation'
         ));
     }
+
+
+
 
     public function update(Request $request, $id)
     {
@@ -161,7 +176,7 @@ class DemandeAbsenceController extends Controller
         'date_fin'    => 'required|date|after_or_equal:date_debut',
         'motif'       => 'required|string|in:evenement_familliaux,jouissance_de_reliquat_de_congé_paye,convenances_personnelles,autre',
         'motif_autre' => 'required_if:motif,autre|nullable|string|max:255',
-        'interimaire' => 'nullable|string|max:255',
+        'interimaire' => 'nullable|exists:users,id',
     ], [
         'motif_autre.required_if' => 'Veuillez préciser le motif.',
     ]);
@@ -182,7 +197,7 @@ class DemandeAbsenceController extends Controller
             'date_fin'    => $request->date_fin,
             'motif'       => $request->motif,
             'motif_autre' => $request->motif === 'autre' ? $request->motif_autre : null,
-            'interimaire' => $request->interimaire,
+           'interimaire_id' => $request->interimaire,
         ]);
         $user->update(['solde_absence' => $soldeDisponible - $nouveauxJours]);
 
@@ -249,36 +264,53 @@ class DemandeAbsenceController extends Controller
     }
 
     public function telecharger($id)
-    {
-        $demande = DemandeAbsence::with('user.departement.direction', 'avisAbsence')
-            ->findOrFail($id);
+        {
+            $demande = DemandeAbsence::with('user.departement.direction', 'avisAbsence.user', 'interimaire')
+                ->findOrFail($id);
 
-        if ($demande->user_id !== auth()->id() || $demande->statut !== 'validee') {
-            return redirect()->route('demande_absences.show', $id)
-                ->with('error', 'Téléchargement non autorisé.');
-        }
+           $user = auth()->user();
+            $autorise = $demande->peutTelechargerDocuments($user);
 
-        if (!$demande->estCloturee()) {
-            $demande->update(['cloturee_at' => now()]);
+            if (!$autorise || $demande->statut !== 'validee') {
+                return redirect()->route('demande_absences.show', $id)
+                    ->with('error', 'Téléchargement non autorisé.');
+            }
+
+            if (!$demande->estCloturee()) {
+                $demande->update(['cloturee_at' => now()]);
+
+                LogActivity::log(
+                    'update',
+                    'DemandeAbsence',
+                    $demande->id,
+                    "Clôture demande absence #{$demande->num_demande}"
+                );
+            }
 
             LogActivity::log(
-                'update',
+                'read',
                 'DemandeAbsence',
                 $demande->id,
-                "Clôture demande absence #{$demande->num_demande}"
+                "Téléchargement autorisation absence #{$demande->num_demande}"
             );
-        }
 
-        LogActivity::log(
-            'read',
-            'DemandeAbsence',
-            $demande->id,
-            "Téléchargement autorisation absence #{$demande->num_demande}"
-        );
+            // Jours cumulés validés sur l'année en cours
+            $joursCumules = DemandeAbsence::where('user_id', $demande->user_id)
+                ->where('statut', 'validee')
+                ->whereYear('date_debut', now()->year)
+                ->get()
+                ->sum(fn ($d) => $d->nombreJours());
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.absence', compact('demande'));
-        return $pdf->download("autorisation_absence_{$demande->num_demande}.pdf");
-    }
+            $circuit        = $demande->circuitAttendu();
+            $telechargePar  = $user;
+            $telechargeLe   = now();
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.absence', compact(
+                'demande', 'joursCumules', 'circuit', 'telechargePar', 'telechargeLe'
+            ));
+
+            return $pdf->download("autorisation_absence_{$demande->num_demande}.pdf");
+}
 
     public function edit($id)
     {
@@ -295,9 +327,9 @@ class DemandeAbsenceController extends Controller
 
 
         $user = auth()->user();
-        $AgentsMemeDepartement = \App\Models\User::where('departement_id', $user->departement_id)
-            ->where('id', '!=', $user->id)->get();
-        return view('demande_absences.edit', compact('user', 'AgentsMemeDepartement', 'demande'));
+        $AgentsMemeDepartement = $this->agentsPourInterimaire($user);
+        $estResponsable        = $this->estResponsable($user);
+        return view('demande_absences.edit', compact('demande', 'AgentsMemeDepartement', 'estResponsable'));
     
         //  // //récupération des agents du meme département
         // $AgentsMemeDepartement = User::where('departement_id',
@@ -308,6 +340,75 @@ class DemandeAbsenceController extends Controller
 
         
     }
+
+    //
+
+    private function estResponsable(User $user): bool
+    {
+        $role = $user->role->libelle;
+
+        return $role=== 'Responsable Direction'
+            || $role === 'Chef de Département'
+            || $user->est_responsable_departement
+            || $user->est_responsable_direction
+            ||in_array($role, ['Agent RH', 'SG', 'DG', 'PCA']);
+    }
+
+    private function agentsPourInterimaire(User $user)
+    {
+        return User::where('id', '!=', $user->id)->get();
+       
+     }
+
+       
+
+
+            public function telechargerNoteInterim($id)
+            {
+                $demande = DemandeAbsence::with('user.departement.direction', 'interimaire')
+                    ->findOrFail($id);
+
+                $user = auth()->user();
+                $autorise = $demande->peutTelechargerDocuments($user);
+
+                if (!$autorise || $demande->statut !== 'validee' || !$demande->necessiteNoteInterim()) {
+                    return redirect()->route('demande_absences.show', $id)
+                        ->with('error', "Téléchargement de la note d'intérim non autorisé.");
+                }
+
+                $signataire = $demande->signataireUser();
+
+                if (!$signataire) {
+                    return redirect()->route('demande_absences.show', $id)
+                        ->with('error', "Impossible de déterminer le signataire de la note d'intérim.");
+                }
+
+                // Le numéro de note n'est généré qu'une seule fois, à la première
+               
+                if (!$demande->num_note_interim) {
+                    $annee   = now()->year;
+                    $nbNotes = DemandeAbsence::whereYear('note_interim_generee_at', $annee)
+                        ->whereNotNull('num_note_interim')
+                        ->count();
+                    $numero  = str_pad($nbNotes + 1, 3, '0', STR_PAD_LEFT);
+
+                    $demande->update([
+                        'num_note_interim'        => "N°{$annee}-{$numero}MDENP/SG/ANPTIC/SG/DRH",
+                        'note_interim_generee_at' => now(),
+                    ]);
+                }
+
+                LogActivity::log(
+                    'read',
+                    'DemandeAbsence',
+                    $demande->id,
+                    "Téléchargement note d'intérim #{$demande->num_demande}"
+                );
+
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.note_interim', compact('demande', 'signataire'));
+
+                return $pdf->download("note_interim_{$demande->num_demande}.pdf");
+            }
 
 
 }

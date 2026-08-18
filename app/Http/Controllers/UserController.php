@@ -33,9 +33,8 @@ class UserController extends Controller
         return view('utilisateurs.create', compact('roles', 'departements'));
     }
 
- public function store(Request $request)
+    public function store(Request $request)
     {
-        
         $validated = $request->validate([
             'matricule'                     => 'required|numeric|unique:users,matricule',
             'nom'                           => 'required|string|max:255',
@@ -52,14 +51,23 @@ class UserController extends Controller
             'est_responsable_direction'     => 'nullable|boolean',
         ]);
 
+        $erreurUnicite = $this->verifierUniciteResponsable(
+            roleId: $validated['role_id'],
+            departementId: $validated['departement_id'],
+            estResponsableDepartement: $request->boolean('est_responsable_departement'),
+            estResponsableDirection: $request->boolean('est_responsable_direction'),
+        );
+
+        if ($erreurUnicite) {
+            return back()->withInput()->with('error', $erreurUnicite);
+        }
+
         if ($request->password) {
             $validated['password'] = Hash::make($request->password);
-        }
-        else {
-            // Mot de passe temporaire et inutilisable  l'utilisateur définira
+        } else {
+            // Mot de passe temporaire et inutilisable, l'utilisateur définira le sien
             $validated['password'] = Hash::make(Str::random(32));
         }
-        
 
         if ($request->hasFile('certificat_prise_service')) {
             $validated['certificat_prise_service'] = $request->file('certificat_prise_service')
@@ -68,8 +76,7 @@ class UserController extends Controller
 
         $user = User::create($validated);
 
-        // Génère un token de réinitialisation 
-        // et envoie l'email d'invitation contenant le lien
+        // Génère un token de réinitialisation et envoie l'email d'invitation
         $token = Password::createToken($user);
         $user->notify(new InvitationCompteNotification($token));
 
@@ -103,8 +110,6 @@ class UserController extends Controller
             'prenom'                      => 'required|string|max:255',
             'poste'                       => 'required|string|max:255',
             'email'                       => 'required|email|unique:users,email,'.$id,
-            
-            // 'password'                    => 'nullable|string|min:8|confirmed',
             'role_id'                     => 'required|exists:roles,id',
             'departement_id'              => 'required|exists:departements,id',
             'est_responsable_departement' => 'nullable|boolean',
@@ -114,13 +119,23 @@ class UserController extends Controller
             'date_prise_service'          => 'required|date|before_or_equal:today',
             'certificat_prise_service'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ], [
-            // 'password.min'                       => 'Le mot de passe doit contenir au moins 8 caractères.',
-            // 'password.confirmed'                 => 'Les mots de passe ne correspondent pas.',
             'date_prise_service.required'        => 'La date de prise de service est obligatoire.',
             'date_prise_service.before_or_equal' => 'La date de prise de service ne peut pas être dans le futur.',
         ]);
 
         $user = User::findOrFail($id);
+
+        $erreurUnicite = $this->verifierUniciteResponsable(
+            roleId: $request->role_id,
+            departementId: $request->departement_id,
+            estResponsableDepartement: $request->boolean('est_responsable_departement'),
+            estResponsableDirection: $request->boolean('est_responsable_direction'),
+            ignorerUserId: $user->id,
+        );
+
+        if ($erreurUnicite) {
+            return back()->withInput()->with('error', $erreurUnicite);
+        }
 
         $data = [
             'matricule'                   => $request->matricule,
@@ -137,12 +152,10 @@ class UserController extends Controller
             'date_prise_service'          => $request->date_prise_service,
         ];
 
-        // Mot de passe seulement si renseigné
         if ($request->filled('password')) {
             $data['password'] = bcrypt($request->password);
         }
 
-        // Nouveau certificat
         if ($request->hasFile('certificat_prise_service')) {
             if ($user->certificat_prise_service) {
                 Storage::disk('public')->delete($user->certificat_prise_service);
@@ -189,5 +202,55 @@ class UserController extends Controller
         $utilisateur->notify(new InvitationCompteNotification($token));
 
         return back()->with('success', "Email d'invitation renvoyé à {$utilisateur->email}.");
+    }
+
+
+    private function verifierUniciteResponsable(
+        int $roleId,
+        int $departementId,
+        bool $estResponsableDepartement,
+        bool $estResponsableDirection,
+        ?int $ignorerUserId = null
+    ): ?string {
+        $role = Role::find($roleId);
+        $departement = Departement::find($departementId);
+
+        // Un seul Chef de Département par département
+        $estChefDepartement = $estResponsableDepartement || ($role && $role->libelle === 'Chef de Département');
+
+        if ($estChefDepartement) {
+            $existeDeja = User::where('departement_id', $departementId)
+                ->where(function ($q) {
+                    $q->where('est_responsable_departement', true)
+                      ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Chef de Département'));
+                })
+                ->when($ignorerUserId, fn ($q) => $q->where('id', '!=', $ignorerUserId))
+                ->exists();
+
+            if ($existeDeja) {
+                return "Le département « {$departement?->libelle_court} » a déjà un Chef de Département. Un seul chef par département est autorisé.";
+            }
+        }
+
+        // Un seul Responsable de Direction par direction
+        $estRespDirection = $estResponsableDirection || ($role && $role->libelle === 'Responsable Direction');
+
+        if ($estRespDirection && $departement) {
+            $directionId = $departement->direction_id;
+
+            $existeDeja = User::whereHas('departement', fn ($q) => $q->where('direction_id', $directionId))
+                ->where(function ($q) {
+                    $q->where('est_responsable_direction', true)
+                      ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Responsable Direction'));
+                })
+                ->when($ignorerUserId, fn ($q) => $q->where('id', '!=', $ignorerUserId))
+                ->exists();
+
+            if ($existeDeja) {
+                return "La direction « {$departement->direction?->libelle_court} » a déjà un Responsable de Direction. Un seul responsable par direction est autorisé.";
+            }
+        }
+
+        return null;
     }
 }

@@ -29,7 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/', function () {
         return view('Accueil');
     })->name('accueil');
-// });
+
     // DASHBOARD
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
@@ -50,9 +50,10 @@ Route::middleware('auth')->group(function () {
      ->only(['create', 'store', 'destroy']);
     Route::get('demande_absences/{id}/telecharger', [DemandeAbsenceController::class, 'telecharger'])
         ->name('demande_absences.telecharger');
- 
-    
-       
+
+    Route::get('demande_absences/{id}/note_interim', [DemandeAbsenceController::class, 'telechargerNoteInterim'])
+        ->name('demande_absences.note_interim');
+
     Route::resource('avis_absences', AvisAbsenceController::class)
         ->only(['create', 'store', 'edit', 'update', 'destroy']);
 
@@ -86,9 +87,6 @@ Route::middleware('auth')->group(function () {
         [SessionAdministrativeController::class, 'fermer']
     )->name('sessions_administratives.fermer');
 
-
-
-
     Route::post('sessions_Administratives/{id}/toggle-absence', 
         [SessionAdministrativeController::class, 'toggleAbsence'])
         ->name('sessions_Administratives.toggle_absence');
@@ -100,9 +98,6 @@ Route::middleware('auth')->group(function () {
     Route::post('sessions_Administratives/{id}/toggle-jouissance',
         [SessionAdministrativeController::class, 'toggleJouissance'])
         ->name('sessions_Administratives.toggle_jouissance');
-
-
-
 
     // Ajout routes pour la clôture de demande jouissance
     Route::post('demande_jouissances/{id}/upload-cessation', [DemandeJouissanceController::class, 'uploadCessation'])
@@ -123,38 +118,15 @@ Route::middleware('auth')->group(function () {
     Route::post('demande_conges/{id}/abandonner', [DemandeCongeController::class, 'abandonner'])
     ->name('demande_conges.abandonner');
 
-
     Route::delete(
         '/sessions_Administratives/{session}',
         [SessionAdministrativeController::class, 'destroy']
     )->name('sessions_Administratives.destroy');
-
-
-
-    // Page où l'utilisateur invité définit son mot de passe
-    // Route::get('/definir-mot-de-passe/{token}', [PasswordSetupController::class, 'create'])
-    //     ->name('password.setup');
-
-    // Route::post('/definir-mot-de-passe', [PasswordSetupController::class, 'store'])
-    //     ->name('password.setup.store');
-
-        // Permet à l'admin de renvoyer l'email d'invitation depuis la page d'édition
-    // Route::post('/utilisateurs/{utilisateur}/renvoyer-invitation', [App\Http\Controllers\UtilisateurController::class, 'renvoyerInvitation'])
-
-        // ->middleware('auth')
-        // ->name('utilisateurs.renvoyer-invitation');
-
-
 
     Route::prefix('admin/export')->name('admin.export.')->group(function () {
         Route::get('users', [AdminExportController::class, 'users'])->name('users');
         Route::get('conges', [AdminExportController::class, 'conges'])->name('conges');
         Route::get('jouissances', [AdminExportController::class, 'jouissances'])->name('jouissances');
         Route::get('absences', [AdminExportController::class, 'absences'])->name('absences');
-
-
-
-
-      
     });
 });

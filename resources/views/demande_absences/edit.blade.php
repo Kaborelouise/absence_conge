@@ -7,7 +7,7 @@
     <div class="col-md-8">
         <div class="card shadow-sm">
 
-            <div class="card-header text-white text-center" style=" background-color: #1B384F; padding: 20px;">
+            <div class="card-header card-header-anptic text-center" style="padding: 20px;">
                 <h5 class="mb-0">Modifier la demande d'absence</h5>
             </div>
             <div class="card-body">
@@ -21,22 +21,10 @@
                         </ul>
                     </div>
                 @endif
-
-                @if($errors->any())
-                    <div class="alert alert-danger">
-                        <ul class="mb-0">
-                            @foreach($errors->all() as $erreur)
-                                <li>{{ $erreur }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
+                
                 @if(session('error'))
                     <div class="alert alert-danger">{{ session('error') }}</div>
                 @endif
-
-
-
 
                 <form action="{{ route('demande_absences.update', $demande->id) }}" method="POST"
                       enctype="multipart/form-data">
@@ -49,7 +37,7 @@
                             <label class="form-label">Date de début</label>
                             <input type="date" name="date_debut" id="date_debut"
                                    class="form-control @error('date_debut') is-invalid @enderror"
-                                   value="{{ old('date_debut') ?? $demande->date_debut}}" required>
+                                   value="{{ old('date_debut') ?? $demande->date_debut }}" required>
                             @error('date_debut')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -66,7 +54,7 @@
                     </div>
 
                     {{-- Ligne 2 durée et motif --}}
-                     <div class="row g-3 mb-3">
+                    <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Durée (calculée automatiquement)</label>
                             <input type="text" id="duree" class="form-control"
@@ -79,24 +67,20 @@
                                     required onchange="toggleAutreMotif()">
 
                                 <option value="" disabled {{ old('motif', $demande->motif) ? '' : 'selected' }}>
-                                     Sélectionnez un motif 
+                                    -- Sélectionnez un motif --
                                 </option>
-                                
                                 <option value="evenement_familliaux"
                                     {{ old('motif', $demande->motif) === 'evenement_familliaux' ? 'selected' : '' }}>
                                     Évènements familiaux (décès)
                                 </option>
-
                                 <option value="jouissance_de_reliquat_de_congé_paye"
                                     {{ old('motif', $demande->motif) === 'jouissance_de_reliquat_de_congé_paye' ? 'selected' : '' }}>
                                     Jouissance de reliquats de congés payés
                                 </option>
-
                                 <option value="convenances_personnelles"
                                     {{ old('motif', $demande->motif) === 'convenances_personnelles' ? 'selected' : '' }}>
                                     Convenances personnelles
                                 </option>
-                                {{--"Autre (à préciser)" --}}
                                 <option value="autre"
                                     {{ old('motif', $demande->motif) === 'autre' ? 'selected' : '' }}>
                                     Autre (à préciser)
@@ -108,9 +92,9 @@
                         </div>
                     </div>
 
-                    {{-- ajout du champ texte pour préciser le motif "Autre" --}}
+                    {{-- Champ texte pour préciser le motif "Autre" --}}
                     <div class="mb-3" id="bloc_autre_motif"
-                         style="{{ old('motif') === 'autre' ? '' : 'display:none;' }}">
+                         style="{{ old('motif', $demande->motif) === 'autre' ? '' : 'display:none;' }}">
                         <label class="form-label">Précisez le motif <span class="text-danger">*</span></label>
                         <input type="text"
                                name="motif_autre"
@@ -124,27 +108,32 @@
                         @enderror
                     </div>
 
+                    {{--
+                        on remet le solde dispoiible à jour pour l'édition de la demande
+                        (le solde affiché est celui de l'agent + le nombre de jours de la demande en cours, car la demande n'est pas encore validée)
+                    --}}
                     @php
                         $solde = auth()->user()->solde_absence + $demande->nombreJours();
                     @endphp
-
-                    {{-- ligne 3 intérimaire et solde --}}
                     <div class="row g-3 mb-3">
+                        @if($estResponsable)
                         <div class="col-md-6">
                             <label class="form-label">Intérimaire désigné</label>
                             <select name="interimaire" class="form-select">
                                 <option value="">Aucun intérimaire</option>
+
                                 @foreach($AgentsMemeDepartement as $Agent)
-                                    <option value="{{ $Agent->nom }} {{ $Agent->prenom }}"
-                                        {{ old('interimaire', $demande->interimaire) === $Agent->nom.' '.$Agent->prenom ? 'selected' : '' }}>
+                                    <option value="{{ $Agent->id }}"
+                                        {{ old('interimaire', $demande->interimaire_id) == $Agent->id ? 'selected' : '' }}>
                                         {{ $Agent->nom }} {{ $Agent->prenom }} — {{ $Agent->poste }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        @endif
+
+                        <div class="{{ $estResponsable ? 'col-md-6' : 'col-md-12' }}">
                             <label class="form-label">Solde disponible</label>
-                            {{-- Modification affiche le solde calculé dynamiquement--}}
                             <input type="text" class="form-control text-center fw-bold"
                                    readonly
                                    value="{{ $solde }} jours restants">
@@ -157,7 +146,9 @@
                         <label for="fichier" class="form-control text-center"
                                style="cursor:pointer; max-width:400px; margin:auto">
                             <i class="bi bi-paperclip me-1"></i>
-                            <span id="fichier-label">Cliquer pour joindre un fichier</span>
+                            <span id="fichier-label">
+                                {{ $demande->justificatifAbsence ? 'Un justificatif est déjà joint — cliquer pour le remplacer' : 'Cliquer pour joindre un fichier' }}
+                            </span>
                         </label>
                         <input type="file" name="fichier" id="fichier"
                                class="d-none" accept=".pdf,.jpg,.jpeg,.png">
@@ -196,6 +187,7 @@
 
     document.getElementById('date_debut').addEventListener('change', calculerDuree);
     document.getElementById('date_fin').addEventListener('change', calculerDuree);
+    calculerDuree();
 
     function toggleAutreMotif() {
         const motif = document.getElementById('motif').value;

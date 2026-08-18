@@ -48,8 +48,7 @@ class DashboardController extends Controller
     {
         $role = $user->role->libelle;
 
-        // Solde de jours d'absence : on retire les jours déjà validés
-        // cette année du quota annuel
+        // Solde de jours d'absence : on retire les jours déjà validés pour l'année en cours
         $joursAbsenceUtilises = DemandeAbsence::where('user_id', $user->id)
             ->where('statut', 'validee')
             ->whereYear('date_debut', now()->year)
@@ -58,16 +57,18 @@ class DashboardController extends Controller
 
         $soldeAbsence = max(0, 10 - $joursAbsenceUtilises);
         $soldeConge   = $user->solde_conge ?? 30;
-        $mesConges = DemandeConge::where('user_id', $user->id)->get();
 
-        $congeTotal    = $mesConges->count();
-        $congeRejetees = $mesConges->where('statut', 'rejetee')->count();
-        $congeValidees = $mesConges->filter(fn($d) => $d->estCompilee())->count();
-        $congeEnCours  = $mesConges->filter(fn($d) =>
-            !$d->estCompilee() && !$d->abandonnee && $d->statut !== 'rejetee'
-        )->count();
+        // Demandes de jouissance de congé de l'agent
+ 
+        $mesJouissances = DemandeJouissance::where('user_id', $user->id)->get();
 
-        // Demandes d'autorisation d'absence de l'agent.
+        $congeTotal    = $mesJouissances->count();
+        $congeRejetees = $mesJouissances->where('statut', 'rejetee')->count();
+        $congeValidees = $mesJouissances->where('statut', 'validee')->count();
+        $congeEnCours  = $mesJouissances->where('statut', 'en_attente')
+            ->where('abandonnee', false)->count();
+
+        // Demandes d'autorisation d'absence de l'agent
         $mesAbsences = DemandeAbsence::where('user_id', $user->id)->get();
 
         $absenceTotal    = $mesAbsences->count();
@@ -90,7 +91,7 @@ class DashboardController extends Controller
 
         $nbAgents = User::where('departement_id', $departementId)->count();
 
-        //  Congé (DemandeJouissance) 
+        //  DemandeJouissance
         $congesDept = DemandeJouissance::whereHas('user', fn($q) =>
                 $q->where('departement_id', $departementId))
             ->with(['user', 'avis'])
@@ -106,10 +107,11 @@ class DashboardController extends Controller
         );
         $nbAgentsEnConge = $agentsEnCongeListe->pluck('user_id')->unique()->count();
 
-        // Alerte demandes en attente d'avis PAR LE CHEF DE DÉPARTEMENT
+        // Alerte demandes en attente d'avis PAR LE chef de département
+    
         $alerteConge = $congesDept->filter(fn($d) =>
             !in_array($d->statut, ['validee', 'rejetee'])
-            && $d->prochainActeur() === 'Chef de Département'
+            && $d->prochainActeur() === 'chef_departement'
         )->count();
 
         $congeCalendrier   = $this->timelineData($congesDept, fn($d) => $d->nombre_jour);
@@ -173,9 +175,10 @@ class DashboardController extends Controller
             && Carbon::parse($d->date_fin)->gte(now())
         )->pluck('user_id')->unique()->count();
 
+        // (CORRIGÉ : 'Responsable Direction' -> 'responsable_direction')
         $alerteConge = $congesDir->filter(fn($d) =>
             !in_array($d->statut, ['validee', 'rejetee'])
-            && $d->prochainActeur() === 'Responsable Direction'
+            && $d->prochainActeur() === 'responsable_direction'
         )->count();
 
         $congeCalendrier = $this->timelineData($congesDir, fn($d) => $d->nombre_jour);
@@ -247,19 +250,20 @@ class DashboardController extends Controller
             ->map->count();
 
         // Alertes par étape du circuit (vérification RH, avis SG, avis DG)
+        // (CORRIGÉ : comparaisons alignées sur le snake_case renvoyé par prochainActeur())
         $alertesCongeRH = $tousConges->filter(fn($d) =>
             !in_array($d->statut, ['validee', 'rejetee'])
-            && $d->prochainActeur() === 'Agent RH'
+            && $d->prochainActeur() === 'agent_rh'
         )->count();
 
         $alertesCongeSG = $tousConges->filter(fn($d) =>
             !in_array($d->statut, ['validee', 'rejetee'])
-            && $d->prochainActeur() === 'SG'
+            && $d->prochainActeur() === 'sg'
         )->count();
 
         $alertesCongeDG = $tousConges->filter(fn($d) =>
             !in_array($d->statut, ['validee', 'rejetee'])
-            && $d->prochainActeur() === 'DG'
+            && $d->prochainActeur() === 'dg'
         )->count();
 
         $congeStats = $this->statsGenerales($tousConges);
@@ -332,8 +336,9 @@ class DashboardController extends Controller
         ));
     }
 
-    //  TTableau de bord de l'administrateur
-
+    //  Tableau de bord de l'administrateur
+    // (INCHANGÉ : ici DemandeConge est le bon modèle — "congé administratif",
+    // prérequis distinct de la jouissance de congé, voir DemandeJouissanceController::store())
 
     private function dashboardAdministrateur(Request $request)
     {
@@ -395,7 +400,10 @@ class DashboardController extends Controller
         return [
             'total'     => $demandes->count(),
             'rejetees'  => $demandes->where('statut', 'rejetee')->count(),
-            'en_cours'  => $demandes->whereIn('statut', ['en_attente', 'en_cours'])->count(),
+            // (CORRIGÉ : on exclut désormais les demandes abandonnées du compteur "en cours",
+            // pour rester cohérent avec la logique appliquée côté Agent)
+            'en_cours'  => $demandes->whereIn('statut', ['en_attente', 'en_cours'])
+                                     ->where('abandonnee', false)->count(),
             'validees'  => $demandes->where('statut', 'validee')->count(),
             'cloturees' => $demandes->filter(fn($d) => $d->estCloturee())->count(),
         ];

@@ -52,12 +52,12 @@
     </div>
 </div>
 
-{{-- Demandes de congé / Demandes d'autorisation d'absence --}}
+{{-- Demandes de jouissance de congé / Demandes d'autorisation d'absence --}}
 <div class="row g-3">
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
             <div class="card-header card-header-anptic">
-                <i class="bi bi-bookmark-check me-2"></i> Demandes de congé
+                <i class="bi bi-bookmark-check me-2"></i> Demandes de jouissance de congé
             </div>
             <div class="card-body">
                 <div class="row text-center g-2">
@@ -122,7 +122,7 @@
     <div class="col-md-6">
         <div class="card shadow-sm text-center p-3 border-warning">
             <div class="fw-bold fs-3 text-warning">{{ $alerteConge }}</div>
-            <div style="font-size:11px;">Demandes de congé en attente de votre avis (alerte)</div>
+            <div style="font-size:11px;">Demandes de jouissance de congé en attente de votre avis (alerte)</div>
         </div>
     </div>
 </div>
@@ -138,7 +138,7 @@
 
 <div class="card shadow-sm mb-3">
     <div class="card-header card-header-anptic">
-        <i class="bi bi-calendar3-range me-2"></i> Répartition des demandes de congé (calendrier)
+        <i class="bi bi-calendar3-range me-2"></i> Répartition des demandes de jouissance de congé (calendrier)
     </div>
     <div class="card-body"><canvas id="ganttConge" height="140"></canvas></div>
 </div>
@@ -147,7 +147,7 @@
 <div class="row g-3 mb-4">
     <div class="col-md-6">
         <div class="card shadow-sm">
-            <div class="card-header card-header-anptic">Congés par agent</div>
+            <div class="card-header card-header-anptic">Jouissances de congé par agent</div>
             <div class="card-body p-0" style="max-height:220px;overflow-y:auto;">
                 <table class="table table-sm mb-0">
                     <thead class="table-anptic-dark"><tr><th class="ps-2">Agent</th><th>Nb</th></tr></thead>
@@ -164,7 +164,7 @@
     </div>
     <div class="col-md-6">
         <div class="card shadow-sm">
-            <div class="card-header card-header-anptic">Congés par année</div>
+            <div class="card-header card-header-anptic">Jouissances de congé par année</div>
             <div class="card-body p-0" style="max-height:220px;overflow-y:auto;">
                 <table class="table table-sm mb-0">
                     <thead class="table-anptic-dark"><tr><th class="ps-2">Année</th><th>Nb</th></tr></thead>
@@ -309,19 +309,19 @@
     <div class="col-md-2">
         <div class="card shadow-sm text-center p-3 border-warning">
             <div class="fw-bold fs-3 text-warning">{{ $alertesCongeRH }}</div>
-            <div style="font-size:11px;">Congés en attente<br>vérification RH</div>
+            <div style="font-size:11px;">Jouissances de congé en attente<br>vérification RH</div>
         </div>
     </div>
     <div class="col-md-2">
         <div class="card shadow-sm text-center p-3 border-info">
             <div class="fw-bold fs-3 text-info">{{ $alertesCongeSG }}</div>
-            <div style="font-size:11px;">Congés en attente<br>avis SG</div>
+            <div style="font-size:11px;">Jouissances de congé en attente<br>avis SG</div>
         </div>
     </div>
     <div class="col-md-2">
         <div class="card shadow-sm text-center p-3 border-primary">
             <div class="fw-bold fs-3 text-primary">{{ $alertesCongeDG }}</div>
-            <div style="font-size:11px;">Congés en attente<br>avis DG</div>
+            <div style="font-size:11px;">Jouissances de congé en attente<br>avis DG</div>
         </div>
     </div>
     <div class="col-md-2">
@@ -358,31 +358,31 @@
 <div class="row g-3 mb-4">
     <div class="col-md-4">
         <div class="card shadow-sm">
-            <div class="card-header card-header-anptic" style="font-size:11px;">Total congés par direction</div>
+            <div class="card-header card-header-anptic" style="font-size:11px;">Total jouissances de congé par direction</div>
             <div class="card-body"><canvas id="chartCongesTotal" height="160"></canvas></div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card shadow-sm">
-            <div class="card-header card-header-anptic" style="font-size:11px;">Congés rejetés par direction</div>
+            <div class="card-header card-header-anptic" style="font-size:11px;">Jouissances de congé rejetées par direction</div>
             <div class="card-body"><canvas id="chartCongesRejetes" height="160"></canvas></div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card shadow-sm">
-            <div class="card-header card-header-anptic" style="font-size:11px;">Congés en cours par direction</div>
+            <div class="card-header card-header-anptic" style="font-size:11px;">Jouissances de congé en cours par direction</div>
             <div class="card-body"><canvas id="chartCongesEnCours" height="160"></canvas></div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card shadow-sm">
-            <div class="card-header card-header-anptic" style="font-size:11px;">Congés validés par direction</div>
+            <div class="card-header card-header-anptic" style="font-size:11px;">Jouissances de congé validées par direction</div>
             <div class="card-body"><canvas id="chartCongesValides" height="160"></canvas></div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card shadow-sm">
-            <div class="card-header card-header-anptic" style="font-size:11px;">Congés clôturés par direction</div>
+            <div class="card-header card-header-anptic" style="font-size:11px;">Jouissances de congé clôturées par direction</div>
             <div class="card-body"><canvas id="chartCongesClotures" height="160"></canvas></div>
         </div>
     </div>
@@ -391,7 +391,7 @@
 {{-- Stratégique Gantt congé, avec filtre par direction --}}
 <div class="card shadow-sm mb-4">
     <div class="card-header card-header-anptic d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-calendar3-range me-2"></i> Répartition des demandes de congé (Gantt)</span>
+        <span><i class="bi bi-calendar3-range me-2"></i> Répartition des demandes de jouissance de congé (Gantt)</span>
         <select id="filtreDirectionConge" class="form-select form-select-sm" style="width:auto;">
             <option value="">Toutes les directions</option>
             @foreach($directions as $dir)
@@ -515,37 +515,6 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="fw-bold mb-0">Tableau de bord Administrateur</h5>
 </div>
-
-<!-- <div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card shadow-sm text-center p-3">
-            <i class="bi bi-people fs-3 text-primary mb-1"></i>
-            <div class="fw-bold fs-3">{{ $totalUsers }}</div>
-            <div style="font-size:12px;">Utilisateurs total</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm text-center p-3">
-            <i class="bi bi-person-check fs-3 text-success mb-1"></i>
-            <div class="fw-bold fs-3">{{ $connectesAujourdhui }}</div>
-            <div style="font-size:12px;">Connectés aujourd'hui</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm text-center p-3">
-            <i class="bi bi-person-x fs-3 text-danger mb-1"></i>
-            <div class="fw-bold fs-3">{{ $jamaisConnectes }}</div>
-            <div style="font-size:12px;">Jamais connectés</div>
-        </div>
-    </div> -->
-    <!-- <div class="col-md-3">
-        <div class="card shadow-sm text-center p-3">
-            <i class="bi bi-shield-check fs-3 text-warning mb-1"></i>
-            <div class="fw-bold fs-3">{{ $totalAdministrateurs }}</div>
-            <div style="font-size:12px;">Administrateurs</div>
-        </div>
-    </div>
-</div> -->
 
 <div class="row g-3 mb-4">
     <div class="col-md-8">

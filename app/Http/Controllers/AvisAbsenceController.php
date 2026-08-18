@@ -31,9 +31,6 @@ class AvisAbsenceController extends Controller
 
         $role = $user->role->libelle;
 
-        // MODIFIÉ : libellé harmonisé sur 'Chef de Département' (au lieu de
-        // 'Responsable Département'), pour correspondre au libellé réellement
-        // utilisé côté DemandeJouissance et dans la table roles.
         $typeAvis = match (true) {
             $role === 'Chef de Département' || $user->est_responsable_departement => 'chef_departement',
             $role === 'Responsable Direction'                                     => 'responsable_direction',
@@ -48,13 +45,12 @@ class AvisAbsenceController extends Controller
             $demande->update(['retenue_salaire' => $request->boolean('retenue_salaire')]);
         }
 
-        // MODIFIÉ : 'user_id' retiré de la création — Avis n'est plus lié à
-        // User dans le modèle (voir AvisAbsence).
         AvisAbsence::create([
             'demande_absence_id' => $demande->id,
             'avis'               => $request->avis,
             'type'               => $typeAvis,
             'commentaire'        => $request->commentaire,
+            'user_id'            => $user->id, //ajjouté 
         ]);
 
         if ($request->avis === 'defavorable') {
@@ -83,7 +79,7 @@ class AvisAbsenceController extends Controller
                 'update',
                 'DemandeAbsence',
                 $demande->id,
-                "Validation finale ({$role}) demande absence #{$demande->num_demande}"
+                "Validation finale ({$role}) demande absence {$demande->num_demande}"
             );
 
             return redirect()
@@ -97,7 +93,7 @@ class AvisAbsenceController extends Controller
             'update',
             'DemandeAbsence',
             $demande->id,
-            "Avis favorable ({$role}) sur demande absence #{$demande->num_demande}"
+            "Avis favorable ({$role}) sur demande absence {$demande->num_demande}"
         );
 
         return redirect()

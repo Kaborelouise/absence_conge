@@ -100,7 +100,13 @@ $etapeSuivante = ($indexActuel !== false && isset($circuit[$indexActuel + 1]))
                     </tr>
                     <tr>
                         <th class="ps-3">Intérimaire</th>
-                        <td>{{ $demande->interimaire ?? '—' }}</td>
+                        <td>
+                            @if($demande->interimaire)
+                                {{ $demande->interimaire->nom }} {{ $demande->interimaire->prenom }}
+                            @else
+                                -
+                            @endif
+                        </td>
                     </tr>
                     <tr>
                         <th class="ps-3">Retenue salaire</th>
@@ -190,11 +196,21 @@ $etapeSuivante = ($indexActuel !== false && isset($circuit[$indexActuel + 1]))
         </div>
 
         {{-- Bouton télécharger si validée --}}
-        @if($demande->statut === 'validee' && $demande->user_id === auth()->id())
+        @if($peutTelechargerAutorisation)
         <div class="d-grid mb-3">
             <a href="{{ route('demande_absences.telecharger', $demande->id) }}"
                class="btn btn-success">
                 <i class="bi bi-download me-1"></i> Télécharger l'autorisation
+            </a>
+        </div>
+        @endif
+
+        {{-- Bouton télécharger la note d'intérim, si applicable --}}
+        @if($peutTelechargerNoteInterim)
+        <div class="d-grid mb-3">
+            <a href="{{ route('demande_absences.note_interim', $demande->id) }}"
+               class="btn btn-outline-primary">
+                <i class="bi bi-download me-1"></i> Télécharger la note d'intérim
             </a>
         </div>
         @endif
@@ -259,8 +275,7 @@ $etapeSuivante = ($indexActuel !== false && isset($circuit[$indexActuel + 1]))
                     </div>
                     @endif
 
-                    @if(auth()->user()->role->libelle === 'Responsable Département'
-                        || auth()->user()->est_responsable_departement)
+                    @if($donneurAvisEstResponsable)
                     <div class="mb-3">
                         <label class="form-label fw-bold">
                             Intérimaire désigné
@@ -269,8 +284,8 @@ $etapeSuivante = ($indexActuel !== false && isset($circuit[$indexActuel + 1]))
                         <select name="interimaire" class="form-select">
                             <option value="">Choisir un intérimaire</option>
                             @foreach($agentsMemeDepartement as $agent)
-                                <option value="{{ $agent->nom }} {{ $agent->prenom }}"
-                                    {{ $demande->interimaire === $agent->nom.' '.$agent->prenom ? 'selected' : '' }}>
+                                <option value="{{ $agent->id }}"
+                                    {{ $demande->interimaire_id === $agent->id ? 'selected' : '' }}>
                                     {{ $agent->nom }} {{ $agent->prenom }} — {{ $agent->poste }}
                                 </option>
                             @endforeach

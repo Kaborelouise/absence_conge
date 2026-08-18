@@ -17,7 +17,7 @@ class User extends Authenticatable
         'password', 'matricule', 'nom', 'prenom', 'poste', 'email',
         'signature', 'est_responsable_departement', 'est_responsable_direction',
         'role_id', 'departement_id', 'solde_conge', 'solde_absence',
-        'date_prise_service', 'certificat_prise_service', 'last_login_at',
+        'date_prise_service', 'certificat_prise_service', 'last_login_at', 'genre',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -155,5 +155,10 @@ class User extends Authenticatable
                 'debut' => $debut,
                 'fin'   => $fin,
             ];
+    }
+
+    public function interims()
+    {
+        return $this->hasMany(DemandeAbsence::class, 'interimaire_id');
     }
 }

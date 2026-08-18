@@ -4,21 +4,24 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use App\Models\User;
 
 class DemandeAbsence extends Model
 {
     protected $fillable = [
         'num_demande', 'date_debut', 'date_fin', 'motif', 'motif_autre',
-        'interimaire', 'retenue_salaire', 'statut', 'user_id', 'abandonnee',
+        'interimaire_id', 'retenue_salaire', 'statut', 'user_id', 'abandonnee',
         'session_administrative_id',
 
-        'cloturee_at',
+        'cloturee_at', 'num_note_interim',
+        'note_interim_generee_at',
     ];
 
     protected $casts = [
         'abandonnee'      => 'boolean',
         'retenue_salaire' => 'boolean',
         'cloturee_at'     => 'datetime',
+        'note_interim_generee_at' => 'datetime',
     ];
 
     public function user()
@@ -36,6 +39,11 @@ class DemandeAbsence extends Model
         return $this->hasMany(AvisAbsence::class);
     }
 
+    public function interimaire()
+    {
+        return $this->belongsTo(User::class, 'interimaire_id');
+    }
+
     public function nombreJours(): int
     {
         return Carbon::parse($this->date_debut)
@@ -47,7 +55,7 @@ class DemandeAbsence extends Model
         return $this->cloturee_at !== null;
     }
 
-   
+
     public function peutEtreClotureePar(User $user): bool
     {
         return $this->statut === 'validee'
@@ -55,7 +63,7 @@ class DemandeAbsence extends Model
             && $this->user_id === $user->id;
     }
 
-  
+
     public function circuitAttendu(): array
     {
         $user  = $this->user;
@@ -67,7 +75,7 @@ class DemandeAbsence extends Model
             return ['agent_rh', 'pca'];
         }
 
-        // SG → toujours validé par DG
+        // SG  toujours validé par DG
         if ($role === 'SG') {
             return ['agent_rh', 'dg'];
         }
@@ -76,12 +84,13 @@ class DemandeAbsence extends Model
             return ['sg'];
         }
 
-      
+
         $validateurFinal = match (true) {
-            $jours < 2  => null,   
+            $jours <= 2  => null,
             $jours <= 5 => 'sg',
             default     => 'dg',
         };
+
 
 
         $etapesFinales = array_values(array_filter(['agent_rh', $validateurFinal]));
@@ -96,7 +105,7 @@ class DemandeAbsence extends Model
             return array_merge(['responsable_direction'], $etapesFinales);
         }
 
-        // Agent simple → circuit complet
+        // Agent simple circuit complet
         return array_merge(['chef_departement', 'responsable_direction'], $etapesFinales);
     }
 
@@ -121,7 +130,7 @@ class DemandeAbsence extends Model
 
     public function peutDonnerAvis(User $user): bool
     {
-        // Condition 1 : demande non terminée
+        //  demande non terminée
         if (in_array($this->statut, ['validee', 'rejetee', 'abandonnee'])) {
             return false;
         }
@@ -168,7 +177,7 @@ class DemandeAbsence extends Model
             return $dirUser !== null && $dirUser === $dirAgent;
         }
 
-        // Agent RH, SG, DG, PCA → portée globale (toute l'organisation)
+        // Agent RH, SG, DG, PCA  portée globale 
         return true;
     }
 
@@ -177,5 +186,62 @@ class DemandeAbsence extends Model
         if (in_array($this->statut, ['validee', 'rejetee', 'abandonnee'])) return false;
         if ($this->avisAbsence->isNotEmpty()) return false;
         return $this->user_id === $user->id;
+    }
+
+
+    public function necessiteNoteInterim(): bool
+    {
+        if (!$this->interimaire_id) {
+            return false;
+        }
+
+        $role = $this->user->role->libelle;
+
+        return $role === 'Responsable Direction' || $this->user->est_responsable_direction
+            || $role === 'Chef de Département'   || $this->user->est_responsable_departement
+            || $role === 'Agent RH'
+            || $role === 'SG'
+            || $role === 'DG';
+        // Agent simple et PCA -> jamais de note d'intérim
+    }
+
+    public function signataireUser(): ?User
+    {
+        $owner = $this->user;
+        $role  = $owner->role->libelle;
+
+        if ($role === 'DG') {
+            return User::whereHas('role', fn ($q) => $q->where('libelle', 'PCA'))->first();
+        }
+
+        if ($role === 'SG') {
+            return User::whereHas('role', fn ($q) => $q->where('libelle', 'DG'))->first();
+        }
+
+        if ($role === 'Responsable Direction' || $owner->est_responsable_direction || $role === 'Agent RH') {
+            return User::whereHas('role', fn ($q) => $q->where('libelle', 'SG'))->first();
+        }
+
+        if ($role === 'Chef de Département' || $owner->est_responsable_departement) {
+            $directionId = $owner->departement->direction_id ?? null;
+
+            return User::where(function ($q) {
+                    $q->where('est_responsable_direction', true)
+                      ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Responsable Direction'));
+                })
+                ->whereHas('departement', fn ($q) => $q->where('direction_id', $directionId))
+                ->first();
+        }
+
+        return null; // agent simple, PCA -> pas de note d'intérim
+    }
+
+    public function peutTelechargerDocuments(User $user): bool
+    {
+        if ($this->user_id === $user->id) {
+            return true;
+        }
+
+        return $this->avisAbsence->contains('user_id', $user->id);
     }
 }

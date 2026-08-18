@@ -24,7 +24,7 @@
                     <div class="alert alert-danger">{{ session('error') }}</div>
                 @endif
 
-                {{-- Ajout alerte solde insuffisant ou faible --}}
+                {{-- Alerte solde insuffisant ou faible --}}
                 @php $solde = $soldeRestant ?? auth()->user()->solde_absence; @endphp
                 @if($solde <= 0)
                     <div class="alert alert-danger">
@@ -76,8 +76,10 @@
                             <select name="motif" id="motif"
                                     class="form-select @error('motif') is-invalid @enderror"
                                     required onchange="toggleAutreMotif()">
+                                {{-- Option grisée non sélectionnable : sert juste
+                                     d'invite visuelle tant qu'aucun motif n'est choisi --}}
                                 <option value="" disabled {{ old('motif') ? '' : 'selected' }}>
-                                     Sélectionnez un motif 
+                                    -- Sélectionnez un motif --
                                 </option>
                                 <option value="evenement_familliaux"
                                     {{ old('motif') === 'evenement_familliaux' ? 'selected' : '' }}>
@@ -91,7 +93,6 @@
                                     {{ old('motif') === 'convenances_personnelles' ? 'selected' : '' }}>
                                     Convenances personnelles
                                 </option>
-                                {{--"Autre (à préciser)" --}}
                                 <option value="autre"
                                     {{ old('motif') === 'autre' ? 'selected' : '' }}>
                                     Autre (à préciser)
@@ -103,7 +104,7 @@
                         </div>
                     </div>
 
-                    {{-- ajout du champ texte pour préciser le motif "Autre" --}}
+                    {{-- Champ texte pour préciser le motif "Autre" --}}
                     <div class="mb-3" id="bloc_autre_motif"
                          style="{{ old('motif') === 'autre' ? '' : 'display:none;' }}">
                         <label class="form-label">Précisez le motif <span class="text-danger">*</span></label>
@@ -119,23 +120,39 @@
                         @enderror
                     </div>
 
-                    {{-- ligne 3 intérimaire et solde --}}
+                    {{--
+                        LIGNE 3 : intérimaire (conditionnel) + solde
+                        POURQUOI le @if($estResponsable) :
+                        $estResponsable est calculé côté contrôleur (voir
+                        DemandeAbsenceController::estResponsable()). Seuls les
+                        responsables (chef département, responsable direction,
+                        RH, SG, DG, PCA) ont quelqu'un à désigner en intérim ;
+                        un simple Agent n'a pas ce besoin, donc le champ est
+                        complètement absent du formulaire pour lui (pas juste
+                        caché en CSS : il n'est même pas envoyé au navigateur).
+                    --}}
                     <div class="row g-3 mb-3">
+                        @if($estResponsable)
                         <div class="col-md-6">
                             <label class="form-label">Intérimaire désigné</label>
                             <select name="interimaire" class="form-select">
-                                <option value="">Aucun intérimaire</option>
-                                @foreach($AgentsMemeDepartement as $Agent)
-                                    <option value="{{ $Agent->nom }} {{ $Agent->prenom }}"
-                                        {{ old('interimaire') === $Agent->nom.' '.$Agent->prenom ? 'selected' : '' }}>
-                                        {{ $Agent->nom }} {{ $Agent->prenom }} — {{ $Agent->poste }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <option value="">Aucun intérimaire</option>
+
+                            @foreach($AgentsMemeDepartement as $Agent)
+                                <option value="{{ $Agent->id }}"
+                                    {{ old('interimaire') == $Agent->id ? 'selected' : '' }}>
+                                    {{ $Agent->nom }} {{ $Agent->prenom }} — {{ $Agent->poste }}
+                                </option>
+                            @endforeach
+                        </select>
                         </div>
-                        <div class="col-md-6">
+                        @endif
+
+                        {{-- Le solde prend toute la largeur (col-md-12) si le
+                             champ intérimaire est absent, pour éviter un trou
+                             vide dans la mise en page --}}
+                        <div class="{{ $estResponsable ? 'col-md-6' : 'col-md-12' }}">
                             <label class="form-label">Solde disponible</label>
-                            {{-- Modification affiche le solde calculé dynamiquement--}}
                             <input type="text" class="form-control text-center fw-bold"
                                    readonly
                                    value="{{ $solde }} jours restants">
