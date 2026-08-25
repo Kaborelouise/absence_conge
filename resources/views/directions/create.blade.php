@@ -15,10 +15,7 @@
                     style="background-color: #1B384F; padding: 20px;">
                     <h5 class="mb-0">Ajouter une direction</h5>
                 </div>
-
-
             <div class="card-body">
-
                 {{-- erreur de validation ,$errors : variable automatiquement disponible dans toutes les vues Laravel après un validate()     $errors->any() : true s'il y a au moins une erreur --}}
                 @if($errors->any())
                     <div class="alert alert-danger">
@@ -111,7 +108,7 @@
 
     const form = document.getElementById('formDirection');
 
-    // 'submit' : se déclenche quand on clique sur "Enregistrer"
+    // submit se déclenche quand on clique sur "Enregistrer"
     // avant que le formulaire soit envoyé au serveur
     form.addEventListener('submit', function(e) {
         let valide = true; 

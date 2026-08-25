@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -19,6 +20,41 @@
     </style>
 </head>
 <body>
+ 
+@php
+    $responsable = $demande->responsableDirection();
+    $titreSignataire = null;
+ 
+    // Direction de l'agent
+    $direction = $demande->user->departement->direction ?? null;
+    $sigleDirection = $direction->libelle_court ?? null;
+ 
+    // Informations de la décision
+    $session = $demande->sessionAdministrative;
+    $numeroDecision = $session->numero_decision ?? null;
+    $anneeDecision = $session->annee ?? now()->year;
+    $dateDecision = $session->date_decision ?? null;
+ 
+    // Construction de la référence
+    $referenceDecision = $numeroDecision
+        ? "N°{$numeroDecision}/MTDPCE/SG/ANPTIC/DG/SG"
+        : "N°{$anneeDecision}-______/MTDPCE/SG/ANPTIC/DG/SG";
+ 
+    // Ajout du sigle de la direction
+    if ($sigleDirection && $sigleDirection !== 'SG') {
+        $referenceDecision .= "/{$sigleDirection}";
+    }
+ 
+    if ($responsable) {
+        $titreSignataire = match ($responsable->role->libelle) {
+            'SG'  => 'Secrétaire Général',
+            'DG'  => 'Directeur Général',
+            'PCA' => "Président du Conseil d'Administration",
+            default => 'Responsable de Direction',
+        };
+    }
+@endphp
+ 
 <table class="entete" cellpadding="0" cellspacing="0">
     <tr>
         <td class="entete-gauche">
@@ -35,19 +71,22 @@
         </td>
     </tr>
 </table>
-<div class="reference">N°{{ date('Y') }}______/MTDPCE/SG/ANPTIC/DG/SG</div>
+<div class="reference">{{ $demande->num_certificat_cessation }}</div>
 <div class="titre">Certificat de cessation de service</div>
 <div class="corps">
     <p>
-        Je soussigné, <strong>Secrétaire Général</strong>, certifie que
+       Je soussigné, <strong>{{ $titreSignataire ?? 'Secrétaire Général' }}</strong>,
+@if($responsable)
+    <strong>{{ strtoupper($responsable->nom) }} {{ $responsable->prenom }}</strong>,
+@endif
+certifie que
+       
         <strong>{{ strtoupper($demande->user->nom) }} {{ $demande->user->prenom }}</strong>
         matricule <strong>{{ $demande->user->matricule }}</strong>,
         {{ $demande->user->poste }},
-        {{-- MODIFIÉ : clause complète sur la décision annuelle, tirée de la
-             session administrative liée à la demande. 'Administrateuristratif'
-             corrigé en 'administratif'. --}}
+ 
         bénéficiaire d'un congé administratif obtenu suivant la décision
-        N°<strong>{{ $demande->sessionAdministrative->numero_decision ?? '____________' }}</strong>
+        <strong>{{ $referenceDecision }}</strong>
         du <strong>{{ $demande->sessionAdministrative->date_decision
             ? $demande->sessionAdministrative->date_decision->locale('fr')->isoFormat('D MMMM YYYY')
             : '____________' }}</strong>
@@ -68,15 +107,9 @@
     <p>En foi de quoi, le présent certificat est établi pour servir et valoir ce que de droit.</p>
 </div>
 <div class="signature-bloc">
-    {{-- MODIFIÉ : signataire tiré de la session administrative au lieu d'un
-         texte fixe. Repli sur formule neutre si non renseigné. --}}
-    @if($demande->sessionAdministrative->signataire_titre)
-        {{ $demande->sessionAdministrative->signataire_titre }}<br><br><br><br>
-        @if($demande->sessionAdministrative->signataire_nom)
-            <strong>{{ $demande->sessionAdministrative->signataire_nom }}</strong>
-        @else
-            ________________________________
-        @endif
+    @if($responsable)
+        {{ $titreSignataire }}<br><br><br><br>
+        <strong>{{ strtoupper($responsable->nom) }} {{ $responsable->prenom }}</strong>
     @else
         Pour le Secrétaire Général<br><br><br><br>
         ________________________________

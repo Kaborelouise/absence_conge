@@ -14,7 +14,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h5 class="fw-bold mb-0">Bonjour, {{ $user->prenom }} {{ $user->nom }}</h5>
-        <small class="text-muted">{{ $user->poste }} — {{ $user->departement->libelle_court ?? '' }}</small>
+        <small class="text-muted">{{ $user->poste }}  {{ $user->departement->libelle_court ?? '' }}</small>
     </div>
 </div>
 

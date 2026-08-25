@@ -19,7 +19,7 @@ class AvisAbsence extends Model
         return $this->belongsTo(DemandeAbsence::class);
     }
 
-     public function user()                  // ← ajouté
+     public function user()                  //  ajouté
     {
         return $this->belongsTo(User::class);
     }

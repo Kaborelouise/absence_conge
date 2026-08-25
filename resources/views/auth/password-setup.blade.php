@@ -9,7 +9,7 @@
                 <h5 class="mb-0">Définir votre mot de passe</h5>
             </div>
             <div class="card-body">
-                @if($errors->any())
+               @if($errors->any())
                     <div class="alert alert-danger">
                         <ul class="mb-0">
                             @foreach($errors->all() as $erreur)

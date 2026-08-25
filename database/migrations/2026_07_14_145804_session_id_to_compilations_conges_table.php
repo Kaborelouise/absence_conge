@@ -7,10 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     //  On rattache la compilation directement à la session Administrateuristrative
-    //  plutôt que de se fier uniquement au champ "annee" (integer) — plus
-    //  fiable pour retrouver "la compilation de LA session en cours", et
-    //  cohérent avec le reste du système (demande_absences, demande_conges,
-    //  demande_jouissances font déjà de même).
+ 
   
     public function up(): void
     {

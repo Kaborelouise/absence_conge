@@ -23,6 +23,7 @@ class SessionAdministrative extends Model
         'active_jouissance',
         'soldes_reinitialises',
         'created_by',
+        
 
     ];
 

@@ -206,7 +206,31 @@
             .table-anptic-dark th {
                 background-color: #1B384F !important;
                  color: white !important;
+
             }
+
+             .table-anptic-dark th {
+                background-color: #1B384F !important;
+                 color: white !important;
+            }
+
+            .form-check-input {
+                width: 1.3em;
+                height: 1.3em;
+                border: 2px solid #1B384F;
+                cursor: pointer;
+            }
+
+            .form-check-input:checked {
+                background-color: #1B384F;
+                border-color: #1B384F;
+            }
+
+            .form-check-label {
+                cursor: pointer;
+                padding-left: 4px;
+            }
+       
         </style>
 
         @yield('styles')

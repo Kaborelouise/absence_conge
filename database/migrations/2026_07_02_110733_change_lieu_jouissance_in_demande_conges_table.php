@@ -16,7 +16,7 @@ return new class extends Migration
             });
 
             Schema::table('demande_conges', function (Blueprint $table) {
-                // CORRECTION : nullable() pour éviter l'erreur sur données existantes
+                
                 $table->json('lieu_jouissance')->nullable()->after('id');
             });
         }

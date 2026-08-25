@@ -7,12 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
 
-    //  Rattache chaque demande (absence, congé, jouissance) à la session
-    //  Administrateuristrative (campagne annuelle) sous laquelle elle a été créée.
-    //  Nullable + nullOnDelete : si une session est supprimée, on ne perd pas
-    //  les demandes qui y étaient rattachées, elles perdent juste leur lien
-    //  (plutôt qu'un ON DELETE CASCADE qui supprimerait les demandes elles-mêmes
-    //   bien trop destructeur pour de l'historique Administrateuristratif).
+
 
     public function up(): void
     {

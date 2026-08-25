@@ -97,7 +97,9 @@ class DemandeAbsence extends Model
 
 
         if ($role === 'Responsable Direction') {
-            return $etapesFinales;
+            return $jours > 5
+                ? ['agent_rh', 'sg', 'dg']
+                : ['agent_rh', 'sg'];
         }
 
 

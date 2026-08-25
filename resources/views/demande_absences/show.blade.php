@@ -307,7 +307,7 @@ $etapeSuivante = ($indexActuel !== false && isset($circuit[$indexActuel + 1]))
                                        name="avis" value="favorable" id="favorable"
                                        required onchange="toggleMotif(this.value)">
                                 <label class="form-check-label text-success fw-bold" for="favorable">
-                                    <i class="bi bi-check-circle me-1"></i> Favorable
+                                     Favorable
                                 </label>
                             </div>
                             <div class="form-check">
@@ -315,7 +315,7 @@ $etapeSuivante = ($indexActuel !== false && isset($circuit[$indexActuel + 1]))
                                        name="avis" value="defavorable" id="defavorable"
                                        onchange="toggleMotif(this.value)">
                                 <label class="form-check-label text-danger fw-bold" for="defavorable">
-                                    <i class="bi bi-x-circle me-1"></i> Défavorable
+                                    Défavorable
                                 </label>
                             </div>
                         </div>

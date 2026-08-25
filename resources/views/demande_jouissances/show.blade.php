@@ -344,8 +344,8 @@ $peutTelechargerReprise = $demande->statut === 'validee'
                     </div>
                     @endif
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">
+                    <div class="mb-3 text-center">
+                        <label class="form-label fw-bold d-block ">
                             @if(in_array(auth()->user()->role->libelle, ['Responsable Direction','SG','DG','PCA']))
                                 Décision
                             @else
@@ -358,16 +358,16 @@ $peutTelechargerReprise = $demande->statut === 'validee'
                                        value="favorable" id="favorable_jouissance" required
                                        onchange="toggleMotifJouissance(this.value)">
                                 <label class="form-check-label text-success fw-bold" for="favorable_jouissance">
-                                    <i class="bi bi-check-circle me-1"></i> Favorable
+                                         Favorable
                                 </label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="avis"
                                        value="defavorable" id="defavorable_jouissance"
                                        onchange="toggleMotifJouissance(this.value)">
-                                <label class="form-check-label text-danger fw-bold" for="defavorable_jouissance">
-                                    <i class="bi bi-x-circle me-1"></i> Défavorable
-                                </label>
+                             <label class="form-check-label text-danger fw-bold" for="defavorable_jouissance">
+                                Défavorable
+                            </label>
                             </div>
                         </div>
                     </div>

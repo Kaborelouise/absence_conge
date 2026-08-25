@@ -33,7 +33,7 @@
         </div>
 
         <div class="table-responsive">
-        <table class="table table-hover" id="tableDepartements">
+        <table class="table table-hover" id="tableDirections">
             <thead class="table-anptic-dark">
                 <tr>
                     <th>Libellé court</th>

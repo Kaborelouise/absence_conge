@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users');
             // Action : create, update, delete, read
             $table->string('action');
-            // Modèle concerné : User, DemandeAbsence, etc.
+            // Modèle concerné : User, DemandeAbsence
             $table->string('model');
             // Id de l'enregistrement concerné
             $table->unsignedBigInteger('model_id')->nullable();

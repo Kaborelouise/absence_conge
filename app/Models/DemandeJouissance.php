@@ -35,28 +35,44 @@ class DemandeJouissance extends Model
     {
         return $this->cloturee_at !== null;
     }
-    //vérifie si l'Agent peut cloturee : la demande est validée, les 2 certificats ont été uploader
 
-    public function peutEtreClotureePar(User $user): bool 
-    { 
+    // Verifie si l'Agent peut cloturer : la demande est validee, les 2 certificats ont ete uploades
+    public function peutEtreClotureePar(User $user): bool
+    {
         return $this->statut === 'validee'
-        && $this->certificat_cessation !== null
-        && $this->certificat_prise_service !== null
-        && !$this->estCloturee()
-        && $this->user_id === $user->id;
-
+            && $this->certificat_cessation !== null
+            && $this->certificat_prise_service !== null
+            && !$this->estCloturee()
+            && $this->user_id === $user->id;
     }
 
     public function user()
-    {
-        return $this->belongsTo(User::class, 'user_id');
+{
+    return $this->belongsTo(User::class, 'user_id');
+}
+
+public function responsableDirection(): ?User
+{
+    $directionId = $this->user?->departement?->direction_id;
+
+    if (!$directionId) {
+        return null;
     }
 
-  
-    public function sessionAdministrative()
-    {
-        return $this->belongsTo(SessionAdministrative::class, 'session_administrative_id');
-    }
+    return User::where(function ($q) {
+        $q->where('est_responsable_direction', true)
+          ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Responsable Direction'));
+    })
+    ->whereHas('departement', function ($query) use ($directionId) {
+        $query->where('direction_id', $directionId);
+    })
+    ->first();
+}
+
+public function sessionAdministrative()
+{
+    return $this->belongsTo(SessionAdministrative::class, 'session_administrative_id');
+}
 
     public function avis()
     {
@@ -68,7 +84,7 @@ class DemandeJouissance extends Model
         $user = $this->user;
         $role = $user->role->libelle;
 
-        // Cas du SG d'abord RH vérifie puis DG décide 
+        // Cas du SG : d'abord RH verifie, puis DG decide
         if ($role === 'SG') {
             return ['agent_rh', 'dg'];
         }
@@ -77,41 +93,39 @@ class DemandeJouissance extends Model
             return ['sg'];
         }
 
-        // Cas du DG, RH puis PCA décide
+        // Cas du DG : RH puis PCA decide
         if ($role === 'DG') {
             return ['agent_rh', 'pca'];
         }
 
-        // Cas Responsable de direction, RH puis SG décide
+        // Cas Responsable de direction : RH puis SG decide
         if ($role === 'Responsable Direction') {
             return ['agent_rh', 'sg'];
         }
 
-        // Cas Agent de direction ou Chef de département :
-        // RH puis Responsable de direction décide — INCHANGÉ
-        if ($role === 'Chef de Département' || $user->est_responsable_departement) {
+        // Cas Agent de direction ou Chef de departement : RH puis Responsable de direction decide
+        if ($role === 'Chef de Departement' || $user->est_responsable_departement) {
             return ['agent_rh', 'responsable_direction'];
         }
 
-        // Cas Agent simple d'un département 
+        // Cas Agent simple d'un departement
         return ['chef_departement', 'agent_rh', 'responsable_direction'];
     }
 
-
-     public function peutEtreAbandonneePar(User $user): bool
+    public function peutEtreAbandonneePar(User $user): bool
     {
-          // Si déjà abandonnée
-          if ($this->abandonnee ?? false) {
-           return false;
+        // Si deja abandonnee
+        if ($this->abandonnee ?? false) {
+            return false;
         }
 
-          // Si déjà terminée
+        // Si deja terminee
         if (in_array($this->statut, ['validee', 'rejetee'])) {
-        return false;
-    }
+            return false;
+        }
 
-    // Seulement l'auteur peut abandonner
-      return $this->user_id === $user->id;
+        // Seulement l'auteur peut abandonner
+        return $this->user_id === $user->id;
     }
 
     public function prochainActeur(): ?string
@@ -132,8 +146,7 @@ class DemandeJouissance extends Model
         return null;
     }
 
-    // Vérifie si l'utilisateur connecté peut donner son avis
-  
+    // Verifie si l'utilisateur connecte peut donner son avis
     public function peutDonnerAvis(User $user): bool
     {
         if (in_array($this->statut, ['validee', 'rejetee'])) {
@@ -144,7 +157,7 @@ class DemandeJouissance extends Model
             return false;
         }
 
-        $role     = $user->role->libelle;
+        $role = $user->role->libelle;
         $prochain = $this->prochainActeur();
 
         if ($prochain === null) {
@@ -161,13 +174,13 @@ class DemandeJouissance extends Model
         }
 
         if ($role === 'Responsable Direction') {
-            $dirUser  = $user->departement->direction_id ?? null;
+            $dirUser = $user->departement->direction_id ?? null;
             $dirAgent = $this->user->departement->direction_id ?? null;
             return $prochain === 'responsable_direction'
                 && $dirUser !== null && $dirUser === $dirAgent;
         }
 
-        if ($role === 'Chef de Département' || $user->est_responsable_departement) {
+        if ($role === 'Chef de Departement' || $user->est_responsable_departement) {
             return $prochain === 'chef_departement'
                 && $user->departement_id === $this->user->departement_id;
         }
@@ -178,4 +191,6 @@ class DemandeJouissance extends Model
 
         return false;
     }
+
+      
 }

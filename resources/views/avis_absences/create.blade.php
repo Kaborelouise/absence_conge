@@ -1,9 +1,4 @@
-{{-- ============================================================
-     FICHIER : resources/views/avis_absences/create.blade.php
-     RÔLE    : Formulaire pour donner un avis sur une demande
-     DONNÉES : $demande vient du controller
-     ACCÈS   : Depuis show(demande_absence) via bouton "Donner avis"
-     ============================================================ --}}
+
 @extends('layouts.app')
 @section('title', 'Donner un avis')
 @section('page-title', 'Autorisation d\'absence')
