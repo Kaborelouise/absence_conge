@@ -12,6 +12,22 @@
                 </div>
             <div class="card-body p-4">
 
+
+                    @if(session('error'))
+            <div class="alert alert-danger">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach($errors->all() as $erreur)
+                        <li>{{ $erreur }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
                 @if($errors->any())
                     <div class="alert alert-danger">
                         <ul class="mb-0">
@@ -78,13 +94,6 @@
                             @enderror
                         </div>
 
-
-
-
-
-
-
-                        
                     </div>
 
                     <div class="row g-3 mb-3">
@@ -121,14 +130,36 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="form-label">Département</label>
-                            <select name="departement_id"
-                                    class="form-select @error('departement_id') is-invalid @enderror" required>
+                            <label class="form-label">Direction <span class="text-danger">*</span></label>
+                            <select name="direction_id" id="direction_id"
+                                    class="form-select @error('direction_id') is-invalid @enderror" required>
+                                <option value="">-- Choisir une direction --</option>
+                                @foreach($directions as $dir)
+                                    <option value="{{ $dir->id }}"
+                                        {{ old('direction_id', $user->directionReelle()?->id) == $dir->id ? 'selected' : '' }}>
+                                        {{ $dir->libelle_long }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('direction_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Département <span class="text-muted">(optionnel)</span></label>
+                            <select name="departement_id" id="departement_id"
+                                    class="form-select @error('departement_id') is-invalid @enderror">
+                                <option value="">-- Rattaché directement à la direction --</option>
                                 @foreach($departements as $departement)
                                     <option value="{{ $departement->id }}"
+                                        data-direction="{{ $departement->direction_id }}"
                                         {{ old('departement_id', $user->departement_id) == $departement->id ? 'selected' : '' }}>
-                                        {{ $departement->libelle_court }} ({{ $departement->direction->libelle_court ?? '—' }})
+                                        {{ $departement->libelle_court }}
                                     </option>
                                 @endforeach
                             </select>

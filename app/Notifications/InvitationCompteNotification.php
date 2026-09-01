@@ -26,7 +26,7 @@ class InvitationCompteNotification extends Notification implements ShouldQueue
     }
 
     //toMail methode spécial laravel, notififiable pour l'utilisateur qui va recevoir le mail
-    public function toMail($notifiable): MailMessage
+        public function toMail($notifiable): MailMessage
     {
         $url = url(route('password.setup', [
             'token' => $this->token,
@@ -40,6 +40,7 @@ class InvitationCompteNotification extends Notification implements ShouldQueue
             ->line("Cliquez sur le bouton ci-dessous pour définir votre mot de passe et activer votre compte.")
             ->action('Définir mon mot de passe', $url)
             ->line('Ce lien expirera dans 60 minutes.')
-            ->line("Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.");
+            ->line("Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.")
+            ->salutation("Cordialement,\nPlateforme de gestion des autorisations d'absences et des congés");
     }
 }

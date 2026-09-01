@@ -36,7 +36,7 @@
         </td>
     </tr>
 </table>
-<div class="reference">N°{{ date('Y') }}______/MTDPCE/SG/ANPTIC/DG/SG</div>
+<div class="reference">{{ $demande->numero_prise_service }}</div>
 <div class="titre">Certificat de prise de service</div>
 <div class="corps">
     <p>

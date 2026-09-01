@@ -15,6 +15,8 @@ class SessionAdministrative extends Model
     protected $fillable = [
         'libelle',
         'annee',
+        'numero_decision',
+        'date_decision',
         'date_debut',
         'date_fin',
         'ouverte',
@@ -22,21 +24,22 @@ class SessionAdministrative extends Model
         'active_conge',
         'active_jouissance',
         'soldes_reinitialises',
+        'compteurs_reinitialises',
         'created_by',
-        
-
     ];
 
-    protected $casts = [
+        protected $casts = [
         'libelle'        => 'string',
         'annee'            => 'integer',
         'date_debut'         => 'date',
         'date_fin'           => 'date',
+        'date_decision'      => 'date',
         'ouverte'           => 'boolean',
         'active_absence'     => 'boolean',
         'active_conge'       => 'boolean',
         'active_jouissance'  => 'boolean',
         'soldes_reinitialises' => 'boolean',
+        'compteurs_reinitialises' => 'boolean',
     ];
 
     // indique que personne n'a créer la session administrative

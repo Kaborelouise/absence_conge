@@ -130,9 +130,61 @@ class DemandeAbsence extends Model
         return null;
     }
 
+
+   public function acteursPourEtape(string $etape): \Illuminate\Support\Collection
+    {
+        $agent = $this->user;
+
+        return match ($etape) {
+            'chef_departement' => \App\Models\User::where('departement_id', $agent->departement_id)
+                ->where('id', '!=', $agent->id)
+                ->where(function ($q) {
+                    $q->where('est_responsable_departement', true)
+                    ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Chef de Département'));
+                })
+                ->get(),
+
+            'responsable_direction' => (function () use ($agent) {
+                $directionId = $agent->directionReelle()?->id;
+
+                if ($directionId === null) {
+                    return collect();
+                }
+
+                return \App\Models\User::where(function ($q) use ($directionId) {
+                        $q->where('direction_id', $directionId)
+                        ->orWhereHas('departement', fn ($q2) => $q2->where('direction_id', $directionId));
+                    })
+                    ->where('id', '!=', $agent->id)
+                    ->where(function ($q) {
+                        $q->where('est_responsable_direction', true)
+                        ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Responsable Direction'));
+                    })
+                    ->get();
+            })(),
+
+            'agent_rh' => \App\Models\User::whereHas('role', fn ($q) => $q->where('libelle', 'Agent RH'))->get(),
+            'sg'       => \App\Models\User::whereHas('role', fn ($q) => $q->where('libelle', 'SG'))->get(),
+            'dg'       => \App\Models\User::whereHas('role', fn ($q) => $q->where('libelle', 'DG'))->get(),
+            'pca'      => \App\Models\User::whereHas('role', fn ($q) => $q->where('libelle', 'PCA'))->get(),
+
+            default => collect(),
+        };
+    }
+
+ public function notifierProchainActeur(string $notificationClass): void
+    {
+        $etape = $this->prochainActeur();
+        if ($etape === null) return;
+
+        $acteurs = $this->acteursPourEtape($etape);
+        if ($acteurs->isEmpty()) return;
+
+        \Illuminate\Support\Facades\Notification::send($acteurs, new $notificationClass($this));
+    }
+
     public function peutDonnerAvis(User $user): bool
     {
-        //  demande non terminée
         if (in_array($this->statut, ['validee', 'rejetee', 'abandonnee'])) {
             return false;
         }
@@ -144,7 +196,6 @@ class DemandeAbsence extends Model
         $role     = $user->role->libelle;
         $prochain = $this->prochainActeur();
 
-        // Détermine le type d'avis que cet utilisateur pourrait donner
         $typeAvis = match (true) {
             $role === 'Chef de Département' || $user->est_responsable_departement => 'chef_departement',
             $role === 'Responsable Direction'                                     => 'responsable_direction',
@@ -156,9 +207,7 @@ class DemandeAbsence extends Model
         };
 
         if ($typeAvis === null) return false;
-
         if ($prochain !== $typeAvis) return false;
-
 
         $etapeDejaTraitee = $this->avisAbsence
             ->where('type', $typeAvis)
@@ -166,20 +215,22 @@ class DemandeAbsence extends Model
 
         if ($etapeDejaTraitee) return false;
 
-
         // Le chef de département ne peut agir que sur son propre département
         if ($typeAvis === 'chef_departement') {
+            if ($user->departement_id === null || $this->user->departement_id === null) {
+                return false;
+            }
             return $user->departement_id === $this->user->departement_id;
         }
 
         // Le responsable de direction ne peut agir que sur sa propre direction
         if ($typeAvis === 'responsable_direction') {
-            $dirUser  = $user->departement->direction_id ?? null;
-            $dirAgent = $this->user->departement->direction_id ?? null;
-            return $dirUser !== null && $dirUser === $dirAgent;
+            $dirUser  = $user->directionReelle()?->id;
+            $dirAgent = $this->user->directionReelle()?->id;
+            return $dirUser !== null && $dirAgent !== null && $dirUser === $dirAgent;
         }
 
-        // Agent RH, SG, DG, PCA  portée globale 
+        // Agent RH, SG, DG, PCA  globale 
         return true;
     }
 
@@ -225,18 +276,21 @@ class DemandeAbsence extends Model
         }
 
         if ($role === 'Chef de Département' || $owner->est_responsable_departement) {
-            $directionId = $owner->departement->direction_id ?? null;
+            $directionId = $owner->directionReelle()?->id;
 
             return User::where(function ($q) {
                     $q->where('est_responsable_direction', true)
-                      ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Responsable Direction'));
+                    ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Responsable Direction'));
                 })
-                ->whereHas('departement', fn ($q) => $q->where('direction_id', $directionId))
+                ->where(function ($q) use ($directionId) {
+                    $q->where('direction_id', $directionId)
+                    ->orWhereHas('departement', fn ($q2) => $q2->where('direction_id', $directionId));
+                })
                 ->first();
         }
-
         return null; // agent simple, PCA -> pas de note d'intérim
     }
+    
 
     public function peutTelechargerDocuments(User $user): bool
     {

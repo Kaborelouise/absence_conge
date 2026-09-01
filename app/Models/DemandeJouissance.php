@@ -18,6 +18,10 @@ class DemandeJouissance extends Model
         'certificat_prise_service',
         'cloturee_at',
         'session_administrative_id',
+        'interimaire_id',
+        'numero_cessation_service',
+        'numero_prise_service',
+        'numero_interim',
     ];
 
     protected $casts = [
@@ -46,28 +50,29 @@ class DemandeJouissance extends Model
             && $this->user_id === $user->id;
     }
 
-    public function user()
-{
-    return $this->belongsTo(User::class, 'user_id');
-}
-
-public function responsableDirection(): ?User
-{
-    $directionId = $this->user?->departement?->direction_id;
-
-    if (!$directionId) {
-        return null;
+        public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    return User::where(function ($q) {
-        $q->where('est_responsable_direction', true)
-          ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Responsable Direction'));
-    })
-    ->whereHas('departement', function ($query) use ($directionId) {
-        $query->where('direction_id', $directionId);
-    })
-    ->first();
-}
+   public function responsableDirection(): ?User
+    {
+        $directionId = $this->user?->directionReelle()?->id;
+
+        if (!$directionId) {
+            return null;
+        }
+
+        return User::where(function ($q) {
+            $q->where('est_responsable_direction', true)
+            ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Responsable Direction'));
+        })
+        ->where(function ($q) use ($directionId) {
+            $q->where('direction_id', $directionId)
+            ->orWhereHas('departement', fn ($q2) => $q2->where('direction_id', $directionId));
+        })
+        ->first();
+    }
 
 public function sessionAdministrative()
 {
@@ -108,8 +113,14 @@ public function sessionAdministrative()
             return ['agent_rh', 'responsable_direction'];
         }
 
-        // Cas Agent simple d'un departement
-        return ['chef_departement', 'agent_rh', 'responsable_direction'];
+        // Agent simple SANS département (rattaché directement à une direction) :
+        // on saute chef_departement, qui n'a pas de sens ici
+        if ($user->departement_id === null) {
+            return ['agent_rh', 'responsable_direction'];
+}
+
+// Cas Agent simple d'un departement
+return ['chef_departement', 'agent_rh', 'responsable_direction'];
     }
 
     public function peutEtreAbandonneePar(User $user): bool
@@ -145,6 +156,50 @@ public function sessionAdministrative()
 
         return null;
     }
+
+    public function acteursPourEtape(string $etape): \Illuminate\Support\Collection
+    {
+        $agent = $this->user;
+
+        return match ($etape) {
+            'chef_departement' => \App\Models\User::where('departement_id', $agent->departement_id)
+                ->where('id', '!=', $agent->id)
+                ->where(function ($q) {
+                    $q->where('est_responsable_departement', true)
+                    ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Chef de Département'));
+                })
+                ->get(),
+
+            'responsable_direction' => \App\Models\User::whereHas('departement', function ($q) use ($agent) {
+                    $q->where('direction_id', $agent->departement->direction_id ?? null);
+                })
+                ->where('id', '!=', $agent->id)
+                ->where(function ($q) {
+                    $q->where('est_responsable_direction', true)
+                    ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Responsable Direction'));
+                })
+                ->get(),
+
+            'agent_rh' => \App\Models\User::whereHas('role', fn ($q) => $q->where('libelle', 'Agent RH'))->get(),
+            'sg'       => \App\Models\User::whereHas('role', fn ($q) => $q->where('libelle', 'SG'))->get(),
+            'dg'       => \App\Models\User::whereHas('role', fn ($q) => $q->where('libelle', 'DG'))->get(),
+            'pca'      => \App\Models\User::whereHas('role', fn ($q) => $q->where('libelle', 'PCA'))->get(),
+
+            default => collect(),
+        };
+    }
+
+        public function notifierProchainActeur(string $notificationClass): void
+    {
+        $etape = $this->prochainActeur();
+        if ($etape === null) return;
+
+        $acteurs = $this->acteursPourEtape($etape);
+        if ($acteurs->isEmpty()) return;
+
+        \Illuminate\Support\Facades\Notification::send($acteurs, new $notificationClass($this));
+    }
+    
 
     // Verifie si l'utilisateur connecte peut donner son avis
     public function peutDonnerAvis(User $user): bool
@@ -192,5 +247,55 @@ public function sessionAdministrative()
         return false;
     }
 
-      
+        public function interimaire()
+    {
+        return $this->belongsTo(User::class, 'interimaire_id');
+    }
+
+    public function necessiteNoteInterim(): bool
+    {
+        if (!$this->interimaire_id) {
+            return false;
+        }
+
+        $role = $this->user->role->libelle;
+
+        return $role === 'Responsable Direction' || $this->user->est_responsable_direction
+            || $role === 'Chef de Département'   || $this->user->est_responsable_departement
+            || $role === 'Agent RH'
+            || $role === 'SG'
+            || $role === 'DG';
+        // Agent simple et PCA -> jamais de note d'intérim
+    }     
+
+    public function signataireUser(): ?User
+{
+    $owner = $this->user;
+    $role  = $owner->role->libelle;
+
+    if ($role === 'DG') {
+        return User::whereHas('role', fn ($q) => $q->where('libelle', 'PCA'))->first();
+    }
+
+    if ($role === 'SG') {
+        return User::whereHas('role', fn ($q) => $q->where('libelle', 'DG'))->first();
+    }
+
+    if ($role === 'Responsable Direction' || $owner->est_responsable_direction || $role === 'Agent RH') {
+        return User::whereHas('role', fn ($q) => $q->where('libelle', 'SG'))->first();
+    }
+
+    if ($role === 'Chef de Département' || $owner->est_responsable_departement) {
+        $directionId = $owner->departement->direction_id ?? null;
+
+        return User::where(function ($q) {
+                $q->where('est_responsable_direction', true)
+                  ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Responsable Direction'));
+            })
+            ->whereHas('departement', fn ($q) => $q->where('direction_id', $directionId))
+            ->first();
+    }
+
+    return null;
+}
 }

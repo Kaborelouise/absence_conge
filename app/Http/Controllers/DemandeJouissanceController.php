@@ -6,6 +6,7 @@ use App\Models\DemandeJouissance;
 use App\Models\SessionAdministrative;
 use Illuminate\Http\Request;
 use App\Helpers\LogActivity;
+use App\Models\User;
 
 class DemandeJouissanceController extends Controller
 {
@@ -51,7 +52,11 @@ class DemandeJouissanceController extends Controller
     public function create()
     {
         $user = auth()->user();
-        return view('demande_jouissances.create', compact('user'));
+
+        $AgentsMemeDepartement = $this->agentsPourInterimaire($user);
+        $estResponsable        = $this->estResponsable($user);
+
+        return view('demande_jouissances.create', compact('user', 'AgentsMemeDepartement', 'estResponsable'));
     }
 
 
@@ -60,14 +65,15 @@ class DemandeJouissanceController extends Controller
     {
     
         $request->validate([
-            'date_debut'  => 'required|date|after_or_equal:today',
-            'date_fin'    => 'required|date|after_or_equal:date_debut',
-        ], [
-            'date_debut.required'     => 'La date de début est obligatoire.',
-            'date_debut.after_or_equal' => 'La date de début ne peut pas être inférieue à aujourd\'hui.',//ajouté pour ne pas permettre la soumission d'une demande dont la date de debut est derrière
-            'date_fin.required'       => 'La date de fin est obligatoire.', 
-            'date_fin.after_or_equal' => 'La date de fin doit être supérieure ou égale à la date de début.', // after_or_equal est une regle native de laravel 
-        ]);
+        'date_debut'  => 'required|date|after_or_equal:today',
+        'date_fin'    => 'required|date|after_or_equal:date_debut',
+        'interimaire' => 'nullable|exists:users,id',
+    ], [
+        'date_debut.required'     => 'La date de début est obligatoire.',
+        'date_debut.after_or_equal' => 'La date de début ne peut pas être inférieue à aujourd\'hui.',
+        'date_fin.required'       => 'La date de fin est obligatoire.', 
+        'date_fin.after_or_equal' => 'La date de fin doit être supérieure ou égale à la date de début.',
+    ]);
 
 
         $user    = auth()->user();
@@ -126,9 +132,11 @@ class DemandeJouissanceController extends Controller
             'user_id'                   => $user->id,
             'statut'                    => 'en_attente',
             'session_administrative_id' => $session->id,
+            'interimaire_id'            => $request->interimaire,
         ]);
 
         $user->decrement('solde_conge', $jours);
+        $demande->notifierProchainActeur(\App\Notifications\DemandeJouissanceATraiter::class);
 
         // Log pour la soumission demande jouissance 
         LogActivity::log(
@@ -377,4 +385,22 @@ class DemandeJouissanceController extends Controller
         return redirect()->route('demande_jouissances.show', $id)
             ->with('success', 'Demande clôturée avec succès.');
     }
+
+        private function estResponsable(User $user): bool
+    {
+        $role = $user->role->libelle;
+
+        return $role === 'Responsable Direction'
+            || $role === 'Chef de Département'
+            || $user->est_responsable_departement
+            || $user->est_responsable_direction
+            || in_array($role, ['Agent RH', 'SG', 'DG', 'PCA']);
+    }
+
+    private function agentsPourInterimaire(User $user)
+    {
+        return User::where('id', '!=', $user->id)->get();
+    }
+
+    
 }

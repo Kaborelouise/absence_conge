@@ -16,12 +16,20 @@ use App\Http\Controllers\AvisJouissanceController;
 use App\Http\Controllers\SessionAdministrativeController;
 use App\Http\Controllers\AdminExportController;
 use App\Http\Controllers\PasswordSetupController;
+use App\Http\Controllers\Auth\MotDePasseObligatoireController;
 
 
 
 // Auth routes générées par Breeze
 // NE PAS TOUCHER
 require __DIR__.'/auth.php';
+
+// Définition du mot de passe suite à une invitation — accessible SANS authentification
+Route::get('password-setup/{token}', [PasswordSetupController::class, 'create'])
+    ->name('password.setup');
+
+Route::post('password-setup', [PasswordSetupController::class, 'store'])
+    ->name('password.setup.store');
 
 Route::middleware('auth')->group(function () {
 
@@ -34,7 +42,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
 
-    // AdministrateurISTRATION
+    // Administrateur
     Route::resource('roles', RoleController::class);
     Route::resource('directions', DirectionController::class);
     Route::resource('departements', DepartementController::class);
@@ -42,7 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('sessions_Administratives', \App\Http\Controllers\SessionAdministrativeController::class)
     ->only(['index', 'create', 'store', 'show']);
 
-    // DEMANDES
+    // Demandes
     Route::resource('demande_absences', DemandeAbsenceController::class);
     Route::post('demande_absences/{id}/abandonner', [DemandeAbsenceController::class, 'abandonner'])
     ->name('demande_absences.abandonner');
@@ -99,7 +107,7 @@ Route::middleware('auth')->group(function () {
         [SessionAdministrativeController::class, 'toggleJouissance'])
         ->name('sessions_Administratives.toggle_jouissance');
 
-    // Ajout routes pour la clôture de demande jouissance
+    //  routes pour la cloture de demande jouissance
     Route::post('demande_jouissances/{id}/upload-cessation', [DemandeJouissanceController::class, 'uploadCessation'])
     ->name('demande_jouissances.upload_cessation');
 
@@ -129,4 +137,24 @@ Route::middleware('auth')->group(function () {
         Route::get('jouissances', [AdminExportController::class, 'jouissances'])->name('jouissances');
         Route::get('absences', [AdminExportController::class, 'absences'])->name('absences');
     });
+
+    Route::get('notifications/{id}/lire', [\App\Http\Controllers\NotificationController::class, 'lire'])
+    ->name('notifications.lire');
+
+    Route::post('utilisateurs/{utilisateur}/renvoyer-invitation', [UserController::class, 'renvoyerInvitation'])
+    ->name('utilisateurs.renvoyer_invitation');
+
+    // Mot de passe temporairechangement obligatoire
+    Route::get('/mot-de-passe/changer-obligatoire', [MotDePasseObligatoireController::class, 'create'])
+        ->name('mot_de_passe.changer_obligatoire');
+
+    Route::put('/mot-de-passe/changer-obligatoire', [MotDePasseObligatoireController::class, 'update'])
+        ->name('mot_de_passe.changer_obligatoire.update');
+
+    Route::get('parametres-documents', [\App\Http\Controllers\ParametreDocumentController::class, 'edit'])
+    ->name('parametres_documents.edit');
+
+    Route::put('parametres-documents', [\App\Http\Controllers\ParametreDocumentController::class, 'update'])
+    ->name('parametres_documents.update');
+
 });

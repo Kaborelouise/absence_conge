@@ -71,8 +71,7 @@
         </td>
     </tr>
 </table>
-<div class="reference">{{ $demande->num_certificat_cessation }}</div>
-<div class="titre">Certificat de cessation de service</div>
+<div class="reference">{{ $demande->numero_cessation_service }}</div>
 <div class="corps">
     <p>
        Je soussigné, <strong>{{ $titreSignataire ?? 'Secrétaire Général' }}</strong>,

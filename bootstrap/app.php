@@ -16,10 +16,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'Administrateur' => \App\Http\Middleware\AdministrateurMiddleware::class,
         ]);
+
+        // AJOUT : force le changement de mot de passe temporaire sur tout le site
+        $middleware->appendToGroup('web', \App\Http\Middleware\ForcerChangementMotDePasse::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
     })->create();
-

@@ -9,6 +9,8 @@ use App\Models\DemandeJouissance;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Services\NumerotationService;
+
 
 class SessionAdministrativeController extends Controller
 {
@@ -96,11 +98,18 @@ class SessionAdministrativeController extends Controller
                     ->withInput();
             }
 
+            //pour la génération du numéro de décision pour cette nouvelle session
+            $numeroDecision = NumerotationService::genererNumero('decision', $annee);
+
             // Création de la session (fermée par défaut)
             SessionAdministrative::create([
 
                 // 'libelle' => "Session Administrative {$annee}",
                 'annee' => $annee,
+
+                'numero_decision' => $numeroDecision,
+
+                'date_decision' => now(),
 
                 'date_debut' => $dateDebut,
 
@@ -161,13 +170,26 @@ class SessionAdministrativeController extends Controller
                 'active_jouissance' => false,
             ]);
 
-            // Ouvre la session sélectionnée
+           // Ouvre la session sélectionnée
             $session->update([
                 'ouverte' => true,
                 'active_absence' => true,
                 'active_conge' => true,
                 'active_jouissance' => true,
             ]);
+
+            $messageCompteurs = '';
+
+            if (! $session->compteurs_reinitialises) {
+                NumerotationService::reinitialiserCompteurs($session->annee);
+                $session->update(['compteurs_reinitialises' => true]);
+                $messageCompteurs = ' Les compteurs de numérotation ont été réinitialisés pour cette session.';
+            }
+
+            \Illuminate\Support\Facades\Notification::send(
+            User::all(),
+                new \App\Notifications\SessionCongeOuverte($session)
+                );
             $messageSoldes = '';
 
             if (! $session->soldes_reinitialises) {
@@ -184,10 +206,9 @@ class SessionAdministrativeController extends Controller
 
             return back()->with(
                 'success',
-                "La session {$session->annee} a été ouverte avec succès.{$messageSoldes}"
+                "La session {$session->annee} a été ouverte avec succès.{$messageSoldes}{$messageCompteurs}"
             );
         }
-
     public function fermer(SessionAdministrative $session)
         {
             // Vérifie si la session est déjà fermée

@@ -6,6 +6,7 @@ use App\Models\AvisJouissance;
 use App\Models\DemandeJouissance;
 use Illuminate\Http\Request;
 use App\Helpers\LogActivity;
+use App\Services\NumerotationService;
 
 
 class AvisJouissanceController extends Controller
@@ -87,12 +88,26 @@ class AvisJouissanceController extends Controller
 
 
         if ($prochainActeur === null) {
-            $demande->update(['statut' => 'validee']);
+            $annee = $demande->sessionAdministrative->annee ?? now()->year;
+
+            $donnees = [
+                'statut' => 'validee',
+                'numero_cessation_service' => NumerotationService::genererNumero('cessation_service', $annee),
+                'numero_prise_service'     => NumerotationService::genererNumero('prise_service', $annee),
+            ];
+
+            if ($demande->necessiteNoteInterim()) {
+                $donnees['numero_interim'] = NumerotationService::genererNumero('interim', $annee);
+            }
+
+            $demande->update($donnees);
 
             return redirect()
                 ->route('demande_jouissances.show', $demande->id)
                 ->with('success', 'Demande validée avec succès.');
         }
+
+        $demande->notifierProchainActeur(\App\Notifications\DemandeJouissanceATraiter::class);
 
         // Il reste des étapes en_cours
         $demande->update(['statut' => 'en_cours']);

@@ -121,6 +121,8 @@ class DemandeAbsenceController extends Controller
             "Soumission demande absence du {$request->date_debut} au {$request->date_fin} ({$jours} jour(s))"
         );
 
+        $demande->notifierProchainActeur(\App\Notifications\DemandeAbsenceATraiter::class);
+
         return redirect()->route('demande_absences.index')
             ->with('success', "Demande soumise avec succès. {$jours} jour(s) réservé(s) sur votre solde.");
     }

@@ -41,13 +41,7 @@
             }
 
             .sidebar-brand {
-                /* padding: 18px; */
-                /* border-bottom: 3px solid rgba(255, 255, 255, 1); */
-                /* display: flex; */
-                /* align-items: center; */
                 text-align: center;
-                /* gap: 12px; */
-                /* text-decoration: none; */
             }
 
             .sidebar-brand-text {
@@ -146,6 +140,11 @@
                 cursor: pointer;
             }
 
+            .top-bar-actions {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+            }
             .user-avatar {
                 width: 34px;
                 height: 34px;
@@ -206,12 +205,6 @@
             .table-anptic-dark th {
                 background-color: #1B384F !important;
                  color: white !important;
-
-            }
-
-             .table-anptic-dark th {
-                background-color: #1B384F !important;
-                 color: white !important;
             }
 
             .form-check-input {
@@ -230,7 +223,7 @@
                 cursor: pointer;
                 padding-left: 4px;
             }
-       
+
         </style>
 
         @yield('styles')
@@ -244,12 +237,6 @@
                     <img src="{{ asset('images/logo_anptic.png') }}" alt="Logo ANPTIC" style="width: 100px; height: 100px; object-fit: contain; flex-shrink: 0;">
                 </a>
             </div>
-            
-            {{-- <div>
-                <span>
-                    Gestion des congés et<br>des autorisations d'absence
-                </span>
-            </div> --}}
 
             <div class="sidebar-section-title">Menu principal</div>
 
@@ -289,8 +276,6 @@
               $role = auth()->user()->role->libelle ?? null;
             @endphp
 
-
-            
         @if($role === 'Administrateur')
 
             <div class="sidebar-section-title">Administration</div>
@@ -328,6 +313,12 @@
                 <span>Sessions Administratives</span>
             </a>
 
+            <a href="{{ route('parametres_documents.edit') }}"
+                class="sidebar-link {{ request()->routeIs('parametres_documents.*') ? 'active' : '' }}">
+                <i class="bi bi-gear"></i>
+                <span>Paramètres documents</span>
+            </a>
+
         @endif
 
         </div>
@@ -338,6 +329,40 @@
                 <div class="top-bar-title">
                     @yield('page-title', 'ANPTIC')
                 </div>
+
+                {{-- Cloche de notifications --}}
+                <div class="top-bar-actions">
+                <div class="dropdown ">
+                    <div class="position-relative" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer;">
+                        <i class="bi bi-bell" style="font-size:20px; color:#555;"></i>
+                        @if(auth()->user()->unreadNotifications->count() > 0)
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:10px;">
+                                {{ auth()->user()->unreadNotifications->count() }}
+                            </span>
+                        @endif
+                    </div>
+
+                    <ul class="dropdown-menu dropdown-menu-end p-0" style="min-width:320px; max-height:400px; overflow-y:auto; font-size:13px;">
+                        <li class="px-3 py-2 border-bottom">
+                            <strong>Notifications</strong>
+                        </li>
+
+                        @forelse(auth()->user()->unreadNotifications as $notification)
+                            <li>
+                                <a href="{{ route('notifications.lire', $notification->id) }}"
+                                class="dropdown-item px-3 py-2 border-bottom">
+                                    <div>{{ $notification->data['message'] ?? 'Nouvelle notification' }}</div>
+                                    <div class="text-muted" style="font-size:11px;">
+                                        {{ $notification->data['agent'] ?? '' }} — {{ $notification->created_at->diffForHumans() }}
+                                    </div>
+                                </a>
+                            </li>
+                        @empty
+                            <li class="px-3 py-2 text-muted text-center">Aucune notification</li>
+                        @endforelse
+                    </ul>
+                </div>
+
 
                 {{-- Avatar, nom et le dropdown de deconnexion --}}
                 <div class="dropdown">
@@ -369,6 +394,7 @@
                             </form>
                         </li>
                     </ul>
+                </div>
                 </div>
             </div>
 

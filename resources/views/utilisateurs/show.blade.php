@@ -149,7 +149,7 @@
             </div>
         </div>
 
-        {{-- Actions --}}
+        <!-- {{-- Actions --}}
         <div class="d-flex gap-2">
             <a href="{{ route('utilisateurs.edit', $user->id) }}"
                class="btn btn-warning flex-fill"> Modifier</a>
@@ -163,6 +163,28 @@
             </form>
         </div>
 
-    </div>
+    </div> -->
+            {{-- Actions --}}
+        <div class="d-flex gap-2">
+            <a href="{{ route('utilisateurs.edit', $user->id) }}"
+            class="btn btn-warning flex-fill"> Modifier</a>
+
+            <form action="{{ route('utilisateurs.renvoyer_invitation', $user->id) }}"
+                method="POST" class="flex-fill">
+                @csrf
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-envelope me-1"></i> Renvoyer l'invitation
+                </button>
+            </form>
+
+            <form action="{{ route('utilisateurs.destroy', $user->id) }}"
+                method="POST" class="flex-fill">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-danger w-100"
+                        onclick="return confirm('Supprimer cet utilisateur ?')">Supprimer
+                </button>
+            </form>
+        </div>
 </div>
 @endsection

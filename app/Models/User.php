@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Carbon\Carbon;
+use App\Models\Direction;
 
 class User extends Authenticatable
 {
@@ -18,6 +19,7 @@ class User extends Authenticatable
         'signature', 'est_responsable_departement', 'est_responsable_direction',
         'role_id', 'departement_id', 'solde_conge', 'solde_absence',
         'date_prise_service', 'certificat_prise_service', 'last_login_at', 'genre',
+        'mot_de_passe_temporaire', 'mot_de_passe_expire_at', 'direction_id',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -31,6 +33,8 @@ class User extends Authenticatable
             'est_responsable_direction'   => 'boolean',
             'date_prise_service'          => 'date',
             'last_login_at'               => 'datetime',
+            'mot_de_passe_temporaire'     => 'boolean',
+            'mot_de_passe_expire_at'      => 'datetime',
         ];
     }
 
@@ -42,6 +46,20 @@ class User extends Authenticatable
     public function departement()
     {
         return $this->belongsTo(Departement::class);
+    }
+
+    public function direction()
+    {
+        return $this->belongsTo(Direction::class, 'direction_id');
+    }
+
+
+    public function directionReelle(): ?Direction
+    {
+        if ($this->departement_id) {
+            return $this->departement?->direction;
+        }
+        return $this->direction;
     }
 
     public function demandeAbsences()

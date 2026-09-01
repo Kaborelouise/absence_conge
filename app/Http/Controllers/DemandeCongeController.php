@@ -324,7 +324,10 @@ class DemandeCongeController extends Controller
 
         $compilation->update(['decompilee_at' => now()]);
         $session->update(['active_conge' => true]);
-
+        \Illuminate\Support\Facades\Notification::send(
+          \App\Models\User::all(),
+            new \App\Notifications\SessionCongeOuverte($session)
+        );
         LogActivity::log(
             'update',
             'DemandeConge',

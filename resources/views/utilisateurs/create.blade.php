@@ -167,21 +167,40 @@
                             <small class="text-muted">Ne coche pas le même rôle que le rôle principal ci-dessus.</small>
                         </div> -->
 
+                        {{-- Direction --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Direction <span class="text-danger">*</span>
+                            </label>
+                            <select name="direction_id" id="direction_id"
+                                    class="form-select @error('direction_id') is-invalid @enderror"
+                                    required>
+                                <option value="">-- Choisir une direction --</option>
+                                @foreach($directions as $dir)
+                                    <option value="{{ $dir->id }}"
+                                        {{ old('direction_id') == $dir->id ? 'selected' : '' }}>
+                                        {{ $dir->libelle_long }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('direction_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                         {{-- Département --}}
                         <div class="col-md-6">
                             <label class="form-label fw-bold">
-                                Département <span class="text-danger">*</span>
+                                Département <span class="text-muted">(optionnel)</span>
                             </label>
-                            <select name="departement_id"
-                                    class="form-select @error('departement_id') is-invalid @enderror"
-                                    required>
-                                <option value="">-- Choisir un département --</option>
-                                {{-- On affiche "Département (Direction)" pour plus de clarté --}}
+                            <select name="departement_id" id="departement_id"
+                                    class="form-select @error('departement_id') is-invalid @enderror">
+                                <option value="">-- Rattaché directement à la direction --</option>
                                 @foreach($departements as $dep)
                                     <option value="{{ $dep->id }}"
+                                        data-direction="{{ $dep->direction_id }}"
                                         {{ old('departement_id') == $dep->id ? 'selected' : '' }}>
                                         {{ $dep->libelle_long }}
-                                        ({{ $dep->direction->libelle_court ?? '' }})
                                     </option>
                                 @endforeach
                             </select>
@@ -287,4 +306,32 @@
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const directionSelect = document.getElementById('direction_id');
+    const departementSelect = document.getElementById('departement_id');
+    const toutesLesOptions = Array.from(departementSelect.options).slice(1); // on garde toutes sauf "-- Rattaché directement --"
+
+    function filtrerDepartements() {
+        const directionChoisie = directionSelect.value;
+
+        // Vide le select département, sauf la première option
+        departementSelect.innerHTML = '';
+        departementSelect.appendChild(new Option('-- Rattaché directement à la direction --', ''));
+
+        toutesLesOptions.forEach(function (option) {
+            if (option.dataset.direction === directionChoisie) {
+                departementSelect.appendChild(option.cloneNode(true));
+            }
+        });
+    }
+
+    directionSelect.addEventListener('change', filtrerDepartements);
+
+    // Filtre déjà au chargement si une direction est pré-sélectionnée (cas de vieilles valeurs after erreur de validation)
+    if (directionSelect.value) {
+        filtrerDepartements();
+    }
+});
+</script>
 @endsection

@@ -50,22 +50,42 @@
                             @enderror
                         </div>
                     </div>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label">Nombre de jours</label>
-                            <input type="number" readonly name="nombre_jour" id="nombre_jour"
-                                   class="form-control @error('nombre_jour') is-invalid @enderror"
-                                   value="{{ old('nombre_jour') }}" min="1" required>
-                            @error('nombre_jour')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Solde congé disponible</label>
-                            <input type="text" class="form-control text-center fw-bold" readonly
-                                   value="{{ auth()->user()->solde_conge }} jours restants">
-                        </div>
+                   <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Nombre de jours</label>
+                        <input type="number" readonly name="nombre_jour" id="nombre_jour"
+                            class="form-control @error('nombre_jour') is-invalid @enderror"
+                            value="{{ old('nombre_jour') }}" min="1" required>
+                        @error('nombre_jour')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Solde congé disponible</label>
+                        <input type="text" class="form-control text-center fw-bold" readonly
+                            value="{{ auth()->user()->solde_conge }} jours restants">
+                    </div>
+                </div>
+
+                {{--
+                    Champ intérimaire, uniquement si le demandeur est un responsable
+                --}}
+                @if($estResponsable)
+                <div class="row g-3 mb-4">
+                    <div class="col-md-12">
+                        <label class="form-label">Intérimaire désigné</label>
+                        <select name="interimaire" class="form-select">
+                            <option value="">Aucun intérimaire</option>
+                            @foreach($AgentsMemeDepartement as $Agent)
+                                <option value="{{ $Agent->id }}"
+                                    {{ old('interimaire') == $Agent->id ? 'selected' : '' }}>
+                                    {{ $Agent->nom }} {{ $Agent->prenom }} — {{ $Agent->poste }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                @endif
 
                     <div class="d-flex justify-content-center gap-3">
                         <button type="submit" class="btn btn-primary px-4">

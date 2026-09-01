@@ -6,6 +6,7 @@ use App\Models\AvisAbsence;
 use App\Models\DemandeAbsence;
 use Illuminate\Http\Request;
 use App\Helpers\LogActivity;
+use App\Services\NumerotationService;
 
 class AvisAbsenceController extends Controller
 {
@@ -63,6 +64,7 @@ class AvisAbsenceController extends Controller
                 $demande->id,
                 "Avis défavorable ({$role}) sur demande absence #{$demande->num_demande} — demande rejetée"
             );
+            $demande->user->notify(new \App\Notifications\DemandeAbsenceRejetee($demande, $request->commentaire));
 
             return redirect()
                 ->route('demande_absences.show', $demande->id)
@@ -72,8 +74,19 @@ class AvisAbsenceController extends Controller
         $demande->load('avisAbsence');
         $prochainActeur = $demande->prochainActeur();
 
-        if ($prochainActeur === null) {
-            $demande->update(['statut' => 'validee']);
+       if ($prochainActeur === null) {
+            $annee = $demande->session_administrative_id
+                ? \App\Models\SessionAdministrative::find($demande->session_administrative_id)?->annee
+                : null;
+            $annee = $annee ?? now()->year;
+
+            $donnees = ['statut' => 'validee'];
+
+            if ($demande->necessiteNoteInterim()) {
+                $donnees['numero_interim'] = NumerotationService::genererNumero('interim', $annee);
+            }
+
+            $demande->update($donnees);
 
             LogActivity::log(
                 'update',
@@ -82,6 +95,7 @@ class AvisAbsenceController extends Controller
                 "Validation finale ({$role}) demande absence {$demande->num_demande}"
             );
 
+            $demande->user->notify(new \App\Notifications\DemandeAbsenceValidee($demande));
             return redirect()
                 ->route('demande_absences.show', $demande->id)
                 ->with('success', 'Demande validée avec succès.');
@@ -95,6 +109,9 @@ class AvisAbsenceController extends Controller
             $demande->id,
             "Avis favorable ({$role}) sur demande absence {$demande->num_demande}"
         );
+
+        $demande->notifierProchainActeur(\App\Notifications\DemandeAbsenceATraiter::class);
+
 
         return redirect()
             ->route('demande_absences.show', $demande->id)
