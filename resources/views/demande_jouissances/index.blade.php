@@ -68,7 +68,7 @@
                 <tr>
                     <td>{{ $demande->num_demande }}</td>
                     <td>{{ $demande->user->nom ?? '' }} {{ $demande->user->prenom ?? '' }}</td>
-                    <td>{{ $demande->user->departement->libelle_court ?? '—' }}</td>
+                    <td>{{ $demande->user->departement->libelle_court ?? '-' }}</td>
                     <td>{{ \Carbon\Carbon::parse($demande->date_debut)->format('d/m/Y') }}</td>
                     <td>{{ \Carbon\Carbon::parse($demande->date_fin)->format('d/m/Y') }}</td>
                     <td>{{ $demande->nombre_jour }}</td>

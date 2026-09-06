@@ -76,6 +76,7 @@ class AvisJouissanceController extends Controller
 
             $demande->user->increment('solde_conge', $demande->nombreJours());
 
+        
             return redirect()
                 ->route('demande_jouissances.show', $demande->id)
                 ->with('success', 'Avis défavorable enregistré. La demande est rejetée.');
@@ -88,19 +89,23 @@ class AvisJouissanceController extends Controller
 
 
         if ($prochainActeur === null) {
-            $annee = $demande->sessionAdministrative->annee ?? now()->year;
+            $annee   = $demande->sessionAdministrative->annee ?? now()->year;
+           $segment = $demande->segmentSigleDirection();
 
             $donnees = [
                 'statut' => 'validee',
-                'numero_cessation_service' => NumerotationService::genererNumero('cessation_service', $annee),
-                'numero_prise_service'     => NumerotationService::genererNumero('prise_service', $annee),
+                'numero_cessation_service' => NumerotationService::genererNumero('cessation_service', $annee, $segment),
+                'numero_prise_service'     => NumerotationService::genererNumero('prise_service', $annee, $segment),
             ];
 
             if ($demande->necessiteNoteInterim()) {
                 $donnees['numero_interim'] = NumerotationService::genererNumero('interim', $annee);
+                
             }
 
             $demande->update($donnees);
+
+            $demande->user->notify(new \App\Notifications\DemandeJouissanceValidee($demande));
 
             return redirect()
                 ->route('demande_jouissances.show', $demande->id)

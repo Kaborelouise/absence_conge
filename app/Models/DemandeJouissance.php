@@ -170,15 +170,24 @@ return ['chef_departement', 'agent_rh', 'responsable_direction'];
                 })
                 ->get(),
 
-            'responsable_direction' => \App\Models\User::whereHas('departement', function ($q) use ($agent) {
-                    $q->where('direction_id', $agent->departement->direction_id ?? null);
+            'responsable_direction' => (function () use ($agent) {
+            $directionId = $agent->directionReelle()?->id;
+
+            if ($directionId === null) {
+                return collect();
+            }
+
+            return \App\Models\User::where(function ($q) use ($directionId) {
+                    $q->where('direction_id', $directionId)
+                    ->orWhereHas('departement', fn ($q2) => $q2->where('direction_id', $directionId));
                 })
                 ->where('id', '!=', $agent->id)
                 ->where(function ($q) {
                     $q->where('est_responsable_direction', true)
                     ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Responsable Direction'));
                 })
-                ->get(),
+                ->get();
+        })(),
 
             'agent_rh' => \App\Models\User::whereHas('role', fn ($q) => $q->where('libelle', 'Agent RH'))->get(),
             'sg'       => \App\Models\User::whereHas('role', fn ($q) => $q->where('libelle', 'SG'))->get(),
@@ -228,17 +237,20 @@ return ['chef_departement', 'agent_rh', 'responsable_direction'];
             return $prochain === strtolower($role);
         }
 
-        if ($role === 'Responsable Direction') {
-            $dirUser = $user->departement->direction_id ?? null;
-            $dirAgent = $this->user->departement->direction_id ?? null;
-            return $prochain === 'responsable_direction'
-                && $dirUser !== null && $dirUser === $dirAgent;
-        }
+       if ($role === 'Responsable Direction') {
+        $dirUser  = $user->directionReelle()?->id;
+        $dirAgent = $this->user->directionReelle()?->id;
+        return $prochain === 'responsable_direction'
+            && $dirUser !== null && $dirAgent !== null && $dirUser === $dirAgent;
+    }
 
-        if ($role === 'Chef de Departement' || $user->est_responsable_departement) {
-            return $prochain === 'chef_departement'
-                && $user->departement_id === $this->user->departement_id;
+    if ($role === 'Chef de Departement' || $user->est_responsable_departement) {
+        if ($user->departement_id === null || $this->user->departement_id === null) {
+            return false;
         }
+        return $prochain === 'chef_departement'
+            && $user->departement_id === $this->user->departement_id;
+    }
 
         if ($role === 'Agent RH') {
             return $prochain === 'agent_rh';
@@ -268,34 +280,124 @@ return ['chef_departement', 'agent_rh', 'responsable_direction'];
         // Agent simple et PCA -> jamais de note d'intérim
     }     
 
-    public function signataireUser(): ?User
-{
-    $owner = $this->user;
-    $role  = $owner->role->libelle;
+   public function signataireUser(): ?User
+    {
+        $owner = $this->user;
+        $role  = $owner->role->libelle;
 
-    if ($role === 'DG') {
-        return User::whereHas('role', fn ($q) => $q->where('libelle', 'PCA'))->first();
+        if ($role === 'DG') {
+            return User::whereHas('role', fn ($q) => $q->where('libelle', 'PCA'))->first();
+        }
+        if ($role === 'SG') {
+            return User::whereHas('role', fn ($q) => $q->where('libelle', 'DG'))->first();
+        }
+        if ($role === 'Agent RH') {
+            return User::whereHas('role', fn ($q) => $q->where('libelle', 'SG'))->first();
+        }
+
+        $direction = $owner->directionReelle();
+
+        if (!$direction) {
+            return User::whereHas('role', fn ($q) => $q->where('libelle', 'DG'))->first();
+        }
+
+        $estResponsableDeSaDirection = $owner->est_responsable_direction
+            && $owner->direction_id === $direction->id;
+
+        if ($estResponsableDeSaDirection) {
+            return User::whereHas('role', fn ($q) => $q->where('libelle', 'SG'))->first();
+        }
+
+        return $direction->responsable();
     }
 
-    if ($role === 'SG') {
-        return User::whereHas('role', fn ($q) => $q->where('libelle', 'DG'))->first();
+
+        public function referenceCertificat(): array
+        {
+            $signataire = $this->signataireUser();
+
+            $fonctionSignataire = 'Responsable de Direction';
+
+            if ($signataire) {
+                $role = $signataire->role?->libelle;
+
+                $fonctionSignataire = match ($role) {
+                    'SG'  => 'Secrétaire Général',
+                    'DG'  => 'Directeur Général',
+                    'PCA' => "Président du Conseil d'Administration",
+                    default => $this->fonctionDepuisDirection($signataire),
+                };
+            }
+
+            $numero = $this->numero_cessation_service
+                ?? $this->numero_prise_service
+                ?? '____';
+
+            return [
+                'numero' => $numero,
+                'signataire' => $fonctionSignataire,
+                'nom_signataire' => $signataire
+                    ? strtoupper(trim($signataire->prenom . ' ' . $signataire->nom))
+                    : null,
+                'signataire_user' => $signataire,
+            ];
+        }
+
+
+    private function fonctionDepuisDirection(User $signataire): string
+    {
+        $direction = $signataire->directionReelle();
+
+        if (!$direction || !$direction->libelle_long) {
+            return $signataire->poste ?? 'Responsable de Direction';
+        }
+
+        return preg_replace('/^Direction\b/iu', 'Directeur', $direction->libelle_long);
     }
 
-    if ($role === 'Responsable Direction' || $owner->est_responsable_direction || $role === 'Agent RH') {
-        return User::whereHas('role', fn ($q) => $q->where('libelle', 'SG'))->first();
+
+
+    public function segmentSigleDirection(): ?string
+    {
+        $owner = $this->user;
+        $role  = $owner->role->libelle;
+
+        if (in_array($role, ['DG', 'SG'], true)) {
+            return null;
+        }
+        if ($role === 'Agent RH') {
+            return 'SG';
+        }
+
+        $direction = $owner->directionReelle();
+
+        if (!$direction) {
+            return null;
+        }
+
+        $estResponsableDeSaDirection = $owner->est_responsable_direction
+            && $owner->direction_id === $direction->id;
+
+        if ($estResponsableDeSaDirection) {
+            return 'SG';
+        }
+
+        return "SG/{$direction->libelle_court}";
     }
 
-    if ($role === 'Chef de Département' || $owner->est_responsable_departement) {
-        $directionId = $owner->departement->direction_id ?? null;
 
-        return User::where(function ($q) {
-                $q->where('est_responsable_direction', true)
-                  ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Responsable Direction'));
-            })
-            ->whereHas('departement', fn ($q) => $q->where('direction_id', $directionId))
-            ->first();
+
+    public function peutTelechargerDocuments(User $user): bool
+    {
+        if ($this->user_id === $user->id) {
+            return true;
+        }
+
+        if ($user->role->libelle === 'Agent RH') {
+            return true;
+        }
+
+        return $this->avis->contains('user_id', $user->id);
     }
-
-    return null;
 }
-}
+

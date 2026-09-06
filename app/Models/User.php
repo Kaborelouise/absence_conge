@@ -53,7 +53,6 @@ class User extends Authenticatable
         return $this->belongsTo(Direction::class, 'direction_id');
     }
 
-
     public function directionReelle(): ?Direction
     {
         if ($this->departement_id) {
@@ -77,26 +76,96 @@ class User extends Authenticatable
         return $this->hasMany(DemandeJouissance::class, 'user_id');
     }
 
-   
+      public function prochainePeriodeConge(): ?array
+        {
+            if (!$this->date_prise_service) return null;
+
+            $datePriseService = Carbon::parse($this->date_prise_service);
+            $moisEcoules       = $datePriseService->diffInMonths(Carbon::now());
+            $n                 = intdiv($moisEcoules, 11) + 1;
+
+            $debutTravail  = $datePriseService->copy()->addMonthsNoOverflow(11 * ($n - 1));
+            $finTravail    = $debutTravail->copy()->addMonthsNoOverflow(11)->subDay();
+            $dateEffet     = $finTravail->copy()->addDay();
+            $finJouissance = $dateEffet->copy()->addMonthNoOverflow()->subDay();
+
+            return [
+                'debut_travail'  => $debutTravail,
+                'fin_travail'    => $finTravail,
+                'date_effet'     => $dateEffet,
+                'fin_jouissance' => $finJouissance,
+            ];
+        }
+
+
+    public function periodeOuvrantDroit(): ?array
+    {
+        if (!$this->date_prise_service) return null;
+
+        $debut = Carbon::parse($this->date_prise_service);
+        $fin   = $debut->copy()->addMonthsNoOverflow(11)->subDay();   
+
+        return ['debut' => $debut, 'fin' => $fin];
+    }
+
+  
+    public function periodeTravail(): array
+    {
+        return $this->periodeOuvrantDroit() ?? ['debut' => null, 'fin' => null];
+    }
+
+    public function periodeTravailFormatee(): string
+    {
+        $periode = $this->periodeOuvrantDroit();
+        if (!$periode) return '—';
+
+        return $periode['debut']->format('d/m/Y') . ' au ' . $periode['fin']->format('d/m/Y');
+    }
+
+    public function datePeriodeJouissance(): ?Carbon
+    {
+        $periode = $this->periodeOuvrantDroit();
+        if (!$periode) return null;
+
+        return $periode['fin']->copy()->addDay();
+    }
+
+    public function periodeJouissance(): ?array
+    {
+        $debut = $this->datePeriodeJouissance();
+        if (!$debut) return null;
+
+        return [
+            'debut' => $debut,
+            'fin'   => $debut->copy()->addMonth()->subDay(),
+        ];
+    }
+
+    public function periodeJouissanceFormatee(): string
+    {
+        $periode = $this->periodeJouissance();
+        if (!$periode) return '—';
+
+        return $periode['debut']->format('d/m/Y') . ' au ' . $periode['fin']->format('d/m/Y');
+    }
+
+    
     public function estEligibleAuConge(): bool
     {
         if (!$this->date_prise_service) return false;
 
-        // CORRECTION : (int) force la conversion proprement
         $mois = (int) Carbon::parse($this->date_prise_service)
             ->diffInMonths(Carbon::now());
 
         return $mois >= 11;
     }
 
-   
-    public function datePeriodeJouissance(): ?Carbon
+    // Conservée pour compatibilité, délègue désormais à la version fiable
+    public function estEligible(): bool
     {
-        if (!$this->date_prise_service) return null;
-        return Carbon::parse($this->date_prise_service)->addMonths(11);
+        return $this->estEligibleAuConge();
     }
 
-   
     public function estEligibleJouissance(): bool
     {
         if (!$this->date_prise_service) return false;
@@ -111,72 +180,50 @@ class User extends Authenticatable
             ->exists();
     }
 
-    public function periodeTravailFormatee(): string
+    public function periodeJouissanceFormatee_DEPRECATED_NOTUSED()
     {
-        if (!$this->date_prise_service) return '—';
-
-        $debut = Carbon::parse($this->date_prise_service);
-        $fin   = $debut->copy()->addMonths(11)->subDay();
-
-        return $debut->format('d/m/Y') . ' au ' . $fin->format('d/m/Y');
+        // méthode retirée volontairement — voir periodeJouissanceFormatee() ci-dessus
     }
 
-    public function periodeJouissanceFormatee(): string
+    public function periodeTravailFormatee_ANCIENNE_NOTUSED()
     {
-        if (!$this->date_prise_service) return '—';
-
-        $debut = Carbon::parse($this->date_prise_service)->addMonths(12);
-        $fin   = $debut->copy()->addDays(30);
-
-        return $debut->format('d/m/Y') . ' au ' . $fin->format('d/m/Y');
-    }
-
-    public function periodeOuvrantDroit(): ?array
-    {
-        if (!$this->date_prise_service) return null;
-
-        $debut = Carbon::parse($this->date_prise_service);
-        $fin   = $debut->copy()->addMonths(11)->subDay();
-
-        return ['debut' => $debut, 'fin' => $fin];
-    }
-
-        public function periodeJouissance(): ?array
-        {
-            $debut = $this->datePeriodeJouissance();
-            if (!$debut) return null;
-            return [
-                'debut' => $debut,
-                'fin'   => $debut->copy()->addDays(30)
-            ];
-        }
-
-    public function estEligible(): bool
-    {
-        if (!$this->date_prise_service) return false;
-
-        $mois = (int) Carbon::parse($this->date_prise_service)
-            ->diffInMonths(Carbon::now());
-
-        if ($mois < 11) return false;
-        if ($mois > 11) return true;
-
-    }
-    public function periodeTravail(): array
-    {
-        if (!$this->date_prise_service) return ['debut' => null, 'fin' => null];
-
-        $debut = Carbon::parse($this->date_prise_service);
-        $fin   = $debut->copy()->addMonths(11)->subDay();
-
-        return [
-                'debut' => $debut,
-                'fin'   => $fin,
-            ];
+        // conservé pour référence uniquement, ne pas utiliser
     }
 
     public function interims()
     {
         return $this->hasMany(DemandeAbsence::class, 'interimaire_id');
+    }
+
+
+        public function fonctionAffichee(): string
+    {
+        $role = $this->role?->libelle;
+
+        return match ($role) {
+            'SG'  => 'Secrétaire Général',
+            'DG'  => 'Directeur Général',
+            'PCA' => "Président du Conseil d'Administration",
+            default => $this->fonctionDepuisStructure(),
+        };
+    }
+    private function fonctionDepuisStructure(): string
+    {
+        if ($this->est_responsable_direction || $this->role?->libelle === 'Responsable Direction') {
+            $direction = $this->directionReelle();
+            if ($direction && $direction->libelle_long) {
+                return preg_replace('/^Direction\b/iu', 'Directeur', $direction->libelle_long);
+            }
+        }
+
+        if ($this->est_responsable_departement || $this->role?->libelle === 'Chef de Departement') {
+            $departement = $this->departement;
+            if ($departement && $departement->libelle_long) {
+                return preg_replace('/^Département\b/iu', 'Chef du Département', $departement->libelle_long);
+            }
+            return 'Chef de Département';
+        }
+
+        return $this->poste ?? 'Agent';
     }
 }

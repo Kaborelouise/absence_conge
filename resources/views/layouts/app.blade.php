@@ -109,6 +109,7 @@
                 min-height: 100vh;
                 display: flex;
                 flex-direction: column;
+                transition: margin-left 0.25s ease;
             }
 
             .top-bar {
@@ -162,6 +163,7 @@
             .page-body {
                 padding: 24px;
                 flex: 1;
+                overflow-x: auto;
             }
 
             .card {
@@ -224,6 +226,90 @@
                 padding-left: 4px;
             }
 
+            /* ===== RESPONSIVE ===== */
+
+            .hamburger-btn {
+                display: none;
+                background: none;
+                border: none;
+                font-size: 22px;
+                color: #1B384F;
+                cursor: pointer;
+                padding: 4px 8px;
+            }
+
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.4);
+                z-index: 1050;
+            }
+
+            @media (max-width: 1024px) {
+                .sidebar {
+                    transform: translateX(-100%);
+                    transition: transform 0.25s ease;
+                    z-index: 1100;
+                }
+
+                .sidebar.sidebar-open {
+                    transform: translateX(0);
+                }
+
+                .main-wrapper {
+                    margin-left: 0;
+                }
+
+                .hamburger-btn {
+                    display: inline-block;
+                }
+
+                .sidebar-overlay.active {
+                    display: block;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .page-body {
+                    padding: 16px;
+                }
+
+                .row.g-3 > [class^="col-"] {
+                    margin-bottom: 12px;
+                }
+            }
+
+            @media (max-width: 576px) {
+                .top-bar {
+                    padding: 0 12px;
+                }
+
+                .top-bar-title {
+                    font-size: 15px;
+                }
+
+                .top-bar-actions {
+                    gap: 10px;
+                }
+
+                .top-bar-user span {
+                    display: none; /* cache le nom, garde juste l'avatar sur très petit écran */
+                }
+
+                .page-body {
+                    padding: 12px;
+                }
+
+                .card-header {
+                    padding: 10px 14px;
+                    font-size: 14px;
+                }
+            }
+
         </style>
 
         @yield('styles')
@@ -231,7 +317,7 @@
     <body>
 
         {{-- Sidebar --}}
-        <div class="sidebar">
+        <div class="sidebar" id="appSidebar">
             <div class="text-center mt-3">
                 <a href="{{ route('accueil') }}" class="sidebar-brand">
                     <img src="{{ asset('images/logo_anptic.png') }}" alt="Logo ANPTIC" style="width: 100px; height: 100px; object-fit: contain; flex-shrink: 0;">
@@ -305,7 +391,7 @@
             </a>
 
         @endif
-        @if(in_array($role, ['Administrateur', 'Agent RH']))
+        <!-- @if(in_array($role, ['Administrateur', 'Agent RH']))
 
             <a href="{{ route('sessions_administratives.index') }}"
                 class="sidebar-link {{ request()->routeIs('sessions_administratives.*') ? 'active' : '' }}">
@@ -319,15 +405,23 @@
                 <span>Paramètres documents</span>
             </a>
 
-        @endif
+        @endif -->
 
         </div>
+
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
         {{-- Contenu principal --}}
         <div class="main-wrapper">
 
             <div class="top-bar">
-                <div class="top-bar-title">
-                    @yield('page-title', 'ANPTIC')
+                <div class="d-flex align-items-center gap-2">
+                    <button class="hamburger-btn" type="button" onclick="toggleSidebar()" aria-label="Ouvrir le menu">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <div class="top-bar-title">
+                        @yield('page-title', 'ANPTIC')
+                    </div>
                 </div>
 
                 {{-- Cloche de notifications --}}
@@ -408,6 +502,23 @@
         <!-- Bootstrap JS pour la liste déroulante-->
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+        <script>
+            function toggleSidebar() {
+                document.getElementById('appSidebar').classList.toggle('sidebar-open');
+                document.getElementById('sidebarOverlay').classList.toggle('active');
+            }
+
+            // Referme automatiquement le menu si on clique sur un lien (mobile/tablette)
+            document.querySelectorAll('.sidebar-link').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    if (window.innerWidth <= 1024) {
+                        document.getElementById('appSidebar').classList.remove('sidebar-open');
+                        document.getElementById('sidebarOverlay').classList.remove('active');
+                    }
+                });
+            });
+        </script>
 
         @yield('scripts')
 

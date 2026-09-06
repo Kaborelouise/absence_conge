@@ -121,7 +121,7 @@
                 <tr>
                     <td>{{ $demande->num_demande }}</td>
                     <td>{{ $demande->user->nom ?? '' }} {{ $demande->user->prenom ?? '' }}</td>
-                    <td>{{ $demande->user->departement->libelle_court ?? '—' }}</td>
+                    <td>{{ $demande->user->departement->libelle_court ?? '-' }}</td>
                     <td>
                         @if($demande->abandonnee)
                             <span class="badge-statut badge-rejetee">Abandonnée</span>

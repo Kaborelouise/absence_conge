@@ -42,32 +42,30 @@
         'pca'                   => 'Décision PCA',
     ];
 
-    // Calculs de dates pour les conditions de téléchargement
     $aujourdhui        = \Carbon\Carbon::today();
     $dateFin           = \Carbon\Carbon::parse($demande->date_fin);
     $dateDebut         = \Carbon\Carbon::parse($demande->date_debut);
     $estAuteur  = $demande->user_id === auth()->id();
     $estAgentRH = auth()->user()->role->libelle === 'Agent RH';
 
-    // Certificat cessation téléchargeable dès validation
     $peutTelechargerCessation = $demande->statut === 'validee';
 
-    // Certificat prise de service téléchargeable 2 jours avant la fin
-$peutTelechargerReprise = $demande->statut === 'validee'
-        && ($estAgentRH || $aujourdhui->gte($dateFin->copy()->subDays(2)));
+ $peutTelechargerReprise = $demande->statut === 'validee'; // ← délai de 2 jours désactivé temporairement pour test
+    // $peutTelechargerReprise = $demande->statut === 'validee'
+    //     && ($estAgentRH || $aujourdhui->gte($dateFin->copy()->subDays(2)));
 
-    // Clôture disponible après la date de fin
+    // NOUVEAU — note d'intérim disponible dès la validation, uniquement si applicable
+    $peutTelechargerInterim = $demande->statut === 'validee' && $demande->necessiteNoteInterim();
+
     $peutCloturer = $demande->statut === 'validee'
         && $aujourdhui->gt($dateFin)
         && !$demande->estCloturee();
 
-    // Est-ce l'auteur de la demande ?
     $estAuteur = $demande->user_id === auth()->id();
 @endphp
 
 <div class="row g-3">
 
-    {{-- Colonne gauche : infos demande --}}
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
             <div class="card-header text-center card-header-anptic">
@@ -85,12 +83,12 @@ $peutTelechargerReprise = $demande->statut === 'validee'
                     </tr>
                     <tr>
                         <th class="ps-3">Département</th>
-                        <td>{{ $demande->user->departement->libelle_court ?? '—' }}</td>
+                        <td>{{ $demande->user->departement->libelle_court ?? '-' }}</td>
                     </tr>
                     <tr>
-                        <th class="ps-3">Direction</th>
-                        <td>{{ $demande->user->departement->direction->libelle_court ?? '—' }}</td>
-                    </tr>
+                    <th class="ps-3">Direction</th>
+                    <td>{{ $demande->user->directionReelle()->libelle_court ?? '-' }}</td>
+                </tr>
                     <tr>
                         <th class="ps-3">Date début</th>
                         <td>{{ $dateDebut->format('d/m/Y') }}</td>
@@ -128,7 +126,6 @@ $peutTelechargerReprise = $demande->statut === 'validee'
         </div>
     </div>
 
-    {{-- Colonne droite : suivi + actions --}}
     <div class="col-md-6">
 
         <div class="card shadow-sm mb-3">
@@ -173,7 +170,6 @@ $peutTelechargerReprise = $demande->statut === 'validee'
             </div>
         </div>
 
-        {{-- Bouton donner avis --}}
         @if($peutAgir && !($demande->abandonnee ?? false) && !in_array($demande->statut, ['validee', 'rejetee']))
         <div class="d-grid mb-3">
             <button type="button" class="btn btn-primary"
@@ -188,27 +184,12 @@ $peutTelechargerReprise = $demande->statut === 'validee'
         </div>
         @endif
 
-        {{-- Bouton Abandonner auteur uniquement, demande pas encore traitée --}}
-        {{-- @if(isset($peutAbandonner) && $peutAbandonner)
-        <div class="d-grid mb-3">
-            <form action="{{ route('demande_jouissances.abandonner', $demande->id) }}" method="POST">
-                @csrf
-                <button type="submit" class="btn btn-warning w-100"
-                        onclick="return confirm('Abandonner cette demande ?')">
-                    <i class="bi bi-x-octagon me-2"></i> Abandonner la demande
-                </button>
-            </form>
-        </div>
-        @endif --}}
-
-        {{-- Section clôture visible par l'auteur si la demande est validée--}}
         @php
         $estAgentRH = auth()->user()->role->libelle === 'Agent RH';
     @endphp
     @if($demande->statut === 'validee' && ($estAuteur || $estAgentRH))
         <div class="card shadow-sm border-success">
             <div class="card-header text-white " style="background:#198754;">
-                <!-- <i class="bi bi-check-circle me-2"></i> -->
                 @if($demande->estCloturee())
                     Demande clôturée
                 @else
@@ -218,7 +199,6 @@ $peutTelechargerReprise = $demande->statut === 'validee'
             <div class="card-body">
 
                 @if($demande->estCloturee())
-                    {{-- Demande déjà clôturée --}}
                     <div class="alert alert-success text-center">
                         <i class="bi bi-check-circle-fill me-2"></i>
                         Demande clôturée le
@@ -226,7 +206,6 @@ $peutTelechargerReprise = $demande->statut === 'validee'
                     </div>
 
                 @else
-                    {{-- étape 1, Certificat de cessation disponible dès que la demande est validée--}}
                     <div class="mb-3">
                         <h6 class="fw-bold">
                             <span class="baDGe  me-2"></span>
@@ -236,7 +215,6 @@ $peutTelechargerReprise = $demande->statut === 'validee'
                             Téléchargez votre certificat, imprimez et faites signer
                             par votre responsable.
                         </p>
-                        {{-- disponible dès que la demande est validée--}}
                         <a href="{{ route('demande_jouissances.telecharger_cessation', $demande->id) }}"
                            class="btn btn-outline-primary btn-sm">
                             <i class="bi bi-download me-1"></i>
@@ -244,9 +222,27 @@ $peutTelechargerReprise = $demande->statut === 'validee'
                         </a>
                     </div>
 
+                    {{--note d'intérim --}}
+                    @if($peutTelechargerInterim)
+                    <hr>
+                    <div class="mb-3">
+                        <h6 class="fw-bold">
+                            <span class="baDGe me-2"></span>
+                            Note d'intérim
+                        </h6>
+                        <p class="text-muted" style="font-size:12px;">
+                            Téléchargez la note désignant l'intérimaire durant votre absence.
+                        </p>
+                        <a href="{{ route('demande_jouissances.telecharger_interim', $demande->id) }}"
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-download me-1"></i>
+                            Télécharger la note d'intérim
+                        </a>
+                    </div>
+                    @endif
+
                     <hr>
 
-                    {{-- Étape 2 Certificat prise de service disponible 2jours avant la fin du congé --}}
                     <div class="mb-3">
                         <h6 class="fw-bold">
                             <span class="baDGe {{ $peutTelechargerReprise ? '' : 'bg-secondary' }} me-2"></span>
@@ -262,7 +258,6 @@ $peutTelechargerReprise = $demande->statut === 'validee'
                                 Télécharger le certificat de reprise
                             </a>
                         @else
-                            {{-- Pas encore disponible affiche combien de jours il reste --}}
                             <p class="text-muted" style="font-size:12px;">
                                 <i class="bi bi-lock me-1"></i>
                                 Disponible 2 jours avant votre retour
@@ -277,7 +272,6 @@ $peutTelechargerReprise = $demande->statut === 'validee'
 
                     <hr>
 
-                    {{-- Étape 3 Clôturer disponible après la date de fin --}}
                     @if($estAuteur)
                     <div>
                         <h6 class="fw-bold">
@@ -315,7 +309,6 @@ $peutTelechargerReprise = $demande->statut === 'validee'
     </div>
 </div>
 
-{{-- Modal donner un avis --}}
 @if($peutAgir && !($demande->abandonnee ?? false) && !in_array($demande->statut, ['validee', 'rejetee']))
 <div class="modal fade" id="modalAvisJouissance" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

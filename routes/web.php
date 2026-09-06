@@ -123,6 +123,9 @@ Route::middleware('auth')->group(function () {
      Route::get('demande_jouissances/{id}/telecharger-reprise', [DemandeJouissanceController::class, 'telechargerReprise'])
     ->name('demande_jouissances.telecharger_reprise');
 
+    Route::get('demande_jouissances/{id}/telecharger-interim', [DemandeJouissanceController::class, 'telechargerInterim'])
+    ->name('demande_jouissances.telecharger_interim');
+
     Route::post('demande_conges/{id}/abandonner', [DemandeCongeController::class, 'abandonner'])
     ->name('demande_conges.abandonner');
 

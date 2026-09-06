@@ -7,6 +7,19 @@ use Illuminate\Http\Request;
 
 class ParametreDocumentController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            $role = auth()->user()->role->libelle;
+
+            if (!in_array($role, ['Administrateur', 'Agent RH'])) {
+                abort(403, "Accès non autorisé.");
+            }
+
+            return $next($request);
+        });
+    }
+
     public function edit()
     {
         $parametres = ParametreDocument::actuel();
@@ -25,6 +38,9 @@ class ParametreDocumentController extends Controller
             'nb_chiffres_cessation'      => 'required|integer|min:1|max:10',
             'nb_chiffres_prise_service'  => 'required|integer|min:1|max:10',
             'nb_chiffres_interim'        => 'required|integer|min:1|max:10',
+            'suffixe_decision'           => 'required|string|max:50',
+            'suffixe_certificat'         => 'required|string|max:50',
+            'suffixe_interim'            => 'required|string|max:50',
         ]);
 
         $parametres = ParametreDocument::actuel();
@@ -37,6 +53,9 @@ class ParametreDocumentController extends Controller
             'nb_chiffres_cessation',
             'nb_chiffres_prise_service',
             'nb_chiffres_interim',
+            'suffixe_decision',
+            'suffixe_certificat',
+            'suffixe_interim',
         ]));
 
         return redirect()

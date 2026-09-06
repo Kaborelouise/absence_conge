@@ -2,17 +2,15 @@
     $owner = $demande->user;
     $interimaire = $demande->interimaire;
 
+    $fonctionOwner = $owner->fonctionAffichee();
+    $fonctionInterim = $interimaire?->fonctionAffichee();
+
     $civiliteOwner = $owner->genre === 'F' ? 'Madame' : ($owner->genre === 'M' ? 'Monsieur' : '');
     $civiliteInterim = $interimaire
         ? ($interimaire->genre === 'F' ? 'Madame' : ($interimaire->genre === 'M' ? 'Monsieur' : ''))
         : '';
 
-    // Détermine l'article correct devant le poste, avec élision devant une
-    // voyelle. Deux formes distinctes car les deux phrases du document ont
-    // une syntaxe différente :
-    //  - "intérim DE L'Agent" / "DU Chef..." / "DE LA Directrice..."
-    //  - "Pour L'Agent absent" / "LE Chef... absent" / "LA Directrice absente"
-    $posteLower = mb_strtolower($owner->poste ?? '');
+    $posteLower = mb_strtolower($fonctionOwner ?? '');
     $commenceParVoyelle = $posteLower !== '' && in_array(mb_substr($posteLower, 0, 1), ['a','e','i','o','u','h']);
 
     if ($commenceParVoyelle) {
@@ -28,19 +26,18 @@
 
     $absentAccord = $owner->genre === 'F' ? 'absente' : ($owner->genre === 'M' ? 'absent' : 'absent(e)');
 
-    // Noms complets construits proprement (espace, pas de slash — voir
-    // explication : le slash du document original sépare deux noms de
-    // famille, pas nom/prénom, ce qui ne correspond pas à notre modèle).
     $ownerNomComplet = trim(($civiliteOwner ? $civiliteOwner.' ' : '') . strtoupper($owner->nom) . ' ' . $owner->prenom);
     $interimNomComplet = $interimaire
         ? trim(($civiliteInterim ? $civiliteInterim.' ' : '') . strtoupper($interimaire->nom) . ' ' . $interimaire->prenom)
         : '';
-    $interimPosteSuffixe = ($interimaire && $interimaire->poste) ? ', '.$interimaire->poste : '';
+    $interimPosteSuffixe = ($interimaire && $fonctionInterim) ? ', '.$fonctionInterim : '';
 
     $logoPath = public_path('images/logo_anptic2.png');
     $logoData = file_exists($logoPath)
         ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath))
         : null;
+
+$fonctionSignataire = $signataire->fonctionAffichee();
 @endphp
 <!DOCTYPE html>
 <html>
@@ -54,9 +51,6 @@
             margin: 0;
             padding: 0 35px;
         }
-
-        /* Structure d'en-tête identique à pdf/absence.blade.php pour un
-           alignement cohérent entre les deux documents générés. */
         table.entete {
             width: 100%;
             border-collapse: collapse;
@@ -153,9 +147,9 @@
     <table class="entete">
         <tr>
             <td class="col-gauche">
-                MINISTERE DU DEVELOPPEMENT<br>
-                DE L'ECONOMIE NUMERIQUE ET<br>
-                DES POSTES<br>
+                MINISTERE DE LA TRANSITION DIGITALE<br>
+                DES POSTES ET DES COMMUNICATIONS<br>
+                ELECTRONIQUES<br>
                 -=-=-=-<br>
                 SECRETARIAT GENERAL<br>
                 -=-=-=-<br>
@@ -172,14 +166,14 @@
             </td>
             <td class="col-droite">
                 BURKINA FASO<br>
-                <span>Unité – Progrès – Justice</span>
+                <span>La Patrie ou La Mort, Nous Vaincrons</span>
             </td>
         </tr>
     </table>
 
     <table class="ref-date">
         <tr>
-            <td class="td-num">{{ $demande->num_note_interim }}</td>
+            <td class="td-num">{{ $demande->numero_interim }}</td>
             <td class="td-date">Ouagadougou, le {{ now()->format('d') }} {{ now()->locale('fr')->isoFormat('MMMM') }} {{ now()->format('Y') }}</td>
         </tr>
     </table>
@@ -189,12 +183,12 @@
     </div>
 
     <p class="objet">
-        <u>Objet</u> : intérim {{ $articleDe }}{{ $owner->poste }}
+        <u>Objet</u> : intérim {{ $articleDe }}{{ $fonctionOwner }}
     </p>
 
     <p>
         Durant l'absence de {{ $ownerNomComplet }},
-        @if($owner->poste){{ $owner->poste }},@endif
+        @if($fonctionOwner){{ $fonctionOwner }},@endif
         en autorisation d'absence,
         l'intérim sera assuré, du <strong>{{ \Carbon\Carbon::parse($demande->date_debut)->format('d/m/Y') }}
         au {{ \Carbon\Carbon::parse($demande->date_fin)->format('d/m/Y') }} inclus</strong>,
@@ -204,13 +198,13 @@
     <p>Par conséquent, toute correspondance soumise à sa signature portera la mention suivante :</p>
 
     <p>
-        Pour {{ $articleSimple }}{{ $owner->poste ?? 'responsable' }} {{ $absentAccord }},
+        Pour {{ $articleSimple }}{{ $fonctionOwner }} {{ $absentAccord }},
         {{ $civiliteInterim === 'Madame' ? "l'agente" : "l'agent" }} chargé{{ $civiliteInterim === 'Madame' ? 'e' : '' }} de l'intérim,<br>
         <strong>{{ $interimNomComplet }}</strong>
     </p>
 
     <div class="signature">
-        <div class="fonction">{{ $signataire->poste ?? $signataire->role->libelle }}</div>
+        <div class="fonction">{{ $fonctionSignataire }}</div>
         <div class="nom">{{ $signataire->nom }} {{ $signataire->prenom }}</div>
     </div>
 

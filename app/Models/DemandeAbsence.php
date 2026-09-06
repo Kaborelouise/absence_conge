@@ -9,13 +9,13 @@ use App\Models\User;
 class DemandeAbsence extends Model
 {
     protected $fillable = [
-        'num_demande', 'date_debut', 'date_fin', 'motif', 'motif_autre',
-        'interimaire_id', 'retenue_salaire', 'statut', 'user_id', 'abandonnee',
-        'session_administrative_id',
-
-        'cloturee_at', 'num_note_interim',
-        'note_interim_generee_at',
-    ];
+    'num_demande', 'date_debut', 'date_fin', 'motif', 'motif_autre',
+    'interimaire_id', 'retenue_salaire', 'statut', 'user_id', 'abandonnee',
+    'session_administrative_id',
+    'cloturee_at', 'num_note_interim',
+    'note_interim_generee_at',
+    'numero_interim', // 
+];
 
     protected $casts = [
         'abandonnee'      => 'boolean',
@@ -102,12 +102,17 @@ class DemandeAbsence extends Model
                 : ['agent_rh', 'sg'];
         }
 
-
         if ($role === 'Chef de Département' || $user->est_responsable_departement) {
             return array_merge(['responsable_direction'], $etapesFinales);
         }
 
-        // Agent simple circuit complet
+        // Agent simple SANS département (rattaché directement à une direction) :
+        // on saute l'étape chef_departement, qui n'a pas de sens ici
+        if ($user->departement_id === null) {
+            return array_merge(['responsable_direction'], $etapesFinales);
+        }
+
+        // Agent simple avec département : circuit complet
         return array_merge(['chef_departement', 'responsable_direction'], $etapesFinales);
     }
 
@@ -144,24 +149,24 @@ class DemandeAbsence extends Model
                 })
                 ->get(),
 
-            'responsable_direction' => (function () use ($agent) {
-                $directionId = $agent->directionReelle()?->id;
+           'responsable_direction' => (function () use ($agent) {
+            $directionId = $agent->directionReelle()?->id;
 
-                if ($directionId === null) {
-                    return collect();
-                }
+            if ($directionId === null) {
+                return collect();
+            }
 
-                return \App\Models\User::where(function ($q) use ($directionId) {
-                        $q->where('direction_id', $directionId)
-                        ->orWhereHas('departement', fn ($q2) => $q2->where('direction_id', $directionId));
-                    })
-                    ->where('id', '!=', $agent->id)
-                    ->where(function ($q) {
-                        $q->where('est_responsable_direction', true)
-                        ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Responsable Direction'));
-                    })
-                    ->get();
-            })(),
+            return \App\Models\User::where(function ($q) use ($directionId) {
+                    $q->where('direction_id', $directionId)
+                    ->orWhereHas('departement', fn ($q2) => $q2->where('direction_id', $directionId));
+                })
+                ->where('id', '!=', $agent->id)
+                ->where(function ($q) {
+                    $q->where('est_responsable_direction', true)
+                    ->orWhereHas('role', fn ($q2) => $q2->where('libelle', 'Responsable Direction'));
+                })
+                ->get();
+        })(),
 
             'agent_rh' => \App\Models\User::whereHas('role', fn ($q) => $q->where('libelle', 'Agent RH'))->get(),
             'sg'       => \App\Models\User::whereHas('role', fn ($q) => $q->where('libelle', 'SG'))->get(),

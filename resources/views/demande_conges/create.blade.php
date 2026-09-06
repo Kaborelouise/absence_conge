@@ -27,13 +27,13 @@
 
 
 
-                <div class="mb-4">
-                    <label class="form-label fw-bold">Période de jouissance</label>
-                    
-                    <input type="text" class="form-control bg-light text-muted" readonly
-                        value="@if($session){{ $session['date_debut']->format('d/m/Y') }} au {{ $session['date_fin']->format('d/m/Y') }}@else Non calculable (Aucune session en cours) @endif">
-                    <small class="text-muted">Calculée automatiquement à partir de votre date de prise de service.</small>
-                </div>
+               <div class="mb-4">
+                <label class="form-label fw-bold">Période de jouissance</label>
+
+                <input type="text" class="form-control bg-light text-muted" readonly
+                    value="@if($periode){{ $periode['date_effet']->format('d/m/Y') }} au {{ $periode['fin_jouissance']->format('d/m/Y') }}@else Non calculable (aucune session en cours ou date de prise de service manquante) @endif">
+                <small class="text-muted">Calculée automatiquement à partir de votre date de prise de service.</small>
+            </div>
 
                 <form action="{{ route('demande_conges.store') }}" method="POST">
                     @csrf

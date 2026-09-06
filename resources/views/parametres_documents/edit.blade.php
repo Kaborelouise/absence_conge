@@ -76,6 +76,28 @@
                         </div>
                     </div>
 
+                    <h6 class="fw-bold mb-3">Suffixes affichés après le numéro</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label">Suffixe de la décision</label>
+                            <input type="text" name="suffixe_decision" class="form-control"
+                                   value="{{ old('suffixe_decision', $parametres->suffixe_decision) }}" required>
+                            <div class="form-text">Ex : DG/SG/DRH</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Suffixe des certificats</label>
+                            <input type="text" name="suffixe_certificat" class="form-control"
+                                   value="{{ old('suffixe_certificat', $parametres->suffixe_certificat) }}" required>
+                            <div class="form-text">Cessation et prise de service. Ex : DG/SG</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Suffixe de l'intérim</label>
+                            <input type="text" name="suffixe_interim" class="form-control"
+                                   value="{{ old('suffixe_interim', $parametres->suffixe_interim) }}" required>
+                            <div class="form-text">Ex : SG/DRH</div>
+                        </div>
+                    </div>
+
                     <div class="d-flex justify-content-center">
                         <button type="submit" class="btn btn-primary px-4">Enregistrer</button>
                     </div>

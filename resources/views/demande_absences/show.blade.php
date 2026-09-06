@@ -63,11 +63,11 @@ $etapeSuivante = ($indexActuel !== false && isset($circuit[$indexActuel + 1]))
                     </tr>
                     <tr>
                         <th class="ps-3">Département</th>
-                        <td>{{ $demande->user->departement->libelle_court ?? '—' }}</td>
+                        <td>{{ $demande->user->departement->libelle_court ?? '-' }}</td>
                     </tr>
                     <tr>
                         <th class="ps-3">Direction</th>
-                        <td>{{ $demande->user->departement->direction->libelle_court ?? '—' }}</td>
+                        <td>{{ $demande->user->directionReelle()->libelle_court ?? '-' }}</td>
                     </tr>
                     <tr>
                         <th class="ps-3">Date début</th>

@@ -51,19 +51,18 @@
                         <th class="ps-3">Rôle</th>
                         <td>
                             <span class="baDGe-statut baDGe-en_cours">
-                                {{ ucfirst(str_replace('_', ' ', $user->role->libelle ?? '—')) }}
+                                {{ ucfirst(str_replace('-', ' ', $user->role->libelle ?? '-')) }}
                             </span>
                         </td>
                     </tr>
                     <tr>
                         <th class="ps-3">Département</th>
-                        <td>{{ $user->departement->libelle_long ?? '—' }}</td>
+                        <td>{{ $user->departement->libelle_long ?? '-' }}</td>
                     </tr>
-                    <tr>
+                   <tr>
                         <th class="ps-3">Direction</th>
-                        <td>{{ $user->departement->direction->libelle_long ?? '—' }}</td>
+                        <td>{{ $user->directionReelle()->libelle_long ?? '-' }}</td>
                     </tr>
-                    <tr>
                         <th class="ps-3">Chef de département</th>
                         <td>
                             @if($user->est_responsable_departement)
@@ -76,7 +75,7 @@
                     <tr>
                         <th class="ps-3">Resp. direction</th>
                         <td>
-                            @if($user->est_Responsable_Direction)
+                            @if($user->est_responsable_direction)
                                 <span class="baDGe-statut baDGe-validee">Oui</span>
                             @else
                                 <span class="baDGe-statut baDGe-rejetee">Non</span>

@@ -1,128 +1,350 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="utf-8">
+
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #000; margin: 0; padding: 30px 40px; }
-        .entete { width: 100%; margin-bottom: 10px; }
-        .entete td { vertical-align: top; font-size: 11px; line-height: 1.7; }
-        .entete-gauche { width: 55%; font-weight: bold; font-size: 11px; text-transform: uppercase; line-height: 1.6; }
-        .entete-droite { width: 45%; text-align: right; font-size: 11px; }
-        .pays { font-weight: bold; font-size: 12px; }
-        .devise { font-style: italic; font-size: 11px; margin-bottom: 6px; }
-        .reference { font-size: 11px; margin: 8px 0 4px; }
-        .titre { text-align: center; font-size: 16px; font-weight: bold; font-style: italic; text-decoration: underline; margin: 20px 0 24px; }
-        .corps { line-height: 2; text-align: justify; margin-bottom: 10px; }
-        .signature-bloc { margin-top: 40px; text-align: right; font-style: italic; }
-        .ampliations { margin-top: 30px; font-size: 10px; }
-        .pied { margin-top: 30px; border-top: 1px solid #000; font-size: 10px; text-align: center; padding-top: 4px; }
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            font-size: 12px;
+            color: #000;
+            margin: 0;
+            padding: 30px 40px;
+        }
+
+        .entete {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .entete td {
+            vertical-align: top;
+            font-size: 11px;
+            line-height: 1.7;
+        }
+
+        .entete-gauche {
+            width: 40%;
+            text-align: center;
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+            line-height: 1.6;
+        }
+
+        .entete-centre {
+            width: 20%;
+            text-align: center;
+            vertical-align: top;
+            padding-top: 5px;
+        }
+
+        .entete-centre img {
+            display: block;
+            width: 70px;
+            height: auto;
+            margin: 0 auto;
+        }
+
+        .logo-sous {
+            font-size: 7.5px;
+            font-style: italic;
+            text-align: center;
+            margin-top: 1px;
+        }
+
+        .entete-droite {
+            width: 40%;
+            vertical-align: top;
+        }
+
+        .reference {
+            font-size: 11px;
+            margin: 8px 0 4px;
+        }
+
+        .titre {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            font-style: italic;
+            text-decoration: underline;
+            margin: 20px 0 24px;
+        }
+
+        .corps {
+            line-height: 2;
+            text-align: justify;
+            margin-bottom: 10px;
+        }
+
+        .signature-bloc {
+            margin-top: 40px;
+            text-align: right;
+        }
+
+        .ampliations {
+            margin-top: 30px;
+            font-size: 10px;
+        }
+
+        .pied {
+            margin-top: 30px;
+            border-top: 1px solid #000;
+            font-size: 10px;
+            text-align: center;
+            padding-top: 4px;
+        }
     </style>
 </head>
+
 <body>
- 
+
 @php
-    $responsable = $demande->responsableDirection();
-    $titreSignataire = null;
- 
-    // Direction de l'agent
-    $direction = $demande->user->departement->direction ?? null;
-    $sigleDirection = $direction->libelle_court ?? null;
- 
-    // Informations de la décision
+    $reference = $demande->referenceCertificat();
+
     $session = $demande->sessionAdministrative;
-    $numeroDecision = $session->numero_decision ?? null;
-    $anneeDecision = $session->annee ?? now()->year;
-    $dateDecision = $session->date_decision ?? null;
- 
-    // Construction de la référence
-    $referenceDecision = $numeroDecision
-        ? "N°{$numeroDecision}/MTDPCE/SG/ANPTIC/DG/SG"
-        : "N°{$anneeDecision}-______/MTDPCE/SG/ANPTIC/DG/SG";
- 
-    // Ajout du sigle de la direction
-    if ($sigleDirection && $sigleDirection !== 'SG') {
-        $referenceDecision .= "/{$sigleDirection}";
-    }
- 
-    if ($responsable) {
-        $titreSignataire = match ($responsable->role->libelle) {
-            'SG'  => 'Secrétaire Général',
-            'DG'  => 'Directeur Général',
-            'PCA' => "Président du Conseil d'Administration",
-            default => 'Responsable de Direction',
-        };
-    }
+    $dateDecision = $session?->date_decision;
+
+    $referenceDecision = $session?->numero_decision
+        ? "N°{$session->numero_decision}"
+        : "N°" . ($session?->annee ?? now()->year) . "-______";
 @endphp
- 
+
+
+{{-- =========================
+     ENTÊTE
+========================= --}}
+
 <table class="entete" cellpadding="0" cellspacing="0">
     <tr>
+
         <td class="entete-gauche">
             MINISTERE DE LA TRANSITION DIGITALE,<br>
             DES POSTES ET DES COMMUNICATIONS<br>
-            ELECTRONIQUES<br>-=-=-=-=-=-<br>
-            SECRETARIAT GENERAL<br>-=-=-=-=-=-<br>
-            AGENCE NATIONALE DE PROMOTION DES TIC<br>-=-=-=-=-=-
+            ELECTRONIQUES<br>
+            -=-=-=-=-=-<br>
+
+            SECRETARIAT GENERAL<br>
+            -=-=-=-=-=-<br>
+
+            AGENCE NATIONALE DE PROMOTION DES TIC<br>
+            -=-=-=-=-=-
         </td>
+
+        <td class="entete-centre">
+
+            <img
+                src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('images/logo_anptic.png'))) }}"
+                style="width:70px; height:auto;"
+            >
+
+            <div class="logo-sous">
+                Le label du numérique
+            </div>
+
+        </td>
+
         <td class="entete-droite">
-            <div class="pays">BURKINA FASO</div>
-            <div class="devise">La Patrie ou la Mort, nous Vaincrons</div><br>
-            Ouagadougou, le {{ \Carbon\Carbon::now()->locale('fr')->isoFormat('D MMMM YYYY') }}
+
+            <table style="width:100%; border-collapse:collapse; margin:0; padding:0;">
+                <tr>
+                    <td style="text-align:center; font-weight:bold; font-size:12px; padding:0;">
+                        BURKINA FASO
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align:center; font-style:italic; font-size:11px; padding:0 0 6px 0;">
+                        La Patrie ou la Mort, nous Vaincrons
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align:right; font-size:11px; padding-top:8px;">
+                        Ouagadougou, le
+                        {{ \Carbon\Carbon::now()->locale('fr')->isoFormat('D MMMM YYYY') }}
+                    </td>
+                </tr>
+            </table>
+
         </td>
+
     </tr>
 </table>
-<div class="reference">{{ $demande->numero_cessation_service }}</div>
+
+
+{{-- =========================
+     RÉFÉRENCE
+========================= --}}
+
+<div class="reference">
+    N°{{ $reference['numero'] }}
+</div>
+
+
+{{-- =========================
+     TITRE
+========================= --}}
+
+<div class="titre">
+    Certificat de cessation de service
+</div>
+
+
+{{-- =========================
+     CORPS
+========================= --}}
+
 <div class="corps">
     <p>
-       Je soussigné, <strong>{{ $titreSignataire ?? 'Secrétaire Général' }}</strong>,
-@if($responsable)
-    <strong>{{ strtoupper($responsable->nom) }} {{ $responsable->prenom }}</strong>,
-@endif
-certifie que
-       
-        <strong>{{ strtoupper($demande->user->nom) }} {{ $demande->user->prenom }}</strong>
-        matricule <strong>{{ $demande->user->matricule }}</strong>,
-        {{ $demande->user->poste }},
- 
+
+        Je soussigné,
+
+        <strong>
+            {{ $reference['signataire'] }}
+        </strong>,
+
+        certifie que
+
+        <strong>
+            {{ strtoupper($demande->user->nom) }}
+            {{ $demande->user->prenom }}
+        </strong>
+
+        matricule
+
+        <strong>
+            {{ $demande->user->matricule }}
+        </strong>,
+
+        {{ $demande->user->fonctionAffichee() }},
+
         bénéficiaire d'un congé administratif obtenu suivant la décision
-        <strong>{{ $referenceDecision }}</strong>
-        du <strong>{{ $demande->sessionAdministrative->date_decision
-            ? $demande->sessionAdministrative->date_decision->locale('fr')->isoFormat('D MMMM YYYY')
-            : '____________' }}</strong>
-        accordant un congé administratif aux agents de l'ANPTIC, autorisé à jouir
-        de son congé annuel de <strong>{{ \Carbon\Carbon::parse($demande->date_debut)->year }}</strong>
+
+        <strong>
+            {{ $referenceDecision }}
+        </strong>
+
+        du
+
+        <strong>
+            {{ $dateDecision
+                ? \Carbon\Carbon::parse($dateDecision)
+                    ->locale('fr')
+                    ->isoFormat('D MMMM YYYY')
+                : '____________'
+            }}
+        </strong>
+
+        accordant un congé administratif aux agents de l'ANPTIC,
+
+        autorisé à jouir de son congé annuel de
+
+        <strong>
+            {{ \Carbon\Carbon::parse($demande->date_debut)->year }}
+        </strong>
+
         pour compter du
-        <strong>{{ \Carbon\Carbon::parse($demande->date_debut)->locale('fr')->isoFormat('dddd DD MMMM YYYY') }}</strong>
+
+        <strong>
+            {{ \Carbon\Carbon::parse($demande->date_debut)
+                ->locale('fr')
+                ->isoFormat('dddd DD MMMM YYYY') }}
+        </strong>
+
         au
-        <strong>{{ \Carbon\Carbon::parse($demande->date_fin)->locale('fr')->isoFormat('dddd DD MMMM YYYY') }} inclus</strong>,
-        soit <strong>{{ $demande->nombre_jour }} jours</strong>,
+
+        <strong>
+            {{ \Carbon\Carbon::parse($demande->date_fin)
+                ->locale('fr')
+                ->isoFormat('dddd DD MMMM YYYY') }}
+            inclus
+        </strong>,
+
+        soit
+
+        <strong>
+            {{ $demande->nombre_jour }} jours
+        </strong>,
+
         a cessé service le
-        <strong>{{ \Carbon\Carbon::parse($demande->date_debut)->subDay()->locale('fr')->isoFormat('dddd DD MMMM YYYY') }}</strong>.
+
+        <strong>
+            {{ \Carbon\Carbon::parse($demande->date_debut)
+                ->subDay()
+                ->locale('fr')
+                ->isoFormat('dddd DD MMMM YYYY') }}
+        </strong>.
+
     </p>
+
+
     <p>
+
         L'intéressé(e) reprendra service le
-        <strong>{{ \Carbon\Carbon::parse($demande->date_fin)->addDay()->locale('fr')->isoFormat('dddd DD MMMM YYYY') }}</strong>.
+
+        <strong>
+            {{ \Carbon\Carbon::parse($demande->date_fin)
+                ->addDay()
+                ->locale('fr')
+                ->isoFormat('dddd DD MMMM YYYY') }}
+        </strong>.
+
     </p>
-    <p>En foi de quoi, le présent certificat est établi pour servir et valoir ce que de droit.</p>
+
+
+    <p>
+        En foi de quoi, le présent certificat est établi
+        pour servir et valoir ce que de droit.
+    </p>
+
 </div>
+
+
+{{-- =========================
+     SIGNATURE
+========================= --}}
+
 <div class="signature-bloc">
-    @if($responsable)
-        {{ $titreSignataire }}<br><br><br><br>
-        <strong>{{ strtoupper($responsable->nom) }} {{ $responsable->prenom }}</strong>
-    @else
-        Pour le Secrétaire Général<br><br><br><br>
-        ________________________________
-    @endif
+
+    <strong>
+        {{ $reference['signataire'] }}
+    </strong>
+
+    <br><br><br><br>
+
+    <strong>
+        {{ $reference['nom_signataire'] }}
+    </strong>
+
 </div>
+
+
+{{-- =========================
+     AMPLIATIONS
+========================= --}}
+
 <div class="ampliations">
+
     <strong>Ampliations :</strong>
+
     <ul style="margin:4px 0; padding-left:20px;">
-        <li>Secrét. DG</li><li>Secrét. SG</li><li>Toutes directions</li>
-        <li>Chrono (1)</li><li>Dossier individuel (1)</li>
+        <li>Secrét. DG</li>
+        <li>Secrét. SG</li>
+        <li>Toutes directions</li>
+        <li>Chrono (1)</li>
+        <li>Dossier individuel (1)</li>
     </ul>
+
 </div>
+
 <div class="pied">
-    03 BP : 7108 Ouagadougou 03 – Tél. : (00226) 25 49 77 99 – 25 49 00 24 – Email : anptic@tic.gov.bf / secretariat@anptic.gov.bf
+
+    03 BP : 7108 Ouagadougou 03 –
+    Tél. : (00226) 25 49 77 99 –
+    25 49 00 24 –
+    Email : anptic@tic.gov.bf / secretariat@anptic.gov.bf
+
 </div>
+
 </body>
 </html>

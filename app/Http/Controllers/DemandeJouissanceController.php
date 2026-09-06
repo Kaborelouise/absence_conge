@@ -10,15 +10,11 @@ use App\Models\User;
 
 class DemandeJouissanceController extends Controller
 {
-   
-
-
     public function index()
     {
         $user = auth()->user();
         $role = $user->role->libelle;
 
-       
         $sessions            = SessionAdministrative::orderByDesc('annee')->get();
         $sessionCourante     = SessionAdministrative::courante();
         $sessionSelectionnee = request('session_id', $sessionCourante?->id);
@@ -35,10 +31,19 @@ class DemandeJouissanceController extends Controller
                     $q2->where('departement_id', $user->departement_id);
                 });
             })
-            ->when($role === 'Responsable Direction', function ($q) use ($user) {
-                $directionId = $user->departement->direction_id;
-                $q->whereHas('user.departement', function ($q2) use ($directionId) {
-                    $q2->where('direction_id', $directionId);
+           ->when($role === 'Responsable Direction', function ($q) use ($user) {
+                $direction = $user->directionReelle();
+
+                if (!$direction) {
+                    $q->whereRaw('1 = 0');
+                    return;
+                }
+
+                $directionId = $direction->id;
+
+                $q->where(function ($q2) use ($directionId) {
+                    $q2->whereHas('user', fn($q3) => $q3->where('direction_id', $directionId))
+                    ->orWhereHas('user.departement', fn($q3) => $q3->where('direction_id', $directionId));
                 });
             })
             ->latest()
@@ -46,8 +51,6 @@ class DemandeJouissanceController extends Controller
 
         return view('demande_jouissances.index', compact('demandes', 'sessions', 'sessionSelectionnee'));
     }
-
-
 
     public function create()
     {
@@ -59,27 +62,20 @@ class DemandeJouissanceController extends Controller
         return view('demande_jouissances.create', compact('user', 'AgentsMemeDepartement', 'estResponsable'));
     }
 
-
-
     public function store(Request $request)
     {
-    
         $request->validate([
-        'date_debut'  => 'required|date|after_or_equal:today',
-        'date_fin'    => 'required|date|after_or_equal:date_debut',
-        'interimaire' => 'nullable|exists:users,id',
-    ], [
-        'date_debut.required'     => 'La date de début est obligatoire.',
-        'date_debut.after_or_equal' => 'La date de début ne peut pas être inférieue à aujourd\'hui.',
-        'date_fin.required'       => 'La date de fin est obligatoire.', 
-        'date_fin.after_or_equal' => 'La date de fin doit être supérieure ou égale à la date de début.',
-    ]);
+            'date_debut'  => 'required|date|after_or_equal:today',
+            'date_fin'    => 'required|date|after_or_equal:date_debut',
+            'interimaire' => 'nullable|exists:users,id',
+        ], [
+            'date_debut.required'     => 'La date de début est obligatoire.',
+            'date_debut.after_or_equal' => 'La date de début ne peut pas être inférieue à aujourd\'hui.',
+            'date_fin.required'       => 'La date de fin est obligatoire.', 
+            'date_fin.after_or_equal' => 'La date de fin doit être supérieure ou égale à la date de début.',
+        ]);
 
-
-        $user    = auth()->user();
-
-
-        // un agent ne peut pas avoir 2 demandes de jouissance  en même temps
+        $user = auth()->user();
 
         $demandeEnCours = DemandeJouissance::where('user_id', $user->id)
             ->where('abandonnee', false)
@@ -112,7 +108,6 @@ class DemandeJouissanceController extends Controller
         $jours = \Carbon\Carbon::parse($request->date_debut)
             ->diffInDays(\Carbon\Carbon::parse($request->date_fin)) + 1;
 
-        //  la période de jouissance doit être de 15 ou 30 jours seulement
         if (!in_array($jours, [15, 30])) {
             return redirect()->back()->withInput()
                 ->with('error', "La période de jouissance doit être de 15 ou 30 jours. Votre demande couvre {$jours} jour(s).");
@@ -122,7 +117,6 @@ class DemandeJouissanceController extends Controller
             return redirect()->back()->withInput()
                 ->with('error', "Solde insuffisant : vous demandez {$jours} jour(s), il ne vous reste que {$user->solde_conge} jour(s).");
         }
-
 
         $demande = DemandeJouissance::create([
             'num_demande'               => time(),
@@ -138,7 +132,6 @@ class DemandeJouissanceController extends Controller
         $user->decrement('solde_conge', $jours);
         $demande->notifierProchainActeur(\App\Notifications\DemandeJouissanceATraiter::class);
 
-        // Log pour la soumission demande jouissance 
         LogActivity::log(
             'create',
             'DemandeJouissance',
@@ -182,62 +175,60 @@ class DemandeJouissanceController extends Controller
         return view('demande_jouissances.edit', compact('demande'));
     }
 
-            public function update(Request $request, $id)
-        {
-            $demande = DemandeJouissance::findOrFail($id);
+    public function update(Request $request, $id)
+    {
+        $demande = DemandeJouissance::findOrFail($id);
 
-            if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
-                return redirect()->route('demande_jouissances.show', $id)
-                    ->with('error', 'Modification non autorisée.');
-            }
-
-                $request->validate([
-                'date_debut' => 'required|date',
-                'date_fin'   => 'required|date|after_or_equal:date_debut',
-            ], [
-                'date_debut.required'     => 'La date de début est obligatoire.',
-                'date_debut.after_or_equal' => 'La date de début ne peut pas être inférieure à aujourd\'hui.',
-                'date_fin.required'       => 'La date de fin est obligatoire.',
-                'date_fin.after_or_equal' => 'La date de fin doit être superieur ou égale à la date de début.',
-            ]);
-
-            $user            = $demande->user;
-            $ancienJours     = $demande->nombreJours();
-            $nouveauxJours   = \Carbon\Carbon::parse($request->date_debut)
-                ->diffInDays(\Carbon\Carbon::parse($request->date_fin)) + 1;
-
-            //  la période de jouissance doit être de 15 ou 30 jours uniquement
-            if (!in_array($nouveauxJours, [15, 30])) {
-                return redirect()->back()->withInput()
-                    ->with('error', "La période de jouissance doit être de 15 ou 30 jours. Votre demande couvre {$nouveauxJours} jour(s).");
-            }
-
-            $soldeDisponible = $user->solde_conge + $ancienJours;
-
-            if ($nouveauxJours > $soldeDisponible) {
-                return redirect()->back()->withInput()
-                    ->with('error', "Solde insuffisant : vous demandez {$nouveauxJours} jour(s), il ne vous reste que {$soldeDisponible} jour(s).");
-            }
-
-            $demande->update([
-                'date_debut'  => $request->date_debut,
-                'date_fin'    => $request->date_fin,
-                'nombre_jour' => $nouveauxJours,
-            ]);
-
-            $user->update(['solde_conge' => $soldeDisponible - $nouveauxJours]);
-
-            // Log pour la modification demande jouissance
-            LogActivity::log(
-                'update',
-                'DemandeJouissance',
-                $demande->id,
-                "Modification demande jouissance #{$demande->num_demande}"
-            );
-
-            return redirect()->route('demande_jouissances.index')
-                ->with('success', 'Demande modifiée avec succès.');
+        if ($demande->user_id !== auth()->id() || $demande->statut !== 'en_attente') {
+            return redirect()->route('demande_jouissances.show', $id)
+                ->with('error', 'Modification non autorisée.');
         }
+
+        $request->validate([
+            'date_debut' => 'required|date',
+            'date_fin'   => 'required|date|after_or_equal:date_debut',
+        ], [
+            'date_debut.required'     => 'La date de début est obligatoire.',
+            'date_debut.after_or_equal' => 'La date de début ne peut pas être inférieure à aujourd\'hui.',
+            'date_fin.required'       => 'La date de fin est obligatoire.',
+            'date_fin.after_or_equal' => 'La date de fin doit être superieur ou égale à la date de début.',
+        ]);
+
+        $user            = $demande->user;
+        $ancienJours     = $demande->nombreJours();
+        $nouveauxJours   = \Carbon\Carbon::parse($request->date_debut)
+            ->diffInDays(\Carbon\Carbon::parse($request->date_fin)) + 1;
+
+        if (!in_array($nouveauxJours, [15, 30])) {
+            return redirect()->back()->withInput()
+                ->with('error', "La période de jouissance doit être de 15 ou 30 jours. Votre demande couvre {$nouveauxJours} jour(s).");
+        }
+
+        $soldeDisponible = $user->solde_conge + $ancienJours;
+
+        if ($nouveauxJours > $soldeDisponible) {
+            return redirect()->back()->withInput()
+                ->with('error', "Solde insuffisant : vous demandez {$nouveauxJours} jour(s), il ne vous reste que {$soldeDisponible} jour(s).");
+        }
+
+        $demande->update([
+            'date_debut'  => $request->date_debut,
+            'date_fin'    => $request->date_fin,
+            'nombre_jour' => $nouveauxJours,
+        ]);
+
+        $user->update(['solde_conge' => $soldeDisponible - $nouveauxJours]);
+
+        LogActivity::log(
+            'update',
+            'DemandeJouissance',
+            $demande->id,
+            "Modification demande jouissance #{$demande->num_demande}"
+        );
+
+        return redirect()->route('demande_jouissances.index')
+            ->with('success', 'Demande modifiée avec succès.');
+    }
 
     public function destroy($id)
     {
@@ -275,7 +266,6 @@ class DemandeJouissanceController extends Controller
         $demande->user->increment('solde_conge', $demande->nombreJours());
         $demande->update(['abandonnee' => true]);
 
-        // LOG abandon demande jouissance
         LogActivity::log(
             'update',
             'DemandeJouissance',
@@ -286,40 +276,16 @@ class DemandeJouissanceController extends Controller
         return redirect()->route('demande_jouissances.index')
             ->with('success', 'Demande abandonnée.');
     }
-
+    
     public function telechargerCessation($id)
     {
         $demande = DemandeJouissance::with('user.departement.direction', 'avis')->findOrFail($id);
 
-        $user       = auth()->user();
-        $estAuteur  = $demande->user_id === $user->id;
-        $estAgentRH = $user->role->libelle === 'Agent RH';
+      $user = auth()->user();
 
-        if ((!$estAuteur && !$estAgentRH) || $demande->statut !== 'validee') {
+        if (!$demande->peutTelechargerDocuments($user) || $demande->statut !== 'validee') {
             return redirect()->route('demande_jouissances.show', $id)
                 ->with('error', 'Téléchargement non autorisé.');
-        }
-
-        // numéro de référence générer une seule fois
-        if (!$demande->num_certificat_cessation) {
-            $direction = $demande->user->departement->direction ?? null;
-            $sigle     = $direction->libelle_court ?? null;
-            $annee     = now()->year;
-
-            $nbCertificats = DemandeJouissance::whereYear('certificat_cessation_genere_at', $annee)
-                ->whereNotNull('num_certificat_cessation')
-                ->count();
-            $numero = str_pad($nbCertificats + 1, 3, '0', STR_PAD_LEFT);
-
-            $reference = "N°{$annee}-{$numero}/MTDPCE/SG/ANPTIC/DG/SG";
-            if ($sigle && $sigle !== 'SG') {
-                $reference .= "/{$sigle}";
-            }
-
-            $demande->update([
-                'num_certificat_cessation'       => $reference,
-                'certificat_cessation_genere_at' => now(),
-            ]);
         }
 
         LogActivity::log(
@@ -334,29 +300,64 @@ class DemandeJouissanceController extends Controller
     }
 
     public function telechargerReprise($id)
-        {
-            $demande    = DemandeJouissance::with('user.departement.direction', 'avis')->findOrFail($id);
-            $dateFin    = \Carbon\Carbon::parse($demande->date_fin);
-            $aujourdhui = \Carbon\Carbon::today();
-            $user       = auth()->user();                                
-            $estAuteur  = $demande->user_id === $user->id;                
-            $estAgentRH = $user->role->libelle === 'Agent RH';            
+    {
+        $demande    = DemandeJouissance::with('user.departement.direction', 'avis')->findOrFail($id);
+        $dateFin    = \Carbon\Carbon::parse($demande->date_fin);
+        $aujourdhui = \Carbon\Carbon::today();
 
-             $bloqueParDelai = !$estAgentRH && $aujourdhui->lt($dateFin->copy()->subDays(2)); 
+       $user = auth()->user();
 
-            if ((!$estAuteur && !$estAgentRH)                              
-                || $demande->statut !== 'validee'
-                || $bloqueParDelai) {                                     
-                return redirect()->route('demande_jouissances.show', $id)
-                    ->with('error', 'Le certificat de reprise sera disponible 2 jours avant le retour');
-            }
+        if (!$demande->peutTelechargerDocuments($user) || $demande->statut !== 'validee') {          
 
-            LogActivity::log('read', 'DemandeJouissance', $demande->id,
-                "Téléchargement certificat reprise #{$demande->num_demande}");   
+        // $bloqueParDelai = !$estAgentRH && $aujourdhui->lt($dateFin->copy()->subDays(2)); 
 
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.jouissance_reprise', compact('demande'));
-            return $pdf->download("reprise_service_{$demande->num_demande}.pdf");  
+        //  $bloqueParDelai = false;
+        //  if ((!$estAuteur && !$estAgentRH)                              
+        //     || $demande->statut !== 'validee'
+        //     || $bloqueParDelai) {                                     
+        //     return redirect()->route('demande_jouissances.show', $id)
+        //         ->with('error', 'Le certificat de reprise sera disponible 2 jours avant le retour');
+        // }
+     
+        return redirect()->route('demande_jouissances.show', $id)
+            ->with('error', 'Téléchargement non autorisé.');
+    }
+
+        LogActivity::log('read', 'DemandeJouissance', $demande->id,
+            "Téléchargement certificat reprise #{$demande->num_demande}");   
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.jouissance_reprise', compact('demande'));
+        return $pdf->download("reprise_service_{$demande->num_demande}.pdf");  
+    }
+
+    public function telechargerInterim($id)
+    {
+        $demande = DemandeJouissance::with('user.departement.direction', 'avis')->findOrFail($id);
+
+        $user = auth()->user();
+
+        if (!$demande->peutTelechargerDocuments($user) || $demande->statut !== 'validee') {
+            return redirect()->route('demande_jouissances.show', $id)
+                ->with('error', 'Téléchargement non autorisé.');
         }
+
+        $signataire = $this->determinerSignataireInterim($demande->user);
+
+        if (!$signataire) {
+            return redirect()->route('demande_jouissances.show', $id)
+                ->with('error', 'Impossible de déterminer le signataire de la note d\'intérim.');
+        }
+
+        LogActivity::log(
+            'read',
+            'DemandeJouissance',
+            $demande->id,
+            "Téléchargement note d'intérim #{$demande->num_demande}"
+        );
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.note_interim', compact('demande', 'signataire'));
+        return $pdf->download("note_interim_{$demande->num_demande}.pdf");
+    }
 
     public function cloturer($id)
     {
@@ -374,7 +375,6 @@ class DemandeJouissanceController extends Controller
 
         $demande->update(['cloturee_at' => now()]);
 
-        // Log pour la clôture demande jouissance
         LogActivity::log(
             'update',
             'DemandeJouissance',
@@ -386,7 +386,7 @@ class DemandeJouissanceController extends Controller
             ->with('success', 'Demande clôturée avec succès.');
     }
 
-        private function estResponsable(User $user): bool
+    private function estResponsable(User $user): bool
     {
         $role = $user->role->libelle;
 
@@ -402,5 +402,33 @@ class DemandeJouissanceController extends Controller
         return User::where('id', '!=', $user->id)->get();
     }
 
-    
+
+
+
+    private function determinerSignataireInterim(User $owner): ?User
+    {
+        $roleOwner = $owner->role->libelle;
+
+        if ($roleOwner === 'SG') {
+            return User::whereHas('role', fn($q) => $q->where('libelle', 'DG'))->first();
+        }
+
+        if ($roleOwner === 'Responsable Direction' || $owner->est_responsable_direction) {
+            return User::whereHas('role', fn($q) => $q->where('libelle', 'SG'))->first();
+        }
+
+        if ($roleOwner === 'Chef de Département' || $owner->est_responsable_departement) {
+            $direction = $owner->directionReelle();
+
+            if (!$direction) {
+                return null;
+            }
+
+            return User::where('direction_id', $direction->id)
+                ->where('est_responsable_direction', true)
+                ->first();
+        }
+
+        return null;
+    }
 }

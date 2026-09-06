@@ -86,9 +86,6 @@ use Illuminate\Http\Request;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        /* Toutes les tables à deux colonnes utilisent désormais la même
-           répartition (58% / 42%) pour que les traits verticaux
-           s'alignent d'un bloc à l'autre sur toute la page. */
         table.bloc {
             width: 100%;
             border-collapse: collapse;
@@ -169,14 +166,11 @@ use Illuminate\Http\Request;
         'autre'                                => 'Autre',
     ];
 
-    // Les vraies valeurs stockées en base (voir AvisAbsenceController::store)
     $avisParType = $demande->avisAbsence->keyBy('type');
     $avisChef      = $avisParType['chef_departement']      ?? null;
     $avisDirection = $avisParType['responsable_direction'] ?? null;
     $avisRH        = $avisParType['agent_rh']               ?? null;
 
-    // Dernière étape réelle du circuit de CETTE demande (peut être 'sg', 'dg', 'pca'
-    // ou même 'agent_rh' si le circuit s'arrête là — absence courte)
     $etapeFinale = collect($circuit)->last();
     $avisFinale  = $avisParType[$etapeFinale] ?? null;
 
@@ -234,8 +228,7 @@ use Illuminate\Http\Request;
     <tr>
         <td colspan="2">
             <strong>Structure de rattachement :</strong>
-            {{ $demande->user->departement->libelle_court ?? '—' }}
-            ({{ $demande->user->departement->direction->libelle_court ?? '—' }})
+            {{ $demande->user->directionReelle()->libelle_court ?? '—' }}
         </td>
     </tr>
 </table>
@@ -308,7 +301,7 @@ use Illuminate\Http\Request;
 @if(in_array('responsable_direction', $circuit))
 <div class="section-header">
     Avis du Directeur de service
-    ({{ $demande->user->departement->direction->libelle_court ?? '' }})
+    ({{ $demande->user->directionReelle()->libelle_court ?? '' }})
 </div>
 <table class="bloc">
     <tr>
@@ -340,12 +333,12 @@ use Illuminate\Http\Request;
 <table class="bloc">
     <tr>
         <td class="col-58">
-            <span class="cb {{ $avisRH && $avisRH->avis === 'favorable' ? 'ok' : '' }}">
+            <span class="cb {{ $avisRH && $demande->retenue_salaire === false && $avisRH->avis === 'favorable' ? 'ok' : '' }}">
                 {{ $avisRH && $avisRH->avis === 'favorable' ? '✓' : 'o' }}
             </span> Autorisation<br>
-            &nbsp;&nbsp;<span class="cb {{ $demande->retenue_salaire ? 'ok' : '' }}">{{ $demande->retenue_salaire ? '✓' : 'o' }}</span>
+            &nbsp;&nbsp;<span class="cb {{ $avisRH && $demande->retenue_salaire ? 'ok' : '' }}">{{ $avisRH && $demande->retenue_salaire ? '✓' : 'o' }}</span>
             Avec retenue sur salaire<br>
-            &nbsp;&nbsp;<span class="cb {{ !$demande->retenue_salaire ? 'ok' : '' }}">{{ !$demande->retenue_salaire ? '✓' : 'o' }}</span>
+            &nbsp;&nbsp;<span class="cb {{ $avisRH && !$demande->retenue_salaire ? 'ok' : '' }}">{{ $avisRH && !$demande->retenue_salaire ? '✓' : 'o' }}</span>
             Sans retenue sur salaire<br><br>
             <span class="cb {{ $avisRH && $avisRH->avis === 'defavorable' ? 'ok' : '' }}">
                 {{ $avisRH && $avisRH->avis === 'defavorable' ? '✓' : 'o' }}
@@ -366,9 +359,7 @@ use Illuminate\Http\Request;
 </table>
 @endif
 
-{{-- Bloc décision finale : toujours affiché, mais son contenu dépend
-     du dernier acteur RÉEL du circuit (peut être SG, DG, PCA... ou même
-     l'Agent RH si le circuit s'arrête là pour une absence courte) --}}
+{{-- Bloc décision finale --}}
 <div class="section-header">
     @if(in_array($etapeFinale, ['sg', 'dg', 'pca']))
         Directeur / Secrétaire Général / Directeur Général

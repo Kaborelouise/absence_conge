@@ -132,10 +132,17 @@
                     <td>{{ $demande->user->prenom }}</td>
                     <td>{{ $demande->user->matricule }}</td>
                     <td>{{ $demande->user->poste }}</td>
-                    <td>{{ $demande->user->departement->direction->libelle_court ?? '—' }}</td>
 
-                    <td class="center">{{ $date_debut }} au {{ $date_fin }}</td>
-                    <td class="center">{{ $date_effet }}</td>
+                    <td>{{ $demande->user->directionReelle()->libelle_court ?? '—' }}</td>
+
+                    <td class="center">
+                        {{ \Carbon\Carbon::parse($demande->date_debut)->format('d/m/Y') }}
+                        au
+                        {{ \Carbon\Carbon::parse($demande->date_fin)->format('d/m/Y') }}
+                    </td>
+                    <td class="center">{{ \Carbon\Carbon::parse($demande->date_effet)->format('d/m/Y') }}</td>
+
+
                     <td>{{ implode(', ', $demande->lieu_jouissance ?? []) }}</td>
                 </tr>
             @endforeach

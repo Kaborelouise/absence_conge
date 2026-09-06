@@ -17,6 +17,9 @@ class ParametreDocument extends Model
         'nb_chiffres_cessation',
         'nb_chiffres_prise_service',
         'nb_chiffres_interim',
+        'suffixe_decision',
+        'suffixe_certificat',
+        'suffixe_interim',
     ];
 
     public static function actuel(): self

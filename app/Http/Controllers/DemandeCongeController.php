@@ -19,36 +19,37 @@ class DemandeCongeController extends Controller
         $sessions            = SessionAdministrative::orderByDesc('annee')->get();
         $session             = SessionAdministrative::courante();
         $sessionSelectionnee = request('session_id', $session?->id);
-        $estEligibleAuConge = $user->estEligible();
-        // dd($estEligibleAuConge);
+        $estEligibleAuConge  = $user->estEligibleAuConge();
 
-    $demandes = DemandeConge::with('user.departement.direction', 'avisConge')
-        ->when($sessionSelectionnee, function ($q) use ($sessionSelectionnee) {
-            $q->where('session_administrative_id', $sessionSelectionnee);
-        })
-        ->when(!in_array($role, ['Agent RH', 'Administrateur']), function ($q) use ($user) {
-            $q->where('user_id', $user->id);
-        })
-        ->latest()
-        ->get();
+        $demandes = DemandeConge::with('user.departement.direction', 'user.direction', 'avisConge')
+            ->when($sessionSelectionnee, function ($q) use ($sessionSelectionnee) {
+                $q->where('session_administrative_id', $sessionSelectionnee);
+            })
+            ->when(!in_array($role, ['Agent RH', 'Administrateur']), function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->latest()
+            ->get();
 
         $compilationActive = $session ? CompilationConge::activeParSession($session->id) : null;
         $peutCompiler       = $role === 'Agent RH';
         $peutSoumettre      = $session !== null && $session->estOuvertePour('conge');
 
-        
         return view('demande_conges.index', compact(
             'demandes', 'compilationActive', 'peutCompiler', 'session',
             'sessions', 'sessionSelectionnee',
-            'peutSoumettre', 'estEligibleAuConge' // pour afficher le bouton Soumettre une demande
+            'peutSoumettre', 'estEligibleAuConge'
         ));
     }
 
     public function create()
     {
-        // $user = auth()->user();
+        $user    = auth()->user();
         $session = SessionAdministrative::courante();
-        return view('demande_conges.create', compact('session'));
+
+        $periode = $user->prochainePeriodeConge();
+
+        return view('demande_conges.create', compact('session', 'periode'));
     }
 
     public function store(Request $request)
@@ -62,37 +63,17 @@ class DemandeCongeController extends Controller
             'lieu_jouissance.*.in'     => 'Lieu de jouissance invalide.',
         ]);
 
-        $user    = auth()->user();
+        $user = auth()->user();
 
-        $periode_travail = $user->periodeTravail();
-        $periode_travail_date_debut = $periode_travail['debut'] ?? null;
-        
-        $date_debut = $periode_travail['debut'] ?? null;
-        $annee_en_cours = sessionAdministrative::courante()->annee;
+        // Vérification de la session AVANT tout calcul
+        $session = SessionAdministrative::courante();
 
-        $periode_travail_date_debut = null;
-        $periode_travail_date_fin = null;
-        $periode_travail_date_effet = null;
-
-        if ($date_debut) {
-            $date = new DateTime($date_debut);
-            
-            $date->setDate($annee_en_cours, $date->format('m'), $date->format('d'));
-            
-            $periode_travail_date_debut = $date->format('d-m-Y');
-
-            $date_fin = clone $date;
-            
-            $date_fin->modify('+11 months -1 day'); // Ajoute 11 mois et retire 1 jour
-            $periode_travail_date_fin = $date_fin->format('d-m-Y');
-
-            $date_effet = clone $date_fin;
-            $date_effet->modify('+1 day');
-            $periode_travail_date_effet = $date_effet->format('d-m-Y');
+        if ($session === null || !$session->estOuvertePour('conge')) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Aucune session n\'est actuellement ouverte pour les demandes de congé.');
         }
 
-        // dd($periode_travail_date_debut, $periode_travail_date_fin, $periode_travail_date_effet);
-
+        //  Vérification d'une demande déjà en cours
         $demandeEnCours = DemandeConge::where('user_id', $user->id)
             ->where('abandonnee', false)
             ->whereDoesntHave('avisConge')
@@ -104,13 +85,7 @@ class DemandeCongeController extends Controller
                     . 'Vous devez attendre qu\'elle soit compilée ou l\'abandonner avant d\'en soumettre une nouvelle.');
         }
 
-        $session = SessionAdministrative::courante();
-
-        if ($session === null || !$session->estOuvertePour('conge')) {
-            return redirect()->back()->withInput()
-                ->with('error', 'Aucune session n\'est actuellement ouverte pour les demandes de congé.');
-        }
-
+        // 3. Vérification d'éligibilité
         if (!$user->estEligibleAuConge()) {
             $periode         = $user->periodeOuvrantDroit();
             $dateEligibilite = $periode
@@ -121,16 +96,22 @@ class DemandeCongeController extends Controller
                 ->with('error', "Vous n'êtes pas encore éligible au congé administratif. Vous le serez à partir du {$dateEligibilite}.");
         }
 
-        
+        //  Calcul de la période, via la source unique de vérité
+        $periode = $user->prochainePeriodeConge();
+
+        if (!$periode) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Impossible de calculer votre période de congé (date de prise de service manquante).');
+        }
 
         $demande = DemandeConge::create([
             'num_demande'                => time(),
             'lieu_jouissance'            => $request->lieu_jouissance,
             'user_id'                    => $user->id,
             'session_administrative_id'  => $session->id,
-            'date_debut'                 => $periode_travail_date_debut,
-            'date_fin'                   => $periode_travail_date_fin,
-            'date_effet'                 => $periode_travail_date_effet,
+            'date_debut'                 => $periode['debut_travail']->format('Y-m-d'),
+            'date_fin'                   => $periode['fin_travail']->format('Y-m-d'),
+            'date_effet'                 => $periode['date_effet']->format('Y-m-d'),
         ]);
 
         LogActivity::log(
@@ -146,13 +127,13 @@ class DemandeCongeController extends Controller
 
     public function show($id)
     {
-        $demande = DemandeConge::with('user.departement.direction', 'avisConge')
+        $demande = DemandeConge::with('user.departement.direction', 'user.direction', 'avisConge')
             ->findOrFail($id);
 
         $user           = auth()->user();
         $peutCompiler   = $demande->peutEtreCompileePar($user);
         $peutAbandonner = $demande->peutEtreAbandonneePar($user);
-        $session = SessionAdministrative::find($demande->session_administrative_id);
+        $session        = SessionAdministrative::find($demande->session_administrative_id);
 
         return view('demande_conges.show', compact('demande', 'peutCompiler', 'peutAbandonner', 'session'));
     }
@@ -325,7 +306,7 @@ class DemandeCongeController extends Controller
         $compilation->update(['decompilee_at' => now()]);
         $session->update(['active_conge' => true]);
         \Illuminate\Support\Facades\Notification::send(
-          \App\Models\User::all(),
+            \App\Models\User::all(),
             new \App\Notifications\SessionCongeOuverte($session)
         );
         LogActivity::log(
@@ -354,26 +335,10 @@ class DemandeCongeController extends Controller
                 ->with('error', "Aucune compilation active.");
         }
 
-        $demandes = DemandeConge::with('user.departement.direction')
+        $demandes = DemandeConge::with('user.departement.direction', 'user.direction')
             ->where('session_administrative_id', $session->id)
             ->where('statut', 'compilee')
             ->get();
-
-        $date_debut = null;
-        $date_fin   = null;
-        $date_effet = null;
-
-        $date_debut = $demandes->first()?->date_debut;
-        $date_fin   = $demandes->first()?->date_fin;
-        $date_effet = $demandes->first()?->date_effet;
-
-        $date_debut_format = new DateTime($date_debut);
-        $date_fin_format   = new DateTime($date_fin);
-        $date_effet_format = new DateTime($date_effet);
-
-        $date_debut = $date_debut_format->format('d/m/Y');
-        $date_fin   = $date_fin_format->format('d/m/Y');
-        $date_effet = $date_effet_format->format('d/m/Y');
 
         LogActivity::log(
             'read',
@@ -384,7 +349,7 @@ class DemandeCongeController extends Controller
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
             'pdf.decision_conge',
-            compact('demandes', 'session', 'compilation', 'date_debut', 'date_fin', 'date_effet')
+            compact('demandes', 'session', 'compilation')
         )->setPaper('A4', 'portrait');
 
         return $pdf->download("decision_conge_{$session->annee}.pdf");

@@ -31,11 +31,11 @@
                     </tr>
                     <tr>
                         <th>Département</th>
-                        <td>{{ $demande->user->departement->libelle_court ?? '—' }}</td>
+                        <td>{{ $demande->user->departement->libelle_court ?? '-' }}</td>
                     </tr>
                     <tr>
-                        <th>Direction</th>
-                        <td>{{ $demande->user->departement->direction->libelle_court ?? '—' }}</td>
+                        <th class="ps-3">Direction</th>
+                        <td>{{ $demande->user->directionReelle()->libelle_court ?? '-' }}</td>
                     </tr>
                     <tr>
                         <th>Lieu(x) de jouissance</th>
@@ -54,23 +54,19 @@
                         </td>
                     </tr>
 
-                    @php
-                        $periode = $demande->user->periodeJouissance();
-                    @endphp
-                    <tr>
-                        <th>Période de jouissance</th>
-                        <td>
-                            @if($session)
-                                <span class="text-muted">
-                                    {{ $session['date_debut']->format('d/m/Y') }} au {{ $session['date_fin']->format('d/m/Y') }}
-                                </span>
-                            @else
-                                <span class="text-muted fst-italic">
-                                    Non calculable (Aucune session en cours)
-                                </span>
-                            @endif
-                        </td>
-                    </tr>
+<tr>
+    <th>Période de travail</th>
+    <td>
+        {{ \Carbon\Carbon::parse($demande->date_debut)->format('d/m/Y') }}
+        au
+        {{ \Carbon\Carbon::parse($demande->date_fin)->format('d/m/Y') }}
+    </td>
+</tr>
+<tr>
+    <th>Date d'effet</th>
+    <td>{{ \Carbon\Carbon::parse($demande->date_effet)->format('d/m/Y') }}</td>
+</tr>
+                    
                 </table>
 
                 <div class="d-flex justify-content-center gap-3 mt-4">

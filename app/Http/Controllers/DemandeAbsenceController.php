@@ -37,9 +37,18 @@ class DemandeAbsenceController extends Controller
                 });
             })
             ->when($role === 'Responsable Direction', function ($q) use ($user) {
-                $directionId = $user->departement->direction_id;
-                $q->whereHas('user.departement', function ($q2) use ($directionId) {
-                    $q2->where('direction_id', $directionId);
+                $direction = $user->directionReelle();
+
+                if (!$direction) {
+                    $q->whereRaw('1 = 0');
+                    return;
+                }
+
+                $directionId = $direction->id;
+
+                $q->where(function ($q2) use ($directionId) {
+                    $q2->whereHas('user', fn($q3) => $q3->where('direction_id', $directionId))
+                    ->orWhereHas('user.departement', fn($q3) => $q3->where('direction_id', $directionId));
                 });
             })
             ->latest()
