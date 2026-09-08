@@ -12,6 +12,23 @@
             </div>
             <div class="card-body p-4">
 
+
+            <div class="card-body p-4">
+
+        {{-- Affichage de la date d'effet du congé --}}
+        @if($periode)
+            <div class="alert alert-secondary mb-4">
+                <strong>Date d'effet de votre congé :</strong>
+                {{ $periode['date_effet']->locale('fr')->isoFormat('D MMMM YYYY') }}
+            </div>
+        @else
+            <div class="alert alert-warning mb-4">
+                Impossible de déterminer votre date d'effet de congé
+                (date de prise de service manquante ou invalide).
+            </div>
+        @endif
+
+
                 @if($errors->any())
                     <div class="alert alert-danger">
                         <ul class="mb-0">
@@ -24,16 +41,6 @@
                 @if(session('error'))
                     <div class="alert alert-danger">{{ session('error') }}</div>
                 @endif
-
-
-
-               <div class="mb-4">
-                <label class="form-label fw-bold">Période de jouissance</label>
-
-                <input type="text" class="form-control bg-light text-muted" readonly
-                    value="@if($periode){{ $periode['date_effet']->format('d/m/Y') }} au {{ $periode['fin_jouissance']->format('d/m/Y') }}@else Non calculable (aucune session en cours ou date de prise de service manquante) @endif">
-                <small class="text-muted">Calculée automatiquement à partir de votre date de prise de service.</small>
-            </div>
 
                 <form action="{{ route('demande_conges.store') }}" method="POST">
                     @csrf

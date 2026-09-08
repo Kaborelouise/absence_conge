@@ -53,8 +53,8 @@
                     {{-- <td>{{ $user->email }}</td>
                     <td>{{ $user->poste }}</td> --}}
                     <td>{{ ucfirst(str_replace('_', ' ', $user->role->libelle ?? '—')) }}</td>
-                    {{-- <td>{{ $user->departement->libelle_court ?? '—' }}</td> --}}
-                    <td>{{ $user->directionReelle()->libelle_court ?? '—' }}</td>
+                    {{-- <td>{{ $user->departement->libelle_court ?? '-' }}</td> --}}
+                    <td>{{ $user->directionReelle()->libelle_court ?? '-' }}</td>
                     <td>
                         <a href="{{ route('utilisateurs.show', $user->id) }}"
                            class="btn btn-sm btn-outline-primary btn-action">Voir

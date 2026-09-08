@@ -19,7 +19,6 @@ class DemandeCongeController extends Controller
         $sessions            = SessionAdministrative::orderByDesc('annee')->get();
         $session             = SessionAdministrative::courante();
         $sessionSelectionnee = request('session_id', $session?->id);
-        $estEligibleAuConge  = $user->estEligibleAuConge();
 
         $demandes = DemandeConge::with('user.departement.direction', 'user.direction', 'avisConge')
             ->when($sessionSelectionnee, function ($q) use ($sessionSelectionnee) {
@@ -38,7 +37,7 @@ class DemandeCongeController extends Controller
         return view('demande_conges.index', compact(
             'demandes', 'compilationActive', 'peutCompiler', 'session',
             'sessions', 'sessionSelectionnee',
-            'peutSoumettre', 'estEligibleAuConge'
+            'peutSoumettre'
         ));
     }
 
@@ -46,7 +45,6 @@ class DemandeCongeController extends Controller
     {
         $user    = auth()->user();
         $session = SessionAdministrative::courante();
-
         $periode = $user->prochainePeriodeConge();
 
         return view('demande_conges.create', compact('session', 'periode'));
@@ -68,35 +66,16 @@ class DemandeCongeController extends Controller
         // Vérification de la session AVANT tout calcul
         $session = SessionAdministrative::courante();
 
+        if ($session !== null && CompilationConge::activeParSession($session->id)) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Les demandes de congé de cette session sont déjà compilées. Aucune nouvelle demande n\'est possible.');
+        }
+
         if ($session === null || !$session->estOuvertePour('conge')) {
             return redirect()->back()->withInput()
                 ->with('error', 'Aucune session n\'est actuellement ouverte pour les demandes de congé.');
         }
-
-        //  Vérification d'une demande déjà en cours
-        $demandeEnCours = DemandeConge::where('user_id', $user->id)
-            ->where('abandonnee', false)
-            ->whereDoesntHave('avisConge')
-            ->exists();
-
-        if ($demandeEnCours) {
-            return redirect()->back()->withInput()
-                ->with('error', 'Vous avez déjà une demande de congé en cours de traitement. '
-                    . 'Vous devez attendre qu\'elle soit compilée ou l\'abandonner avant d\'en soumettre une nouvelle.');
-        }
-
-        // 3. Vérification d'éligibilité
-        if (!$user->estEligibleAuConge()) {
-            $periode         = $user->periodeOuvrantDroit();
-            $dateEligibilite = $periode
-                ? $periode['fin']->copy()->addDay()->format('d/m/Y')
-                : 'inconnue';
-
-            return redirect()->back()->withInput()
-                ->with('error', "Vous n'êtes pas encore éligible au congé administratif. Vous le serez à partir du {$dateEligibilite}.");
-        }
-
-        //  Calcul de la période, via la source unique de vérité
+        // Calcul de la période
         $periode = $user->prochainePeriodeConge();
 
         if (!$periode) {
@@ -141,8 +120,12 @@ class DemandeCongeController extends Controller
     public function edit($id)
     {
         $demande = DemandeConge::findOrFail($id);
+        $user    = auth()->user();
 
-        if ($demande->user_id !== auth()->id() || $demande->estCompilee()) {
+        $estProprietaire = $demande->user_id === $user->id;
+        $estRhOuAdmin    = in_array($user->role->libelle, ['Agent RH', 'Administrateur']);
+
+        if ((!$estProprietaire && !$estRhOuAdmin) || $demande->estCompilee()) {
             return redirect()->route('demande_conges.show', $id)
                 ->with('error', 'Cette demande ne peut plus être modifiée.');
         }
@@ -153,8 +136,12 @@ class DemandeCongeController extends Controller
     public function update(Request $request, $id)
     {
         $demande = DemandeConge::findOrFail($id);
+        $user    = auth()->user();
 
-        if ($demande->user_id !== auth()->id() || $demande->estCompilee()) {
+        $estProprietaire = $demande->user_id === $user->id;
+        $estRhOuAdmin    = in_array($user->role->libelle, ['Agent RH', 'Administrateur']);
+
+        if ((!$estProprietaire && !$estRhOuAdmin) || $demande->estCompilee()) {
             return redirect()->route('demande_conges.show', $id)
                 ->with('error', 'Modification non autorisée.');
         }
@@ -180,8 +167,12 @@ class DemandeCongeController extends Controller
     public function destroy($id)
     {
         $demande = DemandeConge::findOrFail($id);
+        $user    = auth()->user();
 
-        if ($demande->user_id !== auth()->id() || $demande->estCompilee()) {
+        $estProprietaire = $demande->user_id === $user->id;
+        $estRhOuAdmin    = in_array($user->role->libelle, ['Agent RH', 'Administrateur']);
+
+        if ((!$estProprietaire && !$estRhOuAdmin) || $demande->estCompilee()) {
             return redirect()->route('demande_conges.index')
                 ->with('error', 'Suppression non autorisée.');
         }

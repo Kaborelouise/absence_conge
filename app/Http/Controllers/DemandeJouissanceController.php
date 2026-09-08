@@ -7,6 +7,12 @@ use App\Models\SessionAdministrative;
 use Illuminate\Http\Request;
 use App\Helpers\LogActivity;
 use App\Models\User;
+use App\Notifications\DepartCongeImminent;
+use App\Notifications\DepartCongeAnnonce;
+use Illuminate\Support\Facades\Notification;
+
+
+
 
 class DemandeJouissanceController extends Controller
 {
@@ -88,6 +94,11 @@ class DemandeJouissanceController extends Controller
                     . 'Vous devez attendre qu\'elle soit validée, rejetée ou l\'abandonner avant d\'en soumettre une nouvelle.');
         }
 
+        if (!$user->aOnzeMoisService()) {
+            return redirect()->back()->withInput()
+                ->with('error', "Vous n'êtes pas encore éligible à la jouissance de congé. Il vous faut au moins 11 mois de service.");
+        }
+
         $session = SessionAdministrative::courante();
 
         if ($session === null || !$session->estOuvertePour('jouissance')) {
@@ -95,12 +106,7 @@ class DemandeJouissanceController extends Controller
                 ->with('error', 'Aucune session n\'est actuellement ouverte pour les demandes de jouissance.');
         }
 
-        $congeCompile = $user->demandeConges()
-            ->where('session_administrative_id', $session->id)
-            ->where('statut', 'compilee')
-            ->exists();
-
-        if (!$congeCompile) {
+        if (!$user->aUneDemandeCongeCompilee($session->id)) {
             return redirect()->back()->withInput()
                 ->with('error', 'Vous devez avoir une demande de congé compilée avant de soumettre une demande de jouissance.');
         }
@@ -131,6 +137,17 @@ class DemandeJouissanceController extends Controller
 
         $user->decrement('solde_conge', $jours);
         $demande->notifierProchainActeur(\App\Notifications\DemandeJouissanceATraiter::class);
+
+
+        // test temporaire à retirer après vérification visuelle
+       
+        $autresAgents = User::where('id', '!=', $demande->user_id)->get();
+
+        $demande->user->notify(new DepartCongeImminent($demande));
+        Notification::send($autresAgents, new DepartCongeAnnonce($demande));
+    
+        // fin du test temporaire
+       
 
         LogActivity::log(
             'create',

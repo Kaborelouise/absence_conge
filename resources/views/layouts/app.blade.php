@@ -447,7 +447,7 @@
                                 class="dropdown-item px-3 py-2 border-bottom">
                                     <div>{{ $notification->data['message'] ?? 'Nouvelle notification' }}</div>
                                     <div class="text-muted" style="font-size:11px;">
-                                        {{ $notification->data['agent'] ?? '' }} — {{ $notification->created_at->diffForHumans() }}
+                                        {{ $notification->data['agent'] ?? '' }} - {{ $notification->created_at->diffForHumans() }}
                                     </div>
                                 </a>
                             </li>

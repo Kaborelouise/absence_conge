@@ -97,6 +97,13 @@ class User extends Authenticatable
             ];
         }
 
+        public function peutSoumettreCongeMaintenant(): bool
+        {
+            $periode = $this->prochainePeriodeConge();
+            if (!$periode) return false;
+
+            return Carbon::now()->greaterThanOrEqualTo($periode['date_effet']);
+        }
 
     public function periodeOuvrantDroit(): ?array
     {
@@ -160,24 +167,31 @@ class User extends Authenticatable
         return $mois >= 11;
     }
 
-    // Conservée pour compatibilité, délègue désormais à la version fiable
     public function estEligible(): bool
     {
         return $this->estEligibleAuConge();
     }
 
-    public function estEligibleJouissance(): bool
+    public function aOnzeMoisService(): bool
     {
         if (!$this->date_prise_service) return false;
 
-        $mois = (int) Carbon::parse($this->date_prise_service)
-            ->diffInMonths(Carbon::now());
+        return (int) Carbon::parse($this->date_prise_service)
+            ->diffInMonths(Carbon::now()) >= 11;
+    }
 
-        if ($mois < 12) return false;
-
+    public function aUneDemandeCongeCompilee(?int $sessionId = null): bool
+    {
         return $this->demandeConges()
+            ->when($sessionId, fn($q) => $q->where('session_administrative_id', $sessionId))
             ->where('statut', 'compilee')
             ->exists();
+    }
+
+    
+    public function estEligibleJouissance(): bool
+    {
+        return $this->aOnzeMoisService() && $this->aUneDemandeCongeCompilee();
     }
 
     public function periodeJouissanceFormatee_DEPRECATED_NOTUSED()

@@ -42,22 +42,18 @@
                     </button>
                 </form>
                 @if($peutSoumettre)
-                    @if($estEligibleAuConge === true)
-                        <a href="{{ route('demande_conges.create') }}" class="btn btn-primary btn-sm">
-                            <i class="bi bi-plus-lg me-1"></i> Nouvelle demande
-                        </a>
-                    @endif 
+                    <a href="{{ route('demande_conges.create') }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i> Nouvelle demande
+                    </a>
                 @endif
             @endif
 
 
        @else
     @if($peutSoumettre)
-        @if($estEligibleAuConge === true)
-            <a href="{{ route('demande_conges.create') }}" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-lg me-1"></i> Nouvelle demande
-            </a>
-        @endif
+        <a href="{{ route('demande_conges.create') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> Nouvelle demande
+        </a>
     @else
         <span class="text-muted" style="font-size:13px;">
             <i class="bi bi-lock me-1"></i> Les demandes de congé sont compilées, aucune nouvelle soumission n'est possible actuellement.
@@ -114,8 +110,9 @@
             <tbody>
                 @forelse($demandes as $demande)
                 @php
-                    $estAuteur  = $demande->user_id === auth()->id();
-                    $modifiable = $estAuteur && !$demande->estCompilee() && !$demande->abandonnee;
+                    $estAuteur    = $demande->user_id === auth()->id();
+                    $estRhOuAdmin = in_array(auth()->user()->role->libelle, ['Agent RH', 'Administrateur']);
+                    $modifiable   = ($estAuteur || $estRhOuAdmin) && !$demande->estCompilee() && !$demande->abandonnee;
                 @endphp
 
                 <tr>

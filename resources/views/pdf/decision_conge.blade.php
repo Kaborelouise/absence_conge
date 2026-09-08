@@ -22,7 +22,7 @@
 
         .titre-fonction { text-align: center; font-weight: bold; margin: 15px 0; }
 
-        /* Visas "Vu" */
+       
         .vu-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .vu-table td { border: none; padding: 1px 0; font-size: 10.5px; vertical-align: top; }
         .vu-table td.vu-label { width: 25px; font-weight: bold; }
@@ -75,7 +75,7 @@
     </table>
 
     <div class="decision-num">
-        Décision n°2026-{{ str_pad($compilation->id, 3, '0', STR_PAD_LEFT) }}/MTDPCE/SG/ANPTIC/DG/SG/DRH
+        Décision n°{{ $session->numero_decision ?? ($session->annee ?? now()->year) . '-______/MTDPCE/SG/ANPTIC/DG/SG/DRH' }}
     </div>
     <div class="decision-obj">
         <strong>accordant un congé administratif aux agents de l'Agence Nationale de Promotion des TIC</strong>

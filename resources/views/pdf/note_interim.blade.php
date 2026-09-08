@@ -200,7 +200,7 @@ $fonctionSignataire = $signataire->fonctionAffichee();
     <p>
         Pour {{ $articleSimple }}{{ $fonctionOwner }} {{ $absentAccord }},
         {{ $civiliteInterim === 'Madame' ? "l'agente" : "l'agent" }} chargé{{ $civiliteInterim === 'Madame' ? 'e' : '' }} de l'intérim,<br>
-        <strong>{{ $interimNomComplet }}</strong>
+        <strong>{{ $interimNomComplet }}</strong>.
     </p>
 
     <div class="signature">
