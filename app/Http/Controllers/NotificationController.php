@@ -21,4 +21,4 @@ class NotificationController extends Controller
 
         return redirect($url);
     }
-}
+    }

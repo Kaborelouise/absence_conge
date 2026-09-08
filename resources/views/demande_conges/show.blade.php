@@ -19,7 +19,6 @@
                 @endif
 
 
-
                 <table class="table table-borderless">
                     <tr>
                         <th style="width: 220px;">Numéro</th>
@@ -35,7 +34,7 @@
                     </tr>
                     <tr>
                         <th class="ps-3">Direction</th>
-                        <td>{{ $demande->user->directionReelle()->libelle_court ?? '-' }}</td>
+                        <td>{{ $demande->user->directionReelle()?->libelle_court ?? '-' }}</td>
                     </tr>
                     <tr>
                         <th>Lieu(x) de jouissance</th>

@@ -24,7 +24,7 @@ class SessionAdministrative extends Model
         'active_conge',
         'active_jouissance',
         'soldes_reinitialises',
-        'compteurs_reinitialises',
+            'compteurs_reinitialises',
         'created_by',
     ];
 

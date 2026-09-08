@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Password;
 use App\Models\DemandeJouissance;
 use App\Notifications\DepartCongeImminent;
 use App\Notifications\DepartCongeAnnonce;
+use Illuminate\Support\Facades\Notification;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());

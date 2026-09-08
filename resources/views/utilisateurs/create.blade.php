@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     directionSelect.addEventListener('change', filtrerDepartements);
 
-    // Filtre déjà au chargement si une direction est pré-sélectionnée (cas de vieilles valeurs after erreur de validation)
+    // Filtre déjà au chargement si une direction est pré-sélectionnée 
     if (directionSelect.value) {
         filtrerDepartements();
     }

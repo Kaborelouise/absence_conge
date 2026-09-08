@@ -55,7 +55,20 @@
 
         .entete-droite {
             width: 40%;
-            vertical-align: top;
+            text-align: right;
+            font-size: 11px;
+        }
+
+        .pays {
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .devise {
+            font-style: italic;
+            font-size: 11px;
+            margin-bottom: 6px;
+            text-align: center;
         }
 
         .reference {
@@ -147,24 +160,18 @@
 
         <td class="entete-droite">
 
-            <table style="width:100%; border-collapse:collapse; margin:0; padding:0;">
-                <tr>
-                    <td style="text-align:center; font-weight:bold; font-size:12px; padding:0;">
-                        BURKINA FASO
-                    </td>
-                </tr>
-                <tr>
-                    <td style="text-align:center; font-style:italic; font-size:11px; padding:0 0 6px 0;">
-                        La Patrie ou la Mort, nous Vaincrons
-                    </td>
-                </tr>
-                <tr>
-                    <td style="text-align:right; font-size:11px; padding-top:8px;">
-                        Ouagadougou, le
-                        {{ \Carbon\Carbon::now()->locale('fr')->isoFormat('D MMMM YYYY') }}
-                    </td>
-                </tr>
-            </table>
+            <div class="pays">
+                BURKINA FASO
+            </div>
+
+            <div class="devise" style="text-align: center !important;">
+                La Patrie ou la Mort, nous Vaincrons
+            </div>
+
+            <br>
+
+            Ouagadougou, le
+            {{ \Carbon\Carbon::now()->locale('fr')->isoFormat('D MMMM YYYY') }}
 
         </td>
 
