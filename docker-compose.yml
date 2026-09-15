@@ -9,20 +9,8 @@ services:
         condition: service_healthy
     ports:
       - "8080:80"
-    environment:
-      APP_ENV: local
-      APP_DEBUG: "true"
-      APP_URL: http://localhost:8080
-      DB_CONNECTION: pgsql
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_DATABASE: absence_conge
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
-      SESSION_DRIVER: database
-      CACHE_STORE: file
-      QUEUE_CONNECTION: sync
-      MAIL_MAILER: log
+    env_file:
+        - .env
     command: sh -c "php artisan migrate --force && apache2-foreground"
 
   db:
@@ -42,6 +30,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: absence-conge-queue
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    command: php artisan queue:work --sleep=3 --tries=3
+    restart: unless-stopped
 
 volumes:
   pgdata:

@@ -20,7 +20,10 @@ RUN composer install \
     --no-interaction \
     --no-progress \
     --prefer-dist \
-    --optimize-autoloader
+    --optimize-autoloader \
+    --ignore-platform-reqs \
+    --no-scripts \
+    && cp vendor/thecodingmachine/safe/generated/opcache.php vendor/thecodingmachine/safe/generated/oPCAche.php
 
 FROM php:8.3-apache
 
@@ -33,14 +36,16 @@ RUN apt-get update \
         libjpeg62-turbo-dev \
         libpng-dev \
         libzip-dev \
+        libpq-dev \
+        libwebp-dev \
         unzip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j"$(nproc)" \
         bcmath \
         gd \
         intl \
         opcache \
-        pdo_mysql \
+        pdo_pgsql \
         zip \
     && a2enmod rewrite \
     && sed -ri "s!/var/www/html!${APACHE_DOCUMENT_ROOT}!g" /etc/apache2/sites-available/*.conf \
@@ -49,9 +54,12 @@ RUN apt-get update \
 
 WORKDIR /var/www/html
 
+
 COPY --from=vendor /app/vendor ./vendor
 COPY . .
 COPY --from=frontend /app/public/build ./public/build
+
+RUN php artisan package:discover --ansi
 
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R ug+rwx storage bootstrap/cache

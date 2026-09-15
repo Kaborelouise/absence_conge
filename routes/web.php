@@ -35,7 +35,7 @@ Route::middleware('auth')->group(function () {
 
     // ACCUEIL
     Route::get('/', function () {
-        return view('Accueil');
+        return view('accueil');
     })->name('accueil');
 
     // DASHBOARD

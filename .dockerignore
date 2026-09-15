@@ -9,3 +9,4 @@ storage/framework/views/*
 public/build
 Dockerfile
 .dockerignore
+bootstrap/cache/*.php
