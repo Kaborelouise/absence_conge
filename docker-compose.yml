@@ -9,9 +9,14 @@ services:
         condition: service_healthy
     ports:
       - "8080:80"
-    env_file:
-        - .env
-    command: sh -c "php artisan migrate --force && apache2-foreground"
+    command: >
+      sh -c "
+      if [ ! -f .env ]; then cp .env.docker .env; fi &&
+      if ! grep -q '^APP_KEY=base64:' .env; then php artisan key:generate --force; fi &&
+      php artisan config:clear &&
+      php artisan migrate --force &&
+      apache2-foreground
+      "
 
   db:
     image: postgres:16-alpine
@@ -30,18 +35,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-  queue:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: absence-conge-queue
-    depends_on:
-      db:
-        condition: service_healthy
-    env_file:
-      - .env
-    command: php artisan queue:work --sleep=3 --tries=3
-    restart: unless-stopped
 
 volumes:
   pgdata:
