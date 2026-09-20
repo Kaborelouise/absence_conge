@@ -1,58 +1,72 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Gestion des congés et des autorisations d'absence – ANPTIC
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/baDGe.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Application web (Laravel / PHP / PostgreSQL) de gestion des demandes d'autorisation d'absence, de congé administratif et de jouissance de congé, avec circuit de validation multiniveaux.
 
-## About Laravel
+## Prérequis
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- [Docker Desktop](https://docs.docker.com/desktop/) installé et lancé
+- [Git](https://git-scm.com/downloads) installé
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Aucune autre installation n'est nécessaire (pas besoin de PHP, Composer ou PostgreSQL en local : tout tourne dans les conteneurs).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding Agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Installation et lancement
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/Kaborelouise/absence_conge.git
+cd absence_conge
+docker compose up -d --build
 ```
 
-Boost provides your Agent 15+ tools and skills that help Agents build Laravel applications while following best practices.
+La première construction prend 2 à 5 minutes. Les conteneurs s'occupent automatiquement de tout :
+- création du fichier `.env` à partir de `.env.docker`
+- génération de la clé d'application si besoin
+- application des migrations de la base de données
 
-## Contributing
+## Accès à l'application
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Une fois les conteneurs démarrés, ouvrir dans un navigateur :
 
-## Code of Conduct
+**http://localhost:8080**
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Vérifier que tout fonctionne
 
-## Security Vulnerabilities
+```bash
+docker ps
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Deux conteneurs doivent apparaître avec le statut "Up" : `absence-conge-app` et `absence-conge-db`.
 
-## License
+## Commandes utiles
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+# Voir les logs de l'application en direct
+docker compose logs -f app
+
+# Ouvrir un terminal dans le conteneur de l'application
+docker compose exec app bash
+
+# Arrêter les conteneurs (les données sont conservées)
+docker compose down
+
+# Arrêter et supprimer aussi les données de la base
+docker compose down -v
+```
+
+## Dépannage
+
+| Problème | Solution |
+|---|---|
+| Port 8080 déjà utilisé | Modifier `"8080:80"` en `"8081:80"` (ou autre) dans `docker-compose.yml`, puis `docker compose up -d --build` |
+| Port 5432 déjà utilisé | Modifier `"5432:5432"` en `"5433:5432"` dans `docker-compose.yml` |
+| Page blanche ou erreur 500 | Consulter les logs : `docker compose logs --tail 50 app` |
+| Changement de code non pris en compte | Reconstruire l'image : `docker compose up -d --build` |
+
+## Structure technique
+
+- **Backend** : PHP / Laravel
+- **Base de données** : PostgreSQL 16
+- **Conteneurisation** : Docker & Docker Compose (un conteneur pour l'application, un pour la base de données)
+
+## Contact
+
+Projet développé par **KABORE Louise Jessica A.** dans le cadre d'un stage à l'ANPTIC.
