@@ -154,10 +154,5 @@ Route::middleware('auth')->group(function () {
     Route::put('/mot-de-passe/changer-obligatoire', [MotDePasseObligatoireController::class, 'update'])
         ->name('mot_de_passe.changer_obligatoire.update');
 
-    Route::get('parametres-documents', [\App\Http\Controllers\ParametreDocumentController::class, 'edit'])
-    ->name('parametres_documents.edit');
-
-    Route::put('parametres-documents', [\App\Http\Controllers\ParametreDocumentController::class, 'update'])
-    ->name('parametres_documents.update');
 
 });
