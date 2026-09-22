@@ -67,6 +67,18 @@ docker compose down -v
 - **Base de données** : PostgreSQL 16
 - **Conteneurisation** : Docker & Docker Compose (un conteneur pour l'application, un pour la base de données)
 
+
+> Note importante sur le fichier .env
+> Le projet est configuré pour Docker. Si [.env](.env) n'existe pas, Docker le crée automatiquement à partir de [.env.docker](.env.docker).
+> Dans ce mode, la base PostgreSQL est accessible via le nom de service `db` à l'intérieur du réseau Docker.
+>
+> Si vous souhaitez lancer l'application sans Docker, vous devez modifier [.env](.env) pour utiliser PostgreSQL localement :
+> DB_HOST=127.0.0.1
+> DB_PORT=5432
+> DB_DATABASE=absence_conge
+> DB_USERNAME=postgres
+> DB_PASSWORD=postgres
+
 ## Contact
 
 Projet développé par **KABORE Louise Jessica A.** dans le cadre d'un stage à l'ANPTIC.
