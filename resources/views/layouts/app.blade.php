@@ -391,21 +391,7 @@
             </a>
 
         @endif
-        <!-- @if(in_array($role, ['Administrateur', 'Agent RH']))
-
-            <a href="{{ route('sessions_administratives.index') }}"
-                class="sidebar-link {{ request()->routeIs('sessions_administratives.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar-event"></i>
-                <span>Sessions Administratives</span>
-            </a>
-
-            <a href="{{ route('parametres_documents.edit') }}"
-                class="sidebar-link {{ request()->routeIs('parametres_documents.*') ? 'active' : '' }}">
-                <i class="bi bi-gear"></i>
-                <span>Paramètres documents</span>
-            </a>
-
-        @endif -->
+      
 
         </div>
 
