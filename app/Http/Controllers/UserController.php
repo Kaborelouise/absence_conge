@@ -210,23 +210,41 @@ class UserController extends Controller
 }
 
 
-    public function destroy($id)
-    {
-        $user = User::findOrFail($id);
+        public function destroy($id)
+        {
+            $user = User::findOrFail($id);
 
-        if ($user->certificat_prise_service) {
-            Storage::disk('public')->delete($user->certificat_prise_service);
+            // Empêche la suppression si l'utilisateur a des demandes enregistrées
+            // (traçabilité RH + évite la violation de contrainte de clé étrangère)
+            $aDesDemandes = $user->demandeAbsences()->exists()
+                || $user->demandeJouissances()->exists()
+                || (method_exists($user, 'demandeConges') && $user->demandeConges()->exists());
+
+            if ($aDesDemandes) {
+                return redirect()->route('utilisateurs.index')
+                    ->with('error', "Impossible de supprimer {$user->prenom} {$user->nom} : cet utilisateur a des demandes enregistrées dans le système. Envisagez de désactiver son compte plutôt que de le supprimer.");
+            }
+
+            try {
+                if ($user->certificat_prise_service) {
+                    Storage::disk('public')->delete($user->certificat_prise_service);
+                }
+
+                $nomComplet = "{$user->nom} {$user->prenom}";
+                $user->delete();
+
+                LogActivity::log('delete', 'User', $id, "Suppression utilisateur {$nomComplet}");
+
+                return redirect()
+                    ->route('utilisateurs.index')
+                    ->with('success', 'Utilisateur supprimé.');
+
+            } catch (\Illuminate\Database\QueryException $e) {
+                
+                return redirect()->route('utilisateurs.index')
+                    ->with('error', "Impossible de supprimer {$user->prenom} {$user->nom} : des données liées existent encore dans le système.");
+            }
         }
-
-        $nomComplet = "{$user->nom} {$user->prenom}";
-        $user->delete();
-
-        LogActivity::log('delete', 'User', $id, "Suppression utilisateur {$nomComplet}");
-
-        return redirect()
-            ->route('utilisateurs.index')
-            ->with('success', 'Utilisateur supprimé.');
-    }
 
         public function renvoyerInvitation(User $utilisateur)
         {
