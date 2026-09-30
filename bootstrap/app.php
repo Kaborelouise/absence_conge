@@ -12,12 +12,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // AJOUT : enregistrement du middleware Administrateur
+        // Enregistrement des middlewares de contrôle d'accès
         $middleware->alias([
             'Administrateur' => \App\Http\Middleware\AdministrateurMiddleware::class,
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
 
-        // AJOUT : force le changement de mot de passe temporaire sur tout le site
+        // Force le changement de mot de passe temporaire sur tout le site
         $middleware->appendToGroup('web', \App\Http\Middleware\ForcerChangementMotDePasse::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

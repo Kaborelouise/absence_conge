@@ -358,9 +358,20 @@
                 <span>Demande de jouissance</span>
             </a>
 
-            @php
+                        @php
               $role = auth()->user()->role->libelle ?? null;
+              $peutGererSessions = in_array($role, ['Administrateur', 'Agent RH']);
             @endphp
+
+        @if($peutGererSessions)
+            <div class="sidebar-section-title">Gestion RH</div>
+
+            <a href="{{ route('sessions_administratives.index') }}"
+               class="sidebar-link {{ request()->routeIs('sessions_administratives.*') || request()->routeIs('sessions_Administratives.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-event"></i>
+                <span>Sessions administratives</span>
+            </a>
+        @endif
 
         @if($role === 'Administrateur')
 

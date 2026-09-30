@@ -15,6 +15,10 @@ use App\Services\NumerotationService;
 class SessionAdministrativeController extends Controller
 {
 
+    public function __construct()
+    {
+        $this->middleware('role:Administrateur,Agent RH');
+    }
     public function index()
     {
         // Récupération de toutes les sessions administratives,classée par année décroissante
