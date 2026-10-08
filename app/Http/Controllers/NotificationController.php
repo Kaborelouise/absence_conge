@@ -15,7 +15,7 @@ class NotificationController extends Controller
         $url = $notification->data['url'] ?? null;
 
         if ($url) {
-            // On ignore l'hôte et le port enregistrés 
+            // On ignore l'hôte et le port enregistrés
             // pour rester sur le serveur actuel
             $chemin = parse_url($url, PHP_URL_PATH) ?: '/';
             $requete = parse_url($url, PHP_URL_QUERY);
