@@ -4,21 +4,29 @@ namespace App\Http\Controllers;
 
 class NotificationController extends Controller
 {
-
-    //  Marque une notification comme lu puis redirige
-    //  vers la page de la demande concernée stockée dans 'url'
-
+    // Marque une notification comme lue puis redirige
+    // vers la page concernée, en gardant uniquement le chemin de l'URL
     public function lire(string $id)
     {
         $notification = auth()->user()->notifications()->findOrFail($id);
 
-        // markAsRead() est une méthode fournie automatiquement par Laravel
-        // sur chaque notification, dès qu'on utilise le trait Notifiable
         $notification->markAsRead();
 
-        // On récupère l'URL stockée dans toArray() de la notification
-        $url = $notification->data['url'] ?? route('dashboard');
+        $url = $notification->data['url'] ?? null;
 
-        return redirect($url);
+        if ($url) {
+            // On ignore l'hôte et le port enregistrés 
+            // pour rester sur le serveur actuel
+            $chemin = parse_url($url, PHP_URL_PATH) ?: '/';
+            $requete = parse_url($url, PHP_URL_QUERY);
+
+            if ($requete) {
+                $chemin .= '?' . $requete;
+            }
+
+            return redirect($chemin);
+        }
+
+        return redirect()->route('dashboard');
     }
-    }
+}

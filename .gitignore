@@ -28,3 +28,5 @@ Thumbs.db
 
 /dump_reel.sql
 /backup_avant_test.sql
+
+.env.docker
